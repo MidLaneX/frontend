@@ -10,7 +10,7 @@ import Tooltip from '@mui/material/Tooltip';
 import AddIcon from '@mui/icons-material/Add';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import TaskCard from './TaskCard.tsx';
-import type { Task } from '../data';
+import type { Task } from "../types";
 
 interface KanbanColumnProps {
   id: string;

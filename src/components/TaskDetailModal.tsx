@@ -15,7 +15,7 @@ import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
-import type { Task } from '../data';
+import type { Task } from "../types";
 
 interface TaskDetailModalProps {
   task: Task | null;

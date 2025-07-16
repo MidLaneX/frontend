@@ -1,50 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
+import { ThemeProvider, CssBaseline } from "@mui/material";
 import Box from '@mui/material/Box'
 import Navbar from "./components/Navbar.tsx";
 import WelcomePage from "./pages/WelcomePage.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Project from "./pages/Project.tsx";
 import Sidebar from "./components/Sidebar.tsx";
+import { theme } from "./config/theme";
 import "./App.css";
-
-const theme = createTheme({
-  palette: {
-    background: {
-      default: "#FAFBFC",
-    },
-    primary: {
-      main: "#0052CC",
-    },
-    secondary: {
-      main: "#36B37E",
-    },
-  },
-  typography: {
-    fontFamily:
-      '"Inter", "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif',
-    h1: {
-      fontWeight: 700,
-    },
-    h2: {
-      fontWeight: 600,
-    },
-    h3: {
-      fontWeight: 600,
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: "none",
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-});
 
 function App() {
   return (

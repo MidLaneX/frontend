@@ -1,13 +1,18 @@
 {
-  "name": "frontend",
+  "name": "midlinex-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Professional project management platform frontend",
+  "author": "MidLineX Team",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist && rm -rf node_modules/.vite"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

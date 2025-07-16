@@ -1,28 +1,4 @@
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  assignee: string;
-  reporter: string;
-  dueDate: string;
-  priority: 'Highest' | 'High' | 'Medium' | 'Low' | 'Lowest';
-  status: 'Backlog' | 'Todo' | 'In Progress' | 'Review' | 'Done';
-  type: 'Story' | 'Bug' | 'Task' | 'Epic';
-  storyPoints?: number;
-  labels: string[];
-  comments: { id: string; author: string; text: string; timestamp: string }[];
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  key: string;
-  description: string;
-  timeline: { start: string; end: string };
-  teamMembers: { name: string; role: string; avatar?: string }[];
-  tasks: Task[];
-  type: 'Software' | 'Business' | 'Marketing';
-}
+import type { Project } from '../types';
 
 export const projects: Project[] = [
   {

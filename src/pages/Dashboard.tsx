@@ -22,9 +22,9 @@ import StarIcon from '@mui/icons-material/Star'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import { Link } from 'react-router-dom'
-import { projects } from '../data'
+import { projects } from "../data/projects";
 import CreateProjectModal from '../components/CreateProjectModal.tsx'
-import type { Project } from '../data'
+import type { Project } from "../types";
 
 const Dashboard: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
