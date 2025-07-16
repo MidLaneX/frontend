@@ -185,35 +185,64 @@ const Sidebar: React.FC = () => {
       sx={{
         width: drawerWidth,
         flexShrink: 0,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        height: "100vh",
+        zIndex: 1200,
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
-          boxSizing: 'border-box',
-          bgcolor: '#F4F5F7',
-          borderRight: '1px solid #DFE1E6',
-          pt: '64px' // Account for fixed navbar
+          boxSizing: "border-box",
+          bgcolor: "#F4F5F7",
+          borderRight: "1px solid #DFE1E6",
+          position: "fixed",
+          top: "68px", // Start below the navbar
+          left: 0,
+          height: "calc(100vh - 68px)", // Subtract navbar height
+          margin: 0,
+          padding: 0,
         },
       }}
     >
-      <Box sx={{ overflow: 'auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          overflow: "auto",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          margin: 0,
+          padding: 0,
+          "&::-webkit-scrollbar": {
+            display: "none",
+          },
+          "-ms-overflow-style": "none",
+          "scrollbar-width": "none",
+        }}
+      >
         {/* Main Navigation */}
-        <Box sx={{ p: 2, flex: '0 0 auto' }}>
-          <List dense>
-            {mainNavigation.map(renderNavigationItem)}
-          </List>
+        <Box sx={{ p: 2, flex: "0 0 auto" }}>
+          <List dense>{mainNavigation.map(renderNavigationItem)}</List>
         </Box>
 
         <Divider />
 
         {/* Recent Section */}
-        <Box sx={{ px: 2, py: 1, flex: '0 0 auto' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Box sx={{ px: 2, py: 1, flex: "0 0 auto" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 1,
+            }}
+          >
             <Typography
               variant="overline"
               sx={{
-                fontSize: '11px',
+                fontSize: "11px",
                 fontWeight: 600,
-                color: '#5E6C84',
-                display: 'block'
+                color: "#5E6C84",
+                display: "block",
               }}
             >
               RECENT
@@ -221,9 +250,13 @@ const Sidebar: React.FC = () => {
             <IconButton
               size="small"
               onClick={() => setRecentExpanded(!recentExpanded)}
-              sx={{ color: '#5E6C84' }}
+              sx={{ color: "#5E6C84" }}
             >
-              {recentExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+              {recentExpanded ? (
+                <ExpandLessIcon fontSize="small" />
+              ) : (
+                <ExpandMoreIcon fontSize="small" />
+              )}
             </IconButton>
           </Box>
           <Collapse in={recentExpanded}>
@@ -236,41 +269,54 @@ const Sidebar: React.FC = () => {
         <Divider />
 
         {/* Projects Section */}
-        <Box sx={{ 
-          px: 2, 
-          py: 1, 
-          flex: '1 1 auto', 
-          overflow: 'auto',
-          '&::-webkit-scrollbar': {
-            display: 'none'
-          },
-          '-ms-overflow-style': 'none',
-          'scrollbar-width': 'none'
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Box
+          sx={{
+            px: 2,
+            py: 1,
+            flex: "1 1 auto",
+            overflow: "auto",
+            "&::-webkit-scrollbar": {
+              display: "none",
+            },
+            "-ms-overflow-style": "none",
+            "scrollbar-width": "none",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 1,
+            }}
+          >
             <Typography
               variant="overline"
               sx={{
-                fontSize: '11px',
+                fontSize: "11px",
                 fontWeight: 600,
-                color: '#5E6C84',
-                display: 'block'
+                color: "#5E6C84",
+                display: "block",
               }}
             >
               PROJECTS
             </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Box sx={{ display: "flex", gap: 0.5 }}>
               <Tooltip title="Create project">
-                <IconButton size="small" sx={{ color: '#5E6C84' }}>
+                <IconButton size="small" sx={{ color: "#5E6C84" }}>
                   <AddIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
               <IconButton
                 size="small"
                 onClick={() => setProjectsExpanded(!projectsExpanded)}
-                sx={{ color: '#5E6C84' }}
+                sx={{ color: "#5E6C84" }}
               >
-                {projectsExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                {projectsExpanded ? (
+                  <ExpandLessIcon fontSize="small" />
+                ) : (
+                  <ExpandMoreIcon fontSize="small" />
+                )}
               </IconButton>
             </Box>
           </Box>
@@ -282,12 +328,12 @@ const Sidebar: React.FC = () => {
                   sx={{
                     borderRadius: 1,
                     mb: 0.5,
-                    color: '#5E6C84',
-                    '&:hover': { backgroundColor: '#EBECF0' }
+                    color: "#5E6C84",
+                    "&:hover": { backgroundColor: "#EBECF0" },
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <AddIcon sx={{ fontSize: 20, color: '#5E6C84' }} />
+                    <AddIcon sx={{ fontSize: 20, color: "#5E6C84" }} />
                   </ListItemIcon>
                   <ListItemText
                     primary="View all projects"
@@ -300,19 +346,19 @@ const Sidebar: React.FC = () => {
         </Box>
 
         {/* Bottom Section */}
-        <Box sx={{ p: 2, flex: '0 0 auto', mt: 'auto' }}>
+        <Box sx={{ p: 2, flex: "0 0 auto", mt: "auto" }}>
           <Divider sx={{ mb: 2 }} />
-          
+
           {/* Quick Actions */}
           <Box sx={{ mb: 2 }}>
             <Typography
               variant="overline"
               sx={{
-                fontSize: '11px',
+                fontSize: "11px",
                 fontWeight: 600,
-                color: '#5E6C84',
+                color: "#5E6C84",
                 mb: 1,
-                display: 'block'
+                display: "block",
               }}
             >
               QUICK ACTIONS
@@ -323,11 +369,11 @@ const Sidebar: React.FC = () => {
                   sx={{
                     borderRadius: 1,
                     mb: 0.5,
-                    '&:hover': { backgroundColor: '#EBECF0' }
+                    "&:hover": { backgroundColor: "#EBECF0" },
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <AssignmentIcon sx={{ fontSize: 20, color: '#5E6C84' }} />
+                    <AssignmentIcon sx={{ fontSize: 20, color: "#5E6C84" }} />
                   </ListItemIcon>
                   <ListItemText
                     primary="Create issue"
@@ -340,11 +386,11 @@ const Sidebar: React.FC = () => {
                   sx={{
                     borderRadius: 1,
                     mb: 0.5,
-                    '&:hover': { backgroundColor: '#EBECF0' }
+                    "&:hover": { backgroundColor: "#EBECF0" },
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <BarChartIcon sx={{ fontSize: 20, color: '#5E6C84' }} />
+                    <BarChartIcon sx={{ fontSize: 20, color: "#5E6C84" }} />
                   </ListItemIcon>
                   <ListItemText
                     primary="View reports"
@@ -361,11 +407,11 @@ const Sidebar: React.FC = () => {
               <ListItemButton
                 sx={{
                   borderRadius: 1,
-                  '&:hover': { backgroundColor: '#EBECF0' }
+                  "&:hover": { backgroundColor: "#EBECF0" },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>
-                  <SettingsIcon sx={{ fontSize: 20, color: '#5E6C84' }} />
+                  <SettingsIcon sx={{ fontSize: 20, color: "#5E6C84" }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Settings"
