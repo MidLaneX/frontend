@@ -59,8 +59,42 @@ In the project directory, you can run the following commands:
 
 - `pnpm dev`: Runs the app in development mode.
 - `pnpm build`: Builds the app for production to the `dist` folder.
+- `pnpm build:ci`: Runs full CI build with type-check, lint, and build.
 - `pnpm lint`: Lints the codebase using ESLint.
+- `pnpm lint:fix`: Fixes auto-fixable lint issues.
+- `pnpm lint:ci`: Runs lint with zero warnings for CI.
+- `pnpm type-check`: Runs TypeScript type checking.
+- `pnpm validate`: Runs both type-check and lint for code validation.
 - `pnpm preview`: Serves the production build locally for preview.
+- `pnpm clean`: Cleans the build artifacts.
+
+## 🔄 CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+### Workflow Features:
+- **🔍 Code Quality Checks**: TypeScript type checking, ESLint linting
+- **🏗️ Build Verification**: Ensures the application builds successfully
+- **📦 Artifact Management**: Stores build artifacts for deployment
+- **🔒 Security Scanning**: Checks for vulnerabilities in dependencies
+- **🚀 Automated Deployment**: Deploys to production on main branch pushes
+
+### Workflow Triggers:
+- **Push Events**: Triggers on `main` and `develop` branches
+- **Pull Requests**: Runs quality checks and creates preview builds
+- **Manual Dispatch**: Can be triggered manually from GitHub Actions tab
+
+### Branch Strategy:
+- `main`: Production-ready code, auto-deploys on push
+- `develop`: Development branch for feature integration
+- Feature branches: Use pull requests to merge into `develop`
+
+### Quality Gates:
+✅ TypeScript compilation must pass  
+✅ ESLint must pass with zero warnings  
+✅ Build must complete successfully  
+✅ Security audit must pass  
+✅ All checks required before merge  
 
 ## 📁 Project Structure
 

@@ -7,13 +7,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "",
+    "test": "echo \"No tests yet\"",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "build:ci": "pnpm run type-check && pnpm run lint && pnpm run build",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint:ci": "eslint . --ext .ts,.tsx --max-warnings=0",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist && rm -rf node_modules/.vite"
+    "type-check:watch": "tsc --noEmit --watch",
+    "clean": "rm -rf dist && rm -rf node_modules/.vite",
+    "validate": "pnpm run type-check && pnpm run lint:ci",
+    "prepare": "husky install || true"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

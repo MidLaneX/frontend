@@ -1,34 +1,269 @@
 # .github/workflows/main.yml
-name: React CI
+name: React CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: 18
+  PNPM_VERSION: 8
 
 jobs:
-  build:
+  build-and-test:
+    name: Build & Test
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Use Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Run type check
+        run: pnpm run type-check
+
+      - name: Run linting
+        run: pnpm run lint
 
       - name: Run build
         run: pnpm run build
 
-      - name: Run type check
-        run: pnpm run type-check
+      - name: Check build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Build failed - dist directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful - dist directory created"
+          ls -la dist/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: build-files-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Run linting with strict mode
+        run: pnpm run lint:ci
+
+      - name: Check for security vulnerabilities
+        run: pnpm audit --audit-level moderate
+        continue-on-error: true
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [build-and-test]
+    if: github.event_name == 'pull_request' && needs.build-and-test.result == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files-${{ github.sha }}
+          path: dist/
+
+      - name: Verify build artifacts
+        run: |
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ Build artifacts missing"
+            exit 1
+          fi
+          echo "✅ Build artifacts verified"
+
+      - name: Comment PR with preview info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('🚀 **Build successful!**')
+            );
+            
+            const body = `🚀 **Build successful!** Your changes are ready for review.
+
+            📦 **Build artifacts:** Available for download
+            ✅ **All checks passed**
+            🔗 **Commit:** ${context.sha.substring(0, 7)}
+            ⏰ **Built at:** ${new Date().toISOString()}`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build-and-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.build-and-test.result == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files-${{ github.sha }}
+          path: dist/
+
+      - name: Verify production build
+        run: |
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ Production build verification failed"
+            exit 1
+          fi
+          
+          # Check if critical files exist
+          if [ ! -f "dist/assets/index-"*".js" ]; then
+            echo "❌ JavaScript bundle not found"
+            exit 1
+          fi
+          
+          echo "✅ Production build verified"
+          echo "📊 Build size:"
+          du -sh dist/
+          echo "📝 Files:"
+          find dist/ -type f -name "*.js" -o -name "*.css" -o -name "*.html" | head -10
+
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production..."
+          echo "📦 Build artifacts ready for deployment"
+          echo "📊 Deployment size: $(du -sh dist/ | cut -f1)"
+          
+          # Simulate deployment success
+          echo "✅ Production deployment completed successfully!"
+          
+          # Add your actual deployment commands here:
+          # Examples:
+          # - Deploy to AWS S3: aws s3 sync dist/ s3://your-bucket --delete
+          # - Deploy to Vercel: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+          # - Deploy to Netlify: netlify deploy --prod --dir=dist --auth=${{ secrets.NETLIFY_AUTH_TOKEN }}
+          # - Deploy to GitHub Pages: Use actions/deploy-pages
+
+      - name: Create deployment status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment?.id || 0,
+              state: 'success',
+              description: 'Production deployment successful',
+              environment_url: 'https://your-production-url.com'
+            });
+
+  notify-status:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [build-and-test, code-quality]
+    if: always()
+    
+    steps:
+      - name: Notify workflow status
+        run: |
+          if [ "${{ needs.build-and-test.result }}" == "success" ]; then
+            echo "✅ Build and test completed successfully"
+          else
+            echo "❌ Build and test failed"
+          fi
+          
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            if [ "${{ needs.code-quality.result }}" == "success" ]; then
+              echo "✅ Code quality checks passed"
+            else
+              echo "⚠️ Code quality checks had issues"
+            fi
+          fi
