@@ -24,7 +24,7 @@ export const STORAGE_KEYS = {
   FILTERS: 'midlinex_filters',
 } as const;
 
-export const LAYOUT = {
+export const LAYOUT_CONFIG = {
   NAVBAR_HEIGHT: 68,
   SIDEBAR_WIDTH: 280,
   CONTENT_PADDING: 24,

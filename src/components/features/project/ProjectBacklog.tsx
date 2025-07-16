@@ -15,8 +15,8 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import type { Task } from '../types';
-import { formatDate, getInitials, getPriorityConfig, getTaskTypeConfig } from '../utils';
+import type { Task } from '@/types';
+import { formatDate, getInitials, getPriorityColor } from '@/utils';
 
 interface ProjectBacklogProps {
   tasks: Task[];
@@ -159,8 +159,7 @@ const ProjectBacklog: React.FC<ProjectBacklogProps> = ({
       {/* Backlog Items */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {backlogTasks.map((task) => {
-          const priorityConfig = getPriorityConfig(task.priority);
-          const typeConfig = getTaskTypeConfig(task.type);
+          const priorityColor = getPriorityColor(task.priority);
           const isOverdue = new Date(task.dueDate) < new Date();
 
           return (
@@ -185,7 +184,7 @@ const ProjectBacklog: React.FC<ProjectBacklogProps> = ({
                       width: 20,
                       height: 20,
                       borderRadius: 1,
-                      bgcolor: typeConfig.color,
+                      bgcolor: 'primary.main',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -248,8 +247,8 @@ const ProjectBacklog: React.FC<ProjectBacklogProps> = ({
                         label={task.priority}
                         size="small"
                         sx={{
-                          bgcolor: priorityConfig.bgColor,
-                          color: priorityConfig.color,
+                          bgcolor: priorityColor,
+                          color: 'white',
                           fontSize: '10px',
                           height: 20
                         }}

@@ -6,8 +6,8 @@ import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import LinearProgress from '@mui/material/LinearProgress';
-import type { Project, Task } from '../types';
-import { formatDate, getInitials, getPriorityConfig, getTaskTypeConfig } from '../utils';
+import type { Project, Task } from '@/types';
+import { formatDate, getInitials, getPriorityColor } from '@/utils';
 
 interface ProjectTimelineProps {
   project: Project;
@@ -121,8 +121,7 @@ const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks }) => 
             {/* Tasks for this month */}
             <Box sx={{ ml: 6 }}>
               {monthTasks.map((task) => {
-                const priorityConfig = getPriorityConfig(task.priority);
-                const typeConfig = getTaskTypeConfig(task.type);
+                const priorityColor = getPriorityColor(task.priority);
                 const progress = getTaskProgress(task);
                 const overdue = isOverdue(task.dueDate);
 
@@ -143,7 +142,7 @@ const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks }) => 
                             width: 24,
                             height: 24,
                             borderRadius: 1,
-                            bgcolor: typeConfig.color,
+                            bgcolor: 'primary.main',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -197,8 +196,8 @@ const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, tasks }) => 
                               label={task.priority}
                               size="small"
                               sx={{
-                                bgcolor: priorityConfig.bgColor,
-                                color: priorityConfig.color,
+                                bgcolor: priorityColor,
+                                color: 'white',
                                 fontSize: '11px',
                                 height: 22
                               }}

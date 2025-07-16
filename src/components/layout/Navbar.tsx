@@ -28,7 +28,7 @@ import FilterListIcon from '@mui/icons-material/FilterList'
 import FolderIcon from '@mui/icons-material/Folder'
 import AddIcon from '@mui/icons-material/Add'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import QuickSearch from './QuickSearch.tsx'
+import QuickSearch from '@/components/ui/QuickSearch'
 
 const Navbar: React.FC = () => {
   const location = useLocation()

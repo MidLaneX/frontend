@@ -7,8 +7,8 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
-import type { Project, Task } from '../types';
-import { formatDate, getInitials } from '../utils';
+import type { Project, Task } from '@/types';
+import { formatDate, getInitials } from '@/utils';
 
 interface ProjectSummaryProps {
   project: Project;

@@ -23,7 +23,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import { Link } from 'react-router-dom'
 import { projects } from "../data/projects";
-import CreateProjectModal from '../components/CreateProjectModal.tsx'
+import CreateProjectModal from "@/components/features/CreateProjectModal";
 import type { Project } from "../types";
 
 const Dashboard: React.FC = () => {

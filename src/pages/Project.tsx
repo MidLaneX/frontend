@@ -1,6 +1,6 @@
 import React from 'react';
 import Box from '@mui/material/Box';
-import ProjectPage from "../components/Project.tsx";
+import ProjectPage from "@/components/features/project/Project";
 
 const Project: React.FC = () => {
   return (

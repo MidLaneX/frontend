@@ -14,8 +14,8 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import BacklogIcon from '@mui/icons-material/FormatListBulleted';
 import BoardIcon from '@mui/icons-material/ViewKanban';
 
-import type { Project, Task } from '../types';
-import { getInitials } from '../utils';
+import type { Project, Task } from '@/types';
+import { getInitials } from '@/utils';
 import ProjectSummary from './ProjectSummary';
 import ProjectTimeline from './ProjectTimeline';
 import ProjectBacklog from './ProjectBacklog';
@@ -28,7 +28,7 @@ interface ProjectNavigationProps {
   onTaskClick: (task: Task) => void;
   onCreateTask: () => void;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
-  onDragEnd: (event: any) => void;
+  onDragEnd: (event: unknown) => void;
 }
 
 type TabValue = 'summary' | 'timeline' | 'backlog' | 'board';

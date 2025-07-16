@@ -2,13 +2,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import FolderIcon from "@mui/icons-material/Folder";
 
-import TaskDetailModal from "./TaskDetailModal";
-import CreateIssueModal from "./CreateIssueModal";
+import TaskDetailModal from "../task/TaskDetailModal";
+import CreateIssueModal from "../CreateIssueModal";
 import ProjectNavigation from "./ProjectNavigation";
-import { projects } from "../data/projects";
-import type { Task } from "../types";
+import { projects } from "@/data/projects";
+import type { Task } from "@/types";
 
 // Constants for consistent styling
 const STYLES = {
@@ -45,10 +44,10 @@ const STYLES = {
 
 /**
  * ProjectPage Component
- * 
+ *
  * A comprehensive project management page that displays project details,
  * navigation tabs (Summary, Timeline, Backlog, Board), and handles task management.
- * 
+ *
  * Features:
  * - Project header with title and description
  * - Horizontal navigation tabs similar to Jira
@@ -59,7 +58,7 @@ const STYLES = {
 const ProjectPage: React.FC = () => {
   // Hooks
   const { projectId } = useParams<{ projectId: string }>();
-  
+
   // State management
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -95,31 +94,37 @@ const ProjectPage: React.FC = () => {
   /**
    * Updates a specific task with partial updates
    */
-  const handleUpdateTask = useCallback((taskId: string, updates: Partial<Task>) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, ...updates } : task
-      )
-    );
-  }, []);
+  const handleUpdateTask = useCallback(
+    (taskId: string, updates: Partial<Task>) => {
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId ? { ...task, ...updates } : task
+        )
+      );
+    },
+    []
+  );
 
   /**
    * Creates a new task and adds it to the task list
    */
-  const handleCreateIssue = useCallback((issue: Omit<Task, "id" | "comments">) => {
-    const newTask: Task = {
-      ...issue,
-      id: Date.now().toString(),
-      comments: [],
-    };
-    setTasks((prevTasks) => [...prevTasks, newTask]);
-    setIsCreateModalOpen(false);
-  }, []);
+  const handleCreateIssue = useCallback(
+    (issue: Omit<Task, "id" | "comments">) => {
+      const newTask: Task = {
+        ...issue,
+        id: Date.now().toString(),
+        comments: [],
+      };
+      setTasks((prevTasks) => [...prevTasks, newTask]);
+      setIsCreateModalOpen(false);
+    },
+    []
+  );
 
   /**
    * Handles drag and drop end events for task reordering
    */
-  const handleDragEnd = useCallback((event: any) => {
+  const handleDragEnd = useCallback((event: unknown) => {
     // TODO: Implement drag end logic for task reordering
     console.log("Drag end:", event);
   }, []);
@@ -150,20 +155,7 @@ const ProjectPage: React.FC = () => {
   // Main render
   return (
     <Box sx={STYLES.container}>
-      {/* Project Header */}
-      <Box sx={STYLES.header}>
-        <Box sx={STYLES.headerContent}>
-          <FolderIcon sx={{ color: "#42526E" }} />
-          <Typography variant="h4" sx={STYLES.projectTitle}>
-            {project.name}
-          </Typography>
-        </Box>
-        <Typography variant="body1" sx={STYLES.projectDescription}>
-          {project.description}
-        </Typography>
-      </Box>
-
-      {/* Project Navigation */}
+      \{/* Project Navigation */}
       <ProjectNavigation
         project={project}
         tasks={tasks}
@@ -172,7 +164,6 @@ const ProjectPage: React.FC = () => {
         onUpdateTask={handleUpdateTask}
         onDragEnd={handleDragEnd}
       />
-
       {/* Modals */}
       <TaskDetailModal
         task={selectedTask}
@@ -180,7 +171,6 @@ const ProjectPage: React.FC = () => {
         onClose={handleCloseTaskModal}
         onUpdateTask={handleUpdateTask}
       />
-
       <CreateIssueModal
         open={isCreateModalOpen}
         onClose={handleCloseCreateModal}

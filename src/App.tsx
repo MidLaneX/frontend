@@ -1,12 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import Box from '@mui/material/Box'
-import Navbar from "./components/Navbar.tsx";
-import WelcomePage from "./pages/WelcomePage.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
-import Project from "./pages/Project.tsx";
-import Sidebar from "./components/Sidebar.tsx";
-import { theme } from "./config/theme";
+import { Navbar, Sidebar } from "@/components/layout";
+import WelcomePage from "@/pages/WelcomePage";
+import Dashboard from "@/pages/Dashboard";
+import Project from "@/pages/Project";
+import { theme } from "@/config/theme";
 import "./App.css";
 
 function App() {
