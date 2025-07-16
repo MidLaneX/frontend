@@ -15,7 +15,7 @@ import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
-import type { Task } from "../types";
+import type { Task, Comment } from "@/types";
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -91,24 +91,32 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
       fullWidth
       PaperProps={{
         sx: {
-          minHeight: '600px',
-          maxHeight: '90vh'
-        }
+          minHeight: "600px",
+          maxHeight: "90vh",
+        },
       }}
     >
       <DialogTitle sx={{ p: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3, pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            p: 3,
+            pb: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Chip
               label={editedTask.type}
               size="small"
               sx={{
                 bgcolor: getTypeColor(editedTask.type),
-                color: 'white',
-                fontWeight: 600
+                color: "white",
+                fontWeight: 600,
               }}
             />
-            <Typography variant="h6" sx={{ color: '#172B4D', fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ color: "#172B4D", fontWeight: 600 }}>
               {editedTask.id}
             </Typography>
           </Box>
@@ -119,18 +127,23 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
       </DialogTitle>
 
       <DialogContent sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', gap: 3 }}>
+        <Box sx={{ display: "flex", gap: 3 }}>
           {/* Main Content */}
           <Box sx={{ flex: 1 }}>
             {/* Title */}
             <Box sx={{ mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Typography variant="h5" sx={{ color: '#172B4D', fontWeight: 500, flex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                <Typography
+                  variant="h5"
+                  sx={{ color: "#172B4D", fontWeight: 500, flex: 1 }}
+                >
                   {isEditing ? (
                     <TextField
                       fullWidth
                       value={editedTask.title}
-                      onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
+                      onChange={(e) =>
+                        setEditedTask({ ...editedTask, title: e.target.value })
+                      }
                       variant="outlined"
                       size="small"
                     />
@@ -138,7 +151,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
                     editedTask.title
                   )}
                 </Typography>
-                <IconButton size="small" onClick={() => setIsEditing(!isEditing)}>
+                <IconButton
+                  size="small"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
                   <EditIcon />
                 </IconButton>
               </Box>
@@ -146,7 +162,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
 
             {/* Description */}
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle2" sx={{ color: '#5E6C84', fontWeight: 600, mb: 1 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ color: "#5E6C84", fontWeight: 600, mb: 1 }}
+              >
                 Description
               </Typography>
               {isEditing ? (
@@ -154,24 +173,32 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
                   fullWidth
                   multiline
                   rows={4}
-                  value={editedTask.description || ''}
-                  onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+                  value={editedTask.description || ""}
+                  onChange={(e) =>
+                    setEditedTask({
+                      ...editedTask,
+                      description: e.target.value,
+                    })
+                  }
                   placeholder="Add a description..."
                   variant="outlined"
                 />
               ) : (
-                <Typography variant="body2" sx={{ color: '#172B4D' }}>
-                  {editedTask.description || 'No description provided'}
+                <Typography variant="body2" sx={{ color: "#172B4D" }}>
+                  {editedTask.description || "No description provided"}
                 </Typography>
               )}
             </Box>
 
             {/* Activity */}
             <Box>
-              <Typography variant="subtitle2" sx={{ color: '#5E6C84', fontWeight: 600, mb: 2 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ color: "#5E6C84", fontWeight: 600, mb: 2 }}
+              >
                 Activity
               </Typography>
-              
+
               {/* Add Comment */}
               <Box sx={{ mb: 3 }}>
                 <TextField
@@ -184,13 +211,15 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
                   variant="outlined"
                   size="small"
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                <Box
+                  sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}
+                >
                   <Button
                     variant="contained"
                     size="small"
                     onClick={handleAddComment}
                     disabled={!newComment.trim()}
-                    sx={{ textTransform: 'none' }}
+                    sx={{ textTransform: "none" }}
                   >
                     Comment
                   </Button>
@@ -199,20 +228,31 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
 
               {/* Comments */}
               <Box>
-                {editedTask.comments.map((comment) => (
+                {editedTask.comments.map((comment: Comment) => (
                   <Box key={comment.id} sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Avatar sx={{ width: 24, height: 24, mr: 1, fontSize: 12 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                      <Avatar
+                        sx={{ width: 24, height: 24, mr: 1, fontSize: 12 }}
+                      >
                         {comment.author.substring(0, 2).toUpperCase()}
                       </Avatar>
-                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#172B4D' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 600, color: "#172B4D" }}
+                      >
                         {comment.author}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#5E6C84', ml: 1 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "#5E6C84", ml: 1 }}
+                      >
                         {new Date(comment.timestamp).toLocaleDateString()}
                       </Typography>
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#172B4D', ml: 4 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "#172B4D", ml: 4 }}
+                    >
                       {comment.text}
                     </Typography>
                   </Box>
@@ -223,17 +263,30 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
 
           {/* Sidebar */}
           <Box sx={{ width: 280, pl: 2 }}>
-            <Box sx={{ bgcolor: '#F4F5F7', borderRadius: 1, p: 2 }}>
+            <Box sx={{ bgcolor: "#F4F5F7", borderRadius: 1, p: 2 }}>
               {/* Status */}
               <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600, display: 'block', mb: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#5E6C84",
+                    fontWeight: 600,
+                    display: "block",
+                    mb: 1,
+                  }}
+                >
                   STATUS
                 </Typography>
                 {isEditing ? (
                   <FormControl fullWidth size="small">
                     <Select
                       value={editedTask.status}
-                      onChange={(e) => setEditedTask({ ...editedTask, status: e.target.value as Task['status'] })}
+                      onChange={(e) =>
+                        setEditedTask({
+                          ...editedTask,
+                          status: e.target.value as Task["status"],
+                        })
+                      }
                     >
                       <MenuItem value="Backlog">Backlog</MenuItem>
                       <MenuItem value="Todo">Todo</MenuItem>
@@ -243,20 +296,36 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
                     </Select>
                   </FormControl>
                 ) : (
-                  <Chip label={editedTask.status} size="small" sx={{ bgcolor: 'white' }} />
+                  <Chip
+                    label={editedTask.status}
+                    size="small"
+                    sx={{ bgcolor: "white" }}
+                  />
                 )}
               </Box>
 
               {/* Assignee */}
               <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600, display: 'block', mb: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#5E6C84",
+                    fontWeight: 600,
+                    display: "block",
+                    mb: 1,
+                  }}
+                >
                   ASSIGNEE
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
                   <Avatar sx={{ width: 24, height: 24, mr: 1, fontSize: 12 }}>
-                    {editedTask.assignee.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {editedTask.assignee
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .toUpperCase()}
                   </Avatar>
-                  <Typography variant="body2" sx={{ color: '#172B4D' }}>
+                  <Typography variant="body2" sx={{ color: "#172B4D" }}>
                     {editedTask.assignee}
                   </Typography>
                 </Box>
@@ -264,14 +333,26 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
 
               {/* Reporter */}
               <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600, display: 'block', mb: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#5E6C84",
+                    fontWeight: 600,
+                    display: "block",
+                    mb: 1,
+                  }}
+                >
                   REPORTER
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
                   <Avatar sx={{ width: 24, height: 24, mr: 1, fontSize: 12 }}>
-                    {editedTask.reporter.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {editedTask.reporter
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .toUpperCase()}
                   </Avatar>
-                  <Typography variant="body2" sx={{ color: '#172B4D' }}>
+                  <Typography variant="body2" sx={{ color: "#172B4D" }}>
                     {editedTask.reporter}
                   </Typography>
                 </Box>
@@ -279,14 +360,27 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
 
               {/* Priority */}
               <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600, display: 'block', mb: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#5E6C84",
+                    fontWeight: 600,
+                    display: "block",
+                    mb: 1,
+                  }}
+                >
                   PRIORITY
                 </Typography>
                 {isEditing ? (
                   <FormControl fullWidth size="small">
                     <Select
                       value={editedTask.priority}
-                      onChange={(e) => setEditedTask({ ...editedTask, priority: e.target.value as Task['priority'] })}
+                      onChange={(e) =>
+                        setEditedTask({
+                          ...editedTask,
+                          priority: e.target.value as Task["priority"],
+                        })
+                      }
                     >
                       <MenuItem value="Highest">Highest</MenuItem>
                       <MenuItem value="High">High</MenuItem>
@@ -296,14 +390,14 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
                     </Select>
                   </FormControl>
                 ) : (
-                  <Chip 
-                    label={editedTask.priority} 
-                    size="small" 
-                    sx={{ 
+                  <Chip
+                    label={editedTask.priority}
+                    size="small"
+                    sx={{
                       bgcolor: getPriorityColor(editedTask.priority),
-                      color: 'white',
-                      fontWeight: 600
-                    }} 
+                      color: "white",
+                      fontWeight: 600,
+                    }}
                   />
                 )}
               </Box>
@@ -311,19 +405,39 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
               {/* Story Points */}
               {editedTask.storyPoints && (
                 <Box sx={{ mb: 2 }}>
-                  <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600, display: 'block', mb: 1 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "#5E6C84",
+                      fontWeight: 600,
+                      display: "block",
+                      mb: 1,
+                    }}
+                  >
                     STORY POINTS
                   </Typography>
-                  <Chip label={editedTask.storyPoints} size="small" sx={{ bgcolor: 'white' }} />
+                  <Chip
+                    label={editedTask.storyPoints}
+                    size="small"
+                    sx={{ bgcolor: "white" }}
+                  />
                 </Box>
               )}
 
               {/* Due Date */}
               <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600, display: 'block', mb: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#5E6C84",
+                    fontWeight: 600,
+                    display: "block",
+                    mb: 1,
+                  }}
+                >
                   DUE DATE
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#172B4D' }}>
+                <Typography variant="body2" sx={{ color: "#172B4D" }}>
                   {new Date(editedTask.dueDate).toLocaleDateString()}
                 </Typography>
               </Box>
@@ -331,12 +445,25 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
               {/* Labels */}
               {editedTask.labels.length > 0 && (
                 <Box>
-                  <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600, display: 'block', mb: 1 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "#5E6C84",
+                      fontWeight: 600,
+                      display: "block",
+                      mb: 1,
+                    }}
+                  >
                     LABELS
                   </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {editedTask.labels.map((label) => (
-                      <Chip key={label} label={label} size="small" sx={{ bgcolor: 'white' }} />
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {editedTask.labels.map((label: string) => (
+                      <Chip
+                        key={label}
+                        label={label}
+                        size="small"
+                        sx={{ bgcolor: "white" }}
+                      />
                     ))}
                   </Box>
                 </Box>

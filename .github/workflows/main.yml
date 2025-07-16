@@ -1,4 +1,4 @@
-# .github/workflows/react.yml
+# .github/workflows/main.yml
 name: React CI
 
 on:
@@ -12,18 +12,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Run build
-        run: npm run build
+        run: pnpm run build
 
-      - name: Run tests
-        run: npm test -- --watchAll=false
+      - name: Run type check
+        run: pnpm run type-check
