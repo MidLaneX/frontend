@@ -1,6 +1,5 @@
 import React from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useDroppable } from "@dnd-kit/core";
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -75,73 +74,86 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, tasks, onTaskCli
     <Paper
       elevation={0}
       sx={{
-        flex: '0 0 320px',
+        flex: "0 0 320px",
         mr: 3,
-        bgcolor: 'white',
+        bgcolor: "white",
         borderRadius: 2,
-        border: `1px solid ${config.borderColor}`,
-        minHeight: '600px',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'all 0.2s ease',
-        boxShadow: isOver ? '0 4px 20px rgba(0,82,204,0.15)' : '0 1px 3px rgba(9,30,66,0.25)',
-        transform: isOver ? 'scale(1.02)' : 'scale(1)',
-        '&:hover': {
-          boxShadow: '0 2px 8px rgba(9,30,66,0.15)',
-          transform: 'translateY(-1px)'
-        }
+        border: isOver
+          ? `2px solid ${config.color}`
+          : `1px solid ${config.borderColor}`,
+        minHeight: "600px",
+        display: "flex",
+        flexDirection: "column",
+        transition: "all 0.2s ease",
+        boxShadow: isOver
+          ? `0 4px 20px ${config.color}25`
+          : "0 1px 3px rgba(9,30,66,0.25)",
+        transform: isOver ? "scale(1.02)" : "scale(1)",
+        "&:hover": {
+          boxShadow: "0 2px 8px rgba(9,30,66,0.15)",
+          transform: isOver ? "scale(1.02)" : "translateY(-1px)",
+        },
       }}
     >
       {/* Column Header */}
-      <Box sx={{ 
-        p: 2.5, 
-        borderBottom: `2px solid ${config.borderColor}`,
-        bgcolor: config.bgColor,
-        borderRadius: '8px 8px 0 0'
-      }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography 
-            variant="subtitle1" 
-            sx={{ 
+      <Box
+        sx={{
+          p: 2.5,
+          borderBottom: `2px solid ${config.borderColor}`,
+          bgcolor: config.bgColor,
+          borderRadius: "8px 8px 0 0",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 1,
+          }}
+        >
+          <Typography
+            variant="subtitle1"
+            sx={{
               color: config.color,
               fontWeight: 700,
-              fontSize: '14px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              fontSize: "14px",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
             }}
           >
             {title}
           </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Chip 
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Chip
               label={tasks.length}
               size="small"
               sx={{
                 bgcolor: config.chipColor,
-                color: 'white',
+                color: "white",
                 fontWeight: 700,
-                fontSize: '12px',
+                fontSize: "12px",
                 height: 24,
                 minWidth: 24,
-                borderRadius: '12px',
-                '& .MuiChip-label': { px: 1 }
+                borderRadius: "12px",
+                "& .MuiChip-label": { px: 1 },
               }}
             />
-            
+
             <Tooltip title={`Add ${title.toLowerCase()} task`} arrow>
-              <IconButton 
+              <IconButton
                 size="small"
                 onClick={() => onAddTask?.(id)}
-                sx={{ 
+                sx={{
                   p: 0.5,
                   color: config.color,
-                  bgcolor: 'rgba(255,255,255,0.7)',
-                  '&:hover': { 
-                    bgcolor: 'white',
-                    transform: 'scale(1.1)'
+                  bgcolor: "rgba(255,255,255,0.7)",
+                  "&:hover": {
+                    bgcolor: "white",
+                    transform: "scale(1.1)",
                   },
-                  transition: 'all 0.2s ease'
+                  transition: "all 0.2s ease",
                 }}
               >
                 <AddIcon sx={{ fontSize: 16 }} />
@@ -149,17 +161,17 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, tasks, onTaskCli
             </Tooltip>
 
             <Tooltip title="Column options" arrow>
-              <IconButton 
+              <IconButton
                 size="small"
-                sx={{ 
+                sx={{
                   p: 0.5,
                   color: config.color,
-                  bgcolor: 'rgba(255,255,255,0.7)',
-                  '&:hover': { 
-                    bgcolor: 'white',
-                    transform: 'scale(1.1)'
+                  bgcolor: "rgba(255,255,255,0.7)",
+                  "&:hover": {
+                    bgcolor: "white",
+                    transform: "scale(1.1)",
                   },
-                  transition: 'all 0.2s ease'
+                  transition: "all 0.2s ease",
                 }}
               >
                 <MoreHorizIcon sx={{ fontSize: 16 }} />
@@ -167,67 +179,83 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, tasks, onTaskCli
             </Tooltip>
           </Box>
         </Box>
-        
+
         {/* Progress Bar for visual feedback */}
-        <Box sx={{ 
-          height: 3, 
-          bgcolor: 'rgba(255,255,255,0.5)', 
-          borderRadius: 1.5,
-          overflow: 'hidden'
-        }}>
-          <Box sx={{ 
-            height: '100%', 
-            bgcolor: config.color,
-            width: `${Math.min(100, (tasks.length / 10) * 100)}%`,
-            transition: 'width 0.3s ease'
-          }} />
+        <Box
+          sx={{
+            height: 3,
+            bgcolor: "rgba(255,255,255,0.5)",
+            borderRadius: 1.5,
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            sx={{
+              height: "100%",
+              bgcolor: config.color,
+              width: `${Math.min(100, (tasks.length / 10) * 100)}%`,
+              transition: "width 0.3s ease",
+            }}
+          />
         </Box>
       </Box>
-      
+
       {/* Tasks Container */}
-      <Box 
+      <Box
         ref={setNodeRef}
-        sx={{ 
+        sx={{
           flexGrow: 1,
           p: 2,
-          bgcolor: isOver ? `${config.bgColor}80` : 'transparent',
-          transition: 'background-color 0.2s ease',
-          minHeight: '200px',
-          borderRadius: isOver ? '0 0 8px 8px' : 'none'
+          bgcolor: isOver ? `${config.color}10` : "transparent",
+          transition: "background-color 0.2s ease",
+          minHeight: "200px",
+          borderRadius: isOver ? "0 0 8px 8px" : "none",
+          position: "relative",
+          "&::before": isOver
+            ? {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: "0 0 8px 8px",
+                border: `2px dashed ${config.color}`,
+                pointerEvents: "none",
+                opacity: 0.5,
+              }
+            : {},
         }}
       >
-        <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          {tasks.length === 0 ? (
-            <Box sx={{ 
-              textAlign: 'center', 
+        {tasks.length === 0 ? (
+          <Box
+            sx={{
+              textAlign: "center",
               py: 6,
-              color: '#8993A4',
-              fontSize: '14px',
-              fontStyle: 'italic'
-            }}>
-              {isOver ? 'Drop task here' : `No ${title.toLowerCase()} tasks`}
+              color: "#8993A4",
+              fontSize: "14px",
+              fontStyle: "italic",
+            }}
+          >
+            {isOver ? "Drop task here" : `No ${title.toLowerCase()} tasks`}
+          </Box>
+        ) : (
+          tasks.map((task, index) => (
+            <Box
+              key={task.id}
+              sx={{
+                mb: 2,
+                animation: `fadeIn 0.3s ease ${index * 0.1}s both`,
+                "@keyframes fadeIn": {
+                  "0%": { opacity: 0, transform: "translateY(10px)" },
+                  "100%": { opacity: 1, transform: "translateY(0)" },
+                },
+              }}
+            >
+              <TaskCard task={task} onClick={() => onTaskClick?.(task)} />
             </Box>
-          ) : (
-            tasks.map((task, index) => (
-              <Box
-                key={task.id}
-                sx={{ 
-                  mb: 2,
-                  animation: `fadeIn 0.3s ease ${index * 0.1}s both`,
-                  '@keyframes fadeIn': {
-                    '0%': { opacity: 0, transform: 'translateY(10px)' },
-                    '100%': { opacity: 1, transform: 'translateY(0)' }
-                  }
-                }}
-              >
-                <TaskCard 
-                  task={task} 
-                  onClick={() => onTaskClick?.(task)}
-                />
-              </Box>
-            ))
-          )}
-        </SortableContext>
+          ))
+        )}
       </Box>
     </Paper>
   );

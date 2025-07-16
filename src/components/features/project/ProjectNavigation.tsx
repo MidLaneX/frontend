@@ -28,7 +28,6 @@ interface ProjectNavigationProps {
   onTaskClick: (task: Task) => void;
   onCreateTask: () => void;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
-  onDragEnd: (event: unknown) => void;
 }
 
 type TabValue = 'summary' | 'timeline' | 'backlog' | 'board';
@@ -53,26 +52,28 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({
   onTaskClick,
   onCreateTask,
   onUpdateTask,
-  onDragEnd
 }) => {
   // State
-  const [activeTab, setActiveTab] = useState<TabValue>('board');
+  const [activeTab, setActiveTab] = useState<TabValue>("board");
 
   // Event handlers
-  const handleTabChange = useCallback((_event: React.SyntheticEvent, newValue: TabValue) => {
-    setActiveTab(newValue);
-  }, []);
+  const handleTabChange = useCallback(
+    (_event: React.SyntheticEvent, newValue: TabValue) => {
+      setActiveTab(newValue);
+    },
+    []
+  );
 
   /**
    * Renders the content for the currently active tab
    */
   const renderTabContent = useCallback(() => {
     switch (activeTab) {
-      case 'summary':
+      case "summary":
         return <ProjectSummary project={project} tasks={tasks} />;
-      case 'timeline':
+      case "timeline":
         return <ProjectTimeline project={project} tasks={tasks} />;
-      case 'backlog':
+      case "backlog":
         return (
           <ProjectBacklog
             tasks={tasks}
@@ -81,69 +82,78 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({
             onUpdateTask={onUpdateTask}
           />
         );
-      case 'board':
+      case "board":
         return (
-          <ProjectBoard 
-            project={project} 
-            tasks={tasks} 
+          <ProjectBoard
+            project={project}
+            tasks={tasks}
             onTaskClick={onTaskClick}
             onCreateTask={onCreateTask}
-            onDragEnd={onDragEnd}
+            onTaskUpdate={onUpdateTask}
           />
         );
       default:
         return <ProjectSummary project={project} tasks={tasks} />;
     }
-  }, [activeTab, project, tasks, onTaskClick, onCreateTask, onUpdateTask, onDragEnd]);
+  }, [activeTab, project, tasks, onTaskClick, onCreateTask, onUpdateTask]);
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Project Header */}
       <Box
         sx={{
           borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'white',
+          borderColor: "divider",
+          bgcolor: "white",
           px: 3,
-          py: 2
+          py: 2,
         }}
       >
         {/* Breadcrumbs */}
         <Breadcrumbs sx={{ mb: 2 }}>
-          <Link 
-            underline="hover" 
-            color="inherit" 
+          <Link
+            underline="hover"
+            color="inherit"
             href="/dashboard"
-            sx={{ fontSize: '14px', color: '#5E6C84' }}
+            sx={{ fontSize: "14px", color: "#5E6C84" }}
           >
             Projects
           </Link>
-          <Typography sx={{ fontSize: '14px', color: '#172B4D', fontWeight: 500 }}>
+          <Typography
+            sx={{ fontSize: "14px", color: "#172B4D", fontWeight: 500 }}
+          >
             {project.name}
           </Typography>
         </Breadcrumbs>
 
         {/* Project Info */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#172B4D' }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, color: "#172B4D" }}>
               {project.name}
             </Typography>
             <IconButton size="small">
               <StarBorderIcon />
             </IconButton>
           </Box>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <AvatarGroup max={5}>
               {project.teamMembers.map((member, index) => (
-                <Avatar 
+                <Avatar
                   key={index}
-                  sx={{ 
-                    width: 32, 
-                    height: 32, 
-                    fontSize: '0.875rem',
-                    bgcolor: '#0052CC'
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    fontSize: "0.875rem",
+                    bgcolor: "#0052CC",
                   }}
                   title={`${member.name} - ${member.role}`}
                 >
@@ -160,25 +170,25 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({
           onChange={handleTabChange}
           sx={{
             minHeight: 48,
-            '& .MuiTabs-indicator': {
+            "& .MuiTabs-indicator": {
               height: 3,
-              borderRadius: '3px 3px 0 0',
-              bgcolor: '#0052CC'
+              borderRadius: "3px 3px 0 0",
+              bgcolor: "#0052CC",
             },
-            '& .MuiTab-root': {
+            "& .MuiTab-root": {
               minHeight: 48,
-              textTransform: 'none',
+              textTransform: "none",
               fontWeight: 500,
-              fontSize: '14px',
-              color: '#5E6C84',
-              '&.Mui-selected': {
-                color: '#0052CC',
-                fontWeight: 600
+              fontSize: "14px",
+              color: "#5E6C84",
+              "&.Mui-selected": {
+                color: "#0052CC",
+                fontWeight: 600,
               },
-              '&:hover': {
-                color: '#172B4D'
-              }
-            }
+              "&:hover": {
+                color: "#172B4D",
+              },
+            },
           }}
         >
           {TAB_CONFIG.map((tab) => (
@@ -186,7 +196,7 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({
               key={tab.value}
               value={tab.value}
               label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   {tab.icon}
                   {tab.label}
                 </Box>
@@ -197,7 +207,7 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({
       </Box>
 
       {/* Tab Content */}
-      <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#FAFBFC' }}>
+      <Box sx={{ flex: 1, overflow: "auto", bgcolor: "#FAFBFC" }}>
         {renderTabContent()}
       </Box>
     </Box>

@@ -6,7 +6,7 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
-import type { Task } from "../types";
+import type { Task } from "@/types";
 import BugReportIcon from '@mui/icons-material/BugReport';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
@@ -83,79 +83,98 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       style={style}
       {...attributes}
       {...listeners}
-      sx={{ 
+      sx={{
         mb: 1,
-        cursor: 'grab',
-        bgcolor: 'white',
-        boxShadow: '0 1px 2px rgba(9,30,66,0.25)',
+        cursor: isDragging ? "grabbing" : "grab",
+        bgcolor: "white",
+        boxShadow: isDragging
+          ? "0 8px 25px rgba(0,82,204,0.25)"
+          : "0 1px 2px rgba(9,30,66,0.25)",
         borderRadius: 1,
-        '&:hover': {
-          boxShadow: '0 2px 4px rgba(9,30,66,0.25)',
+        transform: isDragging ? "rotate(5deg)" : "none",
+        transition: isDragging ? "none" : "all 0.2s ease",
+        border: isDragging ? "2px solid #0052CC" : "1px solid transparent",
+        "&:hover": {
+          boxShadow: "0 2px 4px rgba(9,30,66,0.25)",
+          transform: isDragging ? "rotate(5deg)" : "translateY(-2px)",
         },
-        '&:active': {
-          cursor: 'grabbing'
-        }
+        "&:active": {
+          cursor: "grabbing",
+        },
       }}
     >
-      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }} onClick={handleClick}>
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            color: '#172B4D',
+      <CardContent
+        sx={{ p: 2, "&:last-child": { pb: 2 } }}
+        onClick={handleClick}
+      >
+        <Typography
+          variant="body2"
+          sx={{
+            color: "#172B4D",
             fontWeight: 500,
             mb: 1,
             lineHeight: 1.3,
-            cursor: 'pointer'
+            cursor: "pointer",
           }}
         >
           {task.title}
         </Typography>
-        
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {getTypeIcon(task.type)}
             {getPriorityIcon(task.priority)}
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: '#5E6C84',
+            <Typography
+              variant="caption"
+              sx={{
+                color: "#5E6C84",
                 fontWeight: 500,
-                bgcolor: '#F4F5F7',
+                bgcolor: "#F4F5F7",
                 px: 1,
                 py: 0.5,
-                borderRadius: 0.5
+                borderRadius: 0.5,
               }}
             >
               {task.id}
             </Typography>
             {task.storyPoints && (
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#0052CC',
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "#0052CC",
                   fontWeight: 600,
-                  bgcolor: '#E3FCEF',
+                  bgcolor: "#E3FCEF",
                   px: 1,
                   py: 0.5,
                   borderRadius: 0.5,
                   minWidth: 20,
-                  textAlign: 'center'
+                  textAlign: "center",
                 }}
               >
                 {task.storyPoints}
               </Typography>
             )}
           </Box>
-          
-          <Avatar 
-            sx={{ 
-              width: 24, 
-              height: 24, 
+
+          <Avatar
+            sx={{
+              width: 24,
+              height: 24,
               fontSize: 10,
-              bgcolor: '#0052CC'
+              bgcolor: "#0052CC",
             }}
           >
-            {task.assignee.split(' ').map(n => n[0]).join('').toUpperCase()}
+            {task.assignee
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase()}
           </Avatar>
         </Box>
       </CardContent>

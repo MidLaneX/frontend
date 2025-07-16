@@ -1,16 +1,31 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { DndContext, DragOverlay } from "@dnd-kit/core";
-import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Chip from "@mui/material/Chip";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import AddIcon from "@mui/icons-material/Add";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import ViewColumnIcon from "@mui/icons-material/ViewColumn";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from "@dnd-kit/core";
+import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+  Box,
+  Typography,
+  Button,
+  Card,
+  Chip,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  FilterList as FilterListIcon,
+  ViewColumn as ViewColumnIcon,
+} from "@mui/icons-material";
 
 import KanbanColumn from "../kanban/KanbanColumn";
 import TaskCard from "../task/TaskCard";
@@ -18,139 +33,95 @@ import ProjectFilters from "./ProjectFilters";
 import type { FilterState } from "./ProjectFilters";
 import type { Project, Task } from "@/types";
 
-// Constants for consistent styling and configuration
-const BOARD_STYLES = {
+// Theme and styling constants
+const THEME = {
+  colors: {
+    primary: "#0052CC",
+    primaryHover: "#0747A6",
+    secondary: "#172B4D",
+    muted: "#5E6C84",
+    background: "#FAFBFC",
+    surface: "#FFFFFF",
+    border: "#DFE1E6",
+  },
+  spacing: {
+    xs: 1,
+    sm: 2,
+    md: 3,
+    lg: 4,
+  },
+  shadows: {
+    light: "0 1px 3px rgba(0,0,0,0.1)",
+    medium: "0 8px 25px rgba(0,0,0,0.15)",
+  },
+} as const;
+
+// Board styling configuration
+const styles = {
   container: {
-    p: 3,
+    p: THEME.spacing.md,
     height: "100%",
     display: "flex",
     flexDirection: "column",
-    bgcolor: "#FAFBFC",
+    bgcolor: THEME.colors.background,
   },
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    mb: 3,
-    p: 3,
-    bgcolor: "white",
+    mb: THEME.spacing.md,
+    p: THEME.spacing.md,
+    bgcolor: THEME.colors.surface,
     borderRadius: 2,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-  },
-  headerContent: {
-    display: "flex",
-    alignItems: "center",
-    gap: 2,
-  },
-  title: {
-    fontWeight: 700,
-    color: "#172B4D",
-    display: "flex",
-    alignItems: "center",
-    gap: 1,
-  },
-  subtitle: {
-    color: "#5E6C84",
-    mt: 0.5,
-  },
-  createButton: {
-    bgcolor: "#0052CC",
-    "&:hover": { bgcolor: "#0747A6" },
-    textTransform: "none",
-    borderRadius: 2,
-    px: 3,
-    py: 1,
-    fontWeight: 600,
+    boxShadow: THEME.shadows.light,
   },
   boardContainer: {
     flex: 1,
-    mt: 2,
+    mt: THEME.spacing.sm,
     overflowX: "auto",
     overflowY: "hidden",
   },
   columnsContainer: {
     display: "flex",
-    gap: 3,
+    gap: THEME.spacing.md,
     height: "100%",
     minWidth: "fit-content",
-    pb: 2,
-  },
-  column: {
-    minWidth: 320,
-    maxWidth: 320,
-    flex: "0 0 320px",
-    display: "flex",
-    flexDirection: "column",
-  },
-  columnHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    mb: 2,
-    p: 2,
-    bgcolor: "white",
-    borderRadius: "8px 8px 0 0",
-    borderBottom: "2px solid #DFE1E6",
-  },
-  columnTitle: {
-    fontWeight: 700,
-    color: "#172B4D",
-    fontSize: "14px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  taskCount: {
-    bgcolor: "#F4F5F7",
-    color: "#5E6C84",
-    fontSize: "12px",
-    fontWeight: 600,
-    minWidth: "24px",
-    height: "24px",
-  },
-  filterCard: {
-    mb: 2,
-    p: 2,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-  },
-  dragOverlay: {
-    transform: "rotate(5deg)",
-    boxShadow: "0 8px 25px rgba(0,0,0,0.15)",
-    borderRadius: 2,
+    pb: THEME.spacing.sm,
   },
 } as const;
 
-// Status configuration with colors and order
-const STATUS_CONFIG = [
+// Status configuration for Kanban columns
+const COLUMN_CONFIG = [
   {
-    value: "Backlog" as Task["status"],
+    value: "Backlog" as const,
     label: "Backlog",
-    color: "#DDD",
+    color: "#8993A4",
     bgColor: "#F8F9FA",
     borderColor: "#DFE1E6",
   },
   {
-    value: "Todo" as Task["status"],
+    value: "Todo" as const,
     label: "To Do",
-    color: "#0052CC",
+    color: THEME.colors.primary,
     bgColor: "#E6F3FF",
     borderColor: "#B3D9FF",
   },
   {
-    value: "In Progress" as Task["status"],
+    value: "In Progress" as const,
     label: "In Progress",
     color: "#FF8B00",
     bgColor: "#FFF4E6",
     borderColor: "#FFD6B3",
   },
   {
-    value: "Review" as Task["status"],
+    value: "Review" as const,
     label: "Review",
     color: "#8B5CF6",
     bgColor: "#F3F0FF",
     borderColor: "#D6C7FF",
   },
   {
-    value: "Done" as Task["status"],
+    value: "Done" as const,
     label: "Done",
     color: "#00875A",
     bgColor: "#E6F7F1",
@@ -163,21 +134,185 @@ interface ProjectBoardProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
   onCreateTask: () => void;
-  onDragEnd: (event: DragEndEvent) => void;
+  onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
 }
+
+// Custom hook for task filtering with improved performance
+const useTaskFiltering = (
+  tasks: Task[],
+  searchTerm: string,
+  filters: FilterState
+) => {
+  return useMemo(() => {
+    return tasks.filter((task) => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch =
+          task.title.toLowerCase().includes(searchLower) ||
+          task.description?.toLowerCase().includes(searchLower) ||
+          task.assignee.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      // Filter checks with early returns for better performance
+      if (
+        filters.assignee.length > 0 &&
+        !filters.assignee.includes(task.assignee)
+      ) {
+        return false;
+      }
+      if (
+        filters.priority.length > 0 &&
+        !filters.priority.includes(task.priority)
+      ) {
+        return false;
+      }
+      if (filters.type.length > 0 && !filters.type.includes(task.type)) {
+        return false;
+      }
+      if (filters.status.length > 0 && !filters.status.includes(task.status)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [tasks, searchTerm, filters]);
+};
+
+// Helper function to group tasks by status
+const useGroupedTasks = (filteredTasks: Task[]) => {
+  return useMemo(() => {
+    const grouped = new Map<string, Task[]>();
+
+    // Initialize all columns with empty arrays
+    COLUMN_CONFIG.forEach((config) => {
+      grouped.set(config.value, []);
+    });
+
+    // Group tasks by status
+    filteredTasks.forEach((task) => {
+      const statusTasks = grouped.get(task.status) || [];
+      statusTasks.push(task);
+      grouped.set(task.status, statusTasks);
+    });
+
+    return grouped;
+  }, [filteredTasks]);
+};
+
+// Header component for better organization
+const BoardHeader: React.FC<{
+  filteredTasksCount: number;
+  showFilters: boolean;
+  onToggleFilters: () => void;
+  onCreateTask: () => void;
+}> = ({ filteredTasksCount, showFilters, onToggleFilters, onCreateTask }) => (
+  <Box sx={styles.header}>
+    <Box>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <ViewColumnIcon sx={{ color: THEME.colors.primary, fontSize: 28 }} />
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            color: THEME.colors.secondary,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          Board
+        </Typography>
+        <Chip
+          label={`${filteredTasksCount} tasks`}
+          size="small"
+          sx={{
+            bgcolor: "#E6F3FF",
+            color: THEME.colors.primary,
+            fontWeight: 600,
+          }}
+        />
+      </Box>
+      <Typography variant="body1" sx={{ color: THEME.colors.muted, mt: 0.5 }}>
+        Plan, track, and manage your team's work in a visual workflow
+      </Typography>
+    </Box>
+
+    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+      <Tooltip title="Toggle Filters">
+        <IconButton
+          onClick={onToggleFilters}
+          sx={{
+            bgcolor: showFilters ? "#E6F3FF" : "transparent",
+            color: showFilters ? THEME.colors.primary : THEME.colors.muted,
+            "&:hover": { bgcolor: "#E6F3FF", color: THEME.colors.primary },
+          }}
+        >
+          <FilterListIcon />
+        </IconButton>
+      </Tooltip>
+
+      <Button
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={onCreateTask}
+        sx={{
+          bgcolor: THEME.colors.primary,
+          "&:hover": { bgcolor: THEME.colors.primaryHover },
+          textTransform: "none",
+          borderRadius: 2,
+          px: 3,
+          py: 1,
+          fontWeight: 600,
+        }}
+      >
+        Create Issue
+      </Button>
+    </Box>
+  </Box>
+);
+
+// Enhanced Column component with droppable functionality
+const BoardColumn: React.FC<{
+  config: (typeof COLUMN_CONFIG)[number];
+  tasks: Task[];
+  onTaskClick: (task: Task) => void;
+  onAddTask: () => void;
+}> = ({ config, tasks, onTaskClick, onAddTask }) => {
+  return (
+    <Box
+      sx={{
+        minWidth: 320,
+        maxWidth: 320,
+        flex: "0 0 320px",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <KanbanColumn
+        id={config.value}
+        title={config.label}
+        tasks={tasks}
+        onTaskClick={onTaskClick}
+        onAddTask={onAddTask}
+      />
+    </Box>
+  );
+};
 
 /**
  * ProjectBoard Component
  *
- * A beautiful Kanban-style board for task management with drag-and-drop functionality.
- * Features enhanced visual design, proper task filtering, and smooth interactions.
+ * A modern, fully functional Kanban board with drag-and-drop capabilities.
+ * Features proper task management, filtering, and responsive design.
  */
 const ProjectBoard: React.FC<ProjectBoardProps> = ({
   project,
   tasks,
   onTaskClick,
   onCreateTask,
-  onDragEnd,
+  onTaskUpdate,
 }) => {
   // State management
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -190,131 +325,106 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  // Memoized filtered tasks for performance
-  const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      // Search filter
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const matchesSearch =
-          task.title.toLowerCase().includes(searchLower) ||
-          task.description?.toLowerCase().includes(searchLower) ||
-          task.assignee.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
-      }
+  // Configure drag sensors for better UX
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required to start drag
+      },
+    })
+  );
 
-      // Assignee filter
-      if (
-        filters.assignee.length > 0 &&
-        !filters.assignee.includes(task.assignee)
-      ) {
-        return false;
-      }
+  // Custom hooks
+  const filteredTasks = useTaskFiltering(tasks, searchTerm, filters);
+  const groupedTasks = useGroupedTasks(filteredTasks);
 
-      // Priority filter
-      if (
-        filters.priority.length > 0 &&
-        !filters.priority.includes(task.priority)
-      ) {
-        return false;
-      }
-
-      // Type filter
-      if (filters.type.length > 0 && !filters.type.includes(task.type)) {
-        return false;
-      }
-
-      // Status filter
-      if (filters.status.length > 0 && !filters.status.includes(task.status)) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [tasks, searchTerm, filters]);
-
-  // Event handlers
+  // Drag and drop handlers with enhanced feedback
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
-      const task = tasks.find((t) => t.id === event.active.id);
+      const { active } = event;
+      const task = tasks.find((t) => t.id === active.id);
       setActiveTask(task || null);
+
+      // Add visual feedback
+      document.body.style.cursor = "grabbing";
+
+      // Debug log
+      console.log("Drag started:", { taskId: active.id, task });
     },
     [tasks]
   );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      const { active, over } = event;
       setActiveTask(null);
-      onDragEnd(event);
+
+      // Reset cursor
+      document.body.style.cursor = "default";
+
+      console.log("Drag ended:", {
+        taskId: active.id,
+        targetColumnId: over?.id,
+        hasValidTarget: !!over,
+      });
+
+      if (!over) {
+        console.log("No valid drop target");
+        return;
+      }
+
+      const taskId = active.id as string;
+      const newStatus = over.id as Task["status"];
+
+      // Find the task being moved
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) {
+        console.error("Task not found:", taskId);
+        return;
+      }
+
+      console.log(
+        `Attempting to move task "${task.title}" from ${task.status} to ${newStatus}`
+      );
+
+      // Only update if status actually changed
+      if (task.status !== newStatus) {
+        console.log(
+          `✅ Moving task "${task.title}" from ${task.status} to ${newStatus}`
+        );
+        onTaskUpdate(taskId, { status: newStatus });
+      } else {
+        console.log("❌ Task status unchanged, no update needed");
+      }
     },
-    [onDragEnd]
+    [tasks, onTaskUpdate]
   );
 
-  const handleAddTask = useCallback(
-    () => {
-      onCreateTask();
-    },
-    [onCreateTask]
-  );
-
+  // UI event handlers
   const toggleFilters = useCallback(() => {
-    setShowFilters(!showFilters);
-  }, [showFilters]);
+    setShowFilters((prev) => !prev);
+  }, []);
 
-  // Main render
+  const handleTaskClick = useCallback(
+    (task: Task) => {
+      onTaskClick(task);
+    },
+    [onTaskClick]
+  );
+
   return (
-    <Box sx={BOARD_STYLES.container}>
-      {/* Enhanced Board Header */}
-      <Box sx={BOARD_STYLES.header}>
-        <Box>
-          <Box sx={BOARD_STYLES.headerContent}>
-            <ViewColumnIcon sx={{ color: "#0052CC", fontSize: 28 }} />
-            <Typography variant="h4" sx={BOARD_STYLES.title}>
-              Board
-            </Typography>
-            <Chip
-              label={`${filteredTasks.length} tasks`}
-              size="small"
-              sx={{
-                bgcolor: "#E6F3FF",
-                color: "#0052CC",
-                fontWeight: 600,
-              }}
-            />
-          </Box>
-          <Typography variant="body1" sx={BOARD_STYLES.subtitle}>
-            Plan, track, and manage your team's work in a visual workflow
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <Tooltip title="Toggle Filters">
-            <IconButton
-              onClick={toggleFilters}
-              sx={{
-                bgcolor: showFilters ? "#E6F3FF" : "transparent",
-                color: showFilters ? "#0052CC" : "#5E6C84",
-                "&:hover": { bgcolor: "#E6F3FF", color: "#0052CC" },
-              }}
-            >
-              <FilterListIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={onCreateTask}
-            sx={BOARD_STYLES.createButton}
-          >
-            Create Issue
-          </Button>
-        </Box>
-      </Box>
+    <Box sx={styles.container}>
+      {/* Board Header */}
+      <BoardHeader
+        filteredTasksCount={filteredTasks.length}
+        showFilters={showFilters}
+        onToggleFilters={toggleFilters}
+        onCreateTask={onCreateTask}
+      />
 
       {/* Collapsible Filters */}
       {showFilters && (
-        <Card sx={BOARD_STYLES.filterCard}>
+        <Card sx={{ mb: 2, p: 2, boxShadow: THEME.shadows.light }}>
           <ProjectFilters
             onSearchChange={setSearchTerm}
             onFiltersChange={setFilters}
@@ -323,59 +433,31 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
         </Card>
       )}
 
-      {/* Enhanced Kanban Board */}
-      <Box sx={BOARD_STYLES.boardContainer}>
-        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <Box sx={BOARD_STYLES.columnsContainer}>
-            {STATUS_CONFIG.map((statusConfig) => {
-              const statusTasks = filteredTasks.filter(
-                (task) => task.status === statusConfig.value
-              );
+      {/* Enhanced Kanban Board with Working Drag & Drop */}
+      <Box sx={styles.boardContainer}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <Box sx={styles.columnsContainer}>
+            {COLUMN_CONFIG.map((config) => {
+              const columnTasks = groupedTasks.get(config.value) || [];
 
               return (
-                <Box key={statusConfig.value} sx={BOARD_STYLES.column}>
-                  {/* Enhanced Column Header */}
-                  <Box
-                    sx={{
-                      ...BOARD_STYLES.columnHeader,
-                      borderLeft: `4px solid ${statusConfig.color}`,
-                      bgcolor: statusConfig.bgColor,
-                    }}
-                  >
-                    <Typography sx={BOARD_STYLES.columnTitle}>
-                      {statusConfig.label}
-                    </Typography>
-                    <Chip
-                      label={statusTasks.length}
-                      size="small"
-                      sx={{
-                        ...BOARD_STYLES.taskCount,
-                        bgcolor: statusConfig.color,
-                        color: "white",
-                      }}
-                    />
-                  </Box>
-
-                  {/* Enhanced Column Content */}
-                  <Box
-                    sx={{
-                      flex: 1,
-                      bgcolor: statusConfig.bgColor,
-                      borderRadius: "0 0 8px 8px",
-                      border: `1px solid ${statusConfig.borderColor}`,
-                      borderTop: "none",
-                      minHeight: "200px",
-                    }}
-                  >
-                    <KanbanColumn
-                      id={statusConfig.value}
-                      title={statusConfig.label}
-                      tasks={statusTasks}
-                      onTaskClick={onTaskClick}
-                      onAddTask={handleAddTask}
-                    />
-                  </Box>
-                </Box>
+                <SortableContext
+                  key={config.value}
+                  items={columnTasks.map((task) => task.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <BoardColumn
+                    config={config}
+                    tasks={columnTasks}
+                    onTaskClick={handleTaskClick}
+                    onAddTask={onCreateTask}
+                  />
+                </SortableContext>
               );
             })}
           </Box>
@@ -383,7 +465,15 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
           {/* Enhanced Drag Overlay */}
           <DragOverlay>
             {activeTask ? (
-              <Box sx={BOARD_STYLES.dragOverlay}>
+              <Box
+                sx={{
+                  transform: "rotate(5deg)",
+                  boxShadow: THEME.shadows.medium,
+                  borderRadius: 2,
+                  opacity: 0.9,
+                  cursor: "grabbing",
+                }}
+              >
                 <TaskCard task={activeTask} />
               </Box>
             ) : null}

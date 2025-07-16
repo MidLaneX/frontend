@@ -122,14 +122,6 @@ const ProjectPage: React.FC = () => {
   );
 
   /**
-   * Handles drag and drop end events for task reordering
-   */
-  const handleDragEnd = useCallback((event: unknown) => {
-    // TODO: Implement drag end logic for task reordering
-    console.log("Drag end:", event);
-  }, []);
-
-  /**
    * Closes the task detail modal
    */
   const handleCloseTaskModal = useCallback(() => {
@@ -162,7 +154,6 @@ const ProjectPage: React.FC = () => {
         onTaskClick={handleTaskClick}
         onCreateTask={handleCreateTask}
         onUpdateTask={handleUpdateTask}
-        onDragEnd={handleDragEnd}
       />
       {/* Modals */}
       <TaskDetailModal
