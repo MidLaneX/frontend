@@ -18,6 +18,7 @@
     "type-check:watch": "tsc --noEmit --watch",
     "clean": "rm -rf dist && rm -rf node_modules/.vite",
     "validate": "pnpm run type-check && pnpm run lint:ci",
+    "test:ci": "chmod +x scripts/test-ci.sh && scripts/test-ci.sh",
     "prepare": "husky install || true"
   },
   "dependencies": {
