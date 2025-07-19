@@ -29,9 +29,11 @@ import FolderIcon from '@mui/icons-material/Folder'
 import AddIcon from '@mui/icons-material/Add'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import QuickSearch from '@/components/ui/QuickSearch'
+import { useAuth } from '@/context/AuthContext'
 
 const Navbar: React.FC = () => {
   const location = useLocation()
+  const { logout } = useAuth()
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null)
   const [appsMenuAnchor, setAppsMenuAnchor] = useState<null | HTMLElement>(null)
   const [notificationsAnchor, setNotificationsAnchor] = useState<null | HTMLElement>(null)
@@ -58,6 +60,11 @@ const Navbar: React.FC = () => {
     setAppsMenuAnchor(null)
     setNotificationsAnchor(null)
     setCreateMenuAnchor(null)
+  }
+
+  const handleLogout = () => {
+    logout()
+    handleCloseMenus()
   }
 
   const isActiveRoute = (path: string) => {
@@ -791,7 +798,7 @@ const Navbar: React.FC = () => {
           </MenuItem>
           <Divider sx={{ my: 1 }} />
           <MenuItem 
-            onClick={handleCloseMenus} 
+            onClick={handleLogout} 
             sx={{ 
               py: 2, 
               px: 3, 

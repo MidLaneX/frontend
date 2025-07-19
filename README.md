@@ -32,7 +32,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or newer)
-- [pnpm](https://pnpm.io/) (or your preferred package manager like npm or yarn)
+- [pnpm](https://pnpm.io/) or [npm](https://www.npmjs.com/) (package manager)
 
 ### Installation
 
@@ -43,20 +43,36 @@ Follow these instructions to get a copy of the project up and running on your lo
     ```
 
 2.  **Install dependencies:**
+    
+    Using pnpm (recommended):
     ```sh
     pnpm install
     ```
+    
+    Or using npm:
+    ```sh
+    npm install
+    ```
 
 3.  **Run the development server:**
+    
+    Using pnpm:
     ```sh
     pnpm dev
     ```
+    
+    Or using npm:
+    ```sh
+    npm run dev
+    ```
+    
     The application will be available at `http://localhost:5173` (or another port if 5173 is in use).
 
 ## 📜 Available Scripts
 
 In the project directory, you can run the following commands:
 
+### Using pnpm (recommended):
 - `pnpm dev`: Runs the app in development mode.
 - `pnpm build`: Builds the app for production to the `dist` folder.
 - `pnpm build:ci`: Runs full CI build with type-check, lint, and build.
@@ -67,6 +83,18 @@ In the project directory, you can run the following commands:
 - `pnpm validate`: Runs both type-check and lint for code validation.
 - `pnpm preview`: Serves the production build locally for preview.
 - `pnpm clean`: Cleans the build artifacts.
+
+### Using npm:
+- `npm run dev`: Runs the app in development mode.
+- `npm run build`: Builds the app for production to the `dist` folder.
+- `npm run build:ci`: Runs full CI build with type-check, lint, and build.
+- `npm run lint`: Lints the codebase using ESLint.
+- `npm run lint:fix`: Fixes auto-fixable lint issues.
+- `npm run lint:ci`: Runs lint with zero warnings for CI.
+- `npm run type-check`: Runs TypeScript type checking.
+- `npm run validate`: Runs both type-check and lint for code validation.
+- `npm run preview`: Serves the production build locally for preview.
+- `npm run clean`: Cleans the build artifacts.
 
 ## 🔄 CI/CD Pipeline
 
