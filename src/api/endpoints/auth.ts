@@ -1,14 +1,21 @@
 import { apiClient } from '../client';
-import type { User, SignupData } from '../../context/AuthContext';
+import type { SignupData } from '../../context/AuthContext';
 
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
+// Update interfaces to match backend response format
 export interface AuthResponse {
   token: string;
-  user: User;
+  userId: number;
+  email: string;
+}
+
+export interface MeResponse {
+  userId: number;
+  email: string;
 }
 
 export const authApi = {
@@ -22,8 +29,8 @@ export const authApi = {
     return response.data;
   },
 
-  me: async (): Promise<{ user: User }> => {
-    const response = await apiClient.get<{ user: User }>('/auth/me');
+  me: async (): Promise<MeResponse> => {
+    const response = await apiClient.get<MeResponse>('/auth/me');
     return response.data;
   },
 

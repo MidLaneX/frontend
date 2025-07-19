@@ -19,7 +19,7 @@ export interface AuthContextType {
 export interface SignupData {
   email: string;
   password: string;
-  phone: string;
+  phone?: string; // Make phone optional with ?
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,7 +50,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           // Verify token with backend
           const response = await authApi.me();
-          setUser(response.user);
+          // Backend response: { userId, email }
+          const userData: User = {
+            userId: response.userId,
+            email: response.email,
+          };
+          setUser(userData);
         } catch (error) {
           // Token is invalid, remove it
           localStorage.removeItem('authToken');
@@ -70,12 +75,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     
       console.log("Login response:", response);
-      const { token, user: userData } = response;
+      
+      // Backend sends: { token, userId, email }
+      const { token, userId, email: userEmail } = response;
       
       // Store token
       localStorage.setItem('authToken', token);
       
       console.log("Login successful, token stored:", token);
+      
+      // Create user object from response
+      const userData: User = {
+        userId,
+        email: userEmail,
+      };
+      
       console.log("User data:", userData);
       
       // Update user state
@@ -90,10 +104,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authApi.signup(userData);
 
-      const { token, user: newUser } = response;
+      console.log("Signup response:", response);
+      
+      // Backend sends: { token, userId, email }
+      const { token, userId, email: userEmail } = response;
       
       // Store token
       localStorage.setItem('authToken', token);
+      
+      // Create user object from response
+      const newUser: User = {
+        userId,
+        email: userEmail,
+      };
+      
+      console.log("Signup user data:", newUser);
       
       // Update user state
       setUser(newUser);

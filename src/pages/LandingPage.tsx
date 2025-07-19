@@ -138,8 +138,6 @@ const LandingPage: React.FC = () => {
 
       await signup(userData);
       setSuccess('Account created successfully! Redirecting...');
-      // We don't need to manually navigate here as the useEffect will handle it
-      // when isAuthenticated becomes true
     } catch (err: any) {
       // Show exact error message from backend
       const errorMessage = err.response?.data?.message || err.message || 'Signup failed. Please try again.';
