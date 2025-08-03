@@ -4,8 +4,12 @@ export const ENV = {
   PROD: import.meta.env.PROD,
   DEV: import.meta.env.DEV,
   
-  // API Configuration
+  // API Configuration for API gateway
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  
+  // Social Authentication
+  GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+  FACEBOOK_APP_ID: import.meta.env.VITE_FACEBOOK_APP_ID || '',
   
   // App Configuration
   APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
