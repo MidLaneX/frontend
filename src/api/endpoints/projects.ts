@@ -9,12 +9,11 @@ export const projectsApi = {
   },
   //http://localhost:8089/api/projects/projectsOfUser?userId=2&templateType=scrum
 
-  // Get project by ID
- getProject: (id: number, template: string) => {
-  return projectsApiClient.get<Project>(`/projects/${id}`, {
-    params: { template }
-  });
+  // Get project by ID with template-specific features
+  getProject: (id: number, templateType: string) => {
+  return projectsApiClient.get<Project>(`/projects/${id}/${templateType}`);
 },
+
 
 
   // Create new project

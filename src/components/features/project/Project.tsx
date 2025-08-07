@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 
 import TaskDetailModal from "../task/TaskDetailModal";
 import CreateIssueModal from "../CreateIssueModal";
 import DynamicProjectNavigation from "./DynamicProjectNavigation";
 import type { Task } from "@/types";
-import { useProjects } from "@/hooks/useProjects";
+import { useProject } from "@/hooks";
 
 // Constants for consistent styling
 const STYLES = {
@@ -47,32 +48,35 @@ const STYLES = {
  * ProjectPage Component
  *
  * A comprehensive project management page that displays project details,
- * navigation tabs (Summary, Timeline, Backlog, Board), and handles task management.
+ * dynamic navigation based on template type, and handles task management.
  *
  * Features:
- * - Project header with title and description
- * - Horizontal navigation tabs similar to Jira
+ * - Dynamic project loading with template-specific features
+ * - Template-aware navigation tabs
  * - Task creation and editing modals
- * - Drag and drop functionality
  * - Real-time task updates
+ * - Scalable for any template type
  */
 const ProjectPage: React.FC = () => {
-  // Get user info from localStorage or use defaults
-  const userId = parseInt(localStorage.getItem('userId') || '5');
-  const template = 'Scrum'; // Default template
-
-  // Hooks
+  // Get project ID from URL parameters
   const { projectId } = useParams<{ projectId: string }>();
-  const { projects } = useProjects({ userId, template });
+  
+  // Use the new hook to fetch project with template-specific features
+  const { 
+    project, 
+    loading, 
+    error, 
+    refetch 
+  } = useProject({ 
+    projectId: Number(projectId),
+    template: 'scrum' // Default template, could be made dynamic
+  });
 
-  // State management
+  // State management for modals and tasks
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Derived state
-  const project = projects.find((p) => p.id === Number(projectId));
 
   // Effects
   useEffect(() => {
@@ -142,19 +146,41 @@ const ProjectPage: React.FC = () => {
   }, []);
 
   // Render guards
-  if (!project) {
+  // Loading state
+  if (loading) {
     return (
-      <Box sx={STYLES.notFoundContainer}>
-        <Typography variant="h6">Project not found</Typography>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '200px' 
+      }}>
+        <CircularProgress />
       </Box>
     );
   }
 
-  // Show error if project not found
+  // Error state
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Box sx={{ mt: 2 }}>
+          <Button onClick={refetch} variant="outlined">
+            Retry
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Project not found state
   if (!project) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="error">
+        <Alert severity="warning">
           Project not found. Please check the project ID and try again.
         </Alert>
       </Box>
