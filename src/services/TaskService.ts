@@ -1,5 +1,5 @@
 import type { Task, TaskStatus } from '../types';
-import { ProjectService } from './ProjectService';
+import { tasksApi } from '../api/endpoints/tasks';
 
 /**
  * Service class for managing tasks
@@ -8,102 +8,114 @@ export class TaskService {
   /**
    * Get all tasks for a project
    */
-  static getTasksByProjectId(projectId: string): Task[] {
-    const project = ProjectService.getProjectById(projectId);
-    return project?.tasks || [];
+  static async getTasksByProjectId(projectId: string): Promise<Task[]> {
+    try {
+      const response = await tasksApi.getTasks(projectId);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get tasks:', error);
+      return [];
+    }
   }
 
   /**
    * Get task by ID
    */
-  static getTaskById(projectId: string, taskId: string): Task | undefined {
-    const tasks = this.getTasksByProjectId(projectId);
-    return tasks.find(task => task.id === taskId);
+  static async getTaskById(taskId: string): Promise<Task | null> {
+    try {
+      const response = await tasksApi.getTask(taskId);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get task:', error);
+      return null;
+    }
   }
 
   /**
    * Create a new task
    */
-  static createTask(projectId: string, taskData: Omit<Task, 'id' | 'comments'>): Task | null {
-    const project = ProjectService.getProjectById(projectId);
-    if (!project) return null;
-
-    const newTask: Task = {
-      ...taskData,
-      id: `${project.key}-${project.tasks.length + 1}`,
-      comments: [],
-    };
-
-    project.tasks.push(newTask);
-    return newTask;
+  static async createTask(projectId: string, taskData: Omit<Task, 'id'>): Promise<Task | null> {
+    try {
+      const response = await tasksApi.createTask(projectId, taskData);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      return null;
+    }
   }
 
   /**
    * Update an existing task
    */
-  static updateTask(projectId: string, taskId: string, updates: Partial<Task>): Task | null {
-    const project = ProjectService.getProjectById(projectId);
-    if (!project) return null;
-
-    const taskIndex = project.tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) return null;
-
-    project.tasks[taskIndex] = { ...project.tasks[taskIndex], ...updates };
-    return project.tasks[taskIndex];
+  static async updateTask(taskId: string, updates: Partial<Task>): Promise<Task | null> {
+    try {
+      const response = await tasksApi.updateTask(taskId, updates);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      return null;
+    }
   }
 
   /**
    * Delete a task
    */
-  static deleteTask(projectId: string, taskId: string): boolean {
-    const project = ProjectService.getProjectById(projectId);
-    if (!project) return false;
-
-    const initialLength = project.tasks.length;
-    project.tasks = project.tasks.filter(t => t.id !== taskId);
-    return project.tasks.length < initialLength;
+  static async deleteTask(taskId: string): Promise<boolean> {
+    try {
+      await tasksApi.deleteTask(taskId);
+      return true;
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      return false;
+    }
   }
 
   /**
    * Update task status
    */
-  static updateTaskStatus(projectId: string, taskId: string, newStatus: TaskStatus): Task | null {
-    return this.updateTask(projectId, taskId, { status: newStatus });
+  static async updateTaskStatus(taskId: string, newStatus: TaskStatus): Promise<Task | null> {
+    try {
+      const response = await tasksApi.updateTaskStatus(taskId, newStatus);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      return null;
+    }
   }
 
   /**
    * Get tasks by status
    */
-  static getTasksByStatus(projectId: string, status: TaskStatus): Task[] {
-    const tasks = this.getTasksByProjectId(projectId);
+  static async getTasksByStatus(projectId: string, status: TaskStatus): Promise<Task[]> {
+    const tasks = await this.getTasksByProjectId(projectId);
     return tasks.filter(task => task.status === status);
   }
 
   /**
    * Search tasks
    */
-  static searchTasks(projectId: string, query: string): Task[] {
-    const tasks = this.getTasksByProjectId(projectId);
+  static async searchTasks(projectId: string, query: string): Promise<Task[]> {
+    const tasks = await this.getTasksByProjectId(projectId);
     const lowercaseQuery = query.toLowerCase();
     
     return tasks.filter(task => 
       task.title.toLowerCase().includes(lowercaseQuery) ||
       task.description?.toLowerCase().includes(lowercaseQuery) ||
       task.assignee.toLowerCase().includes(lowercaseQuery) ||
-      task.labels.some(label => label.toLowerCase().includes(lowercaseQuery))
+      task.labels.some((label: string) => label.toLowerCase().includes(lowercaseQuery))
     );
   }
 
   /**
    * Filter tasks
    */
-  static filterTasks(projectId: string, filters: {
+  static async filterTasks(projectId: string, filters: {
     assignee?: string[];
     priority?: string[];
     type?: string[];
     status?: string[];
-  }): Task[] {
-    let tasks = this.getTasksByProjectId(projectId);
+  }): Promise<Task[]> {
+    let tasks = await this.getTasksByProjectId(projectId);
 
     if (filters.assignee?.length) {
       tasks = tasks.filter(task => filters.assignee!.includes(task.assignee));

@@ -3,9 +3,13 @@ import type { Project } from '../../types';
 
 export const projectsApi = {
   // Get all projects
-  getProjects: () => {
-    return apiClient.get<Project[]>('/projects');
-  },
+ getProjects: (payload: {
+  projectDTO: Partial<Project>;
+  userProjectRequestDTO: { userId: number; role: string };
+}) => {
+  return apiClient.post<Project[]>('/projects/projectsOfUser', payload);
+},
+
 
   // Get project by ID
   getProject: (id: string) => {

@@ -1,73 +1,83 @@
 import type { Project } from '../types';
-import { projects } from '../data/projects';
+import { projectsApi } from '../api/endpoints/projects';
 
 /**
  * Service class for managing projects
  */
 export class ProjectService {
-  private static projects: Project[] = [...projects];
-
   /**
    * Get all projects
    */
-  static getAllProjects(): Project[] {
-    return this.projects;
-  }
+ static async getAllProjects(payload: {
+  projectDTO: Partial<Project>;
+  userProjectRequestDTO: { userId: number; role: string };
+}): Promise<Project[]> {
+  const response = await projectsApi.getProjects(payload);
+  return response.data;
+}
 
   /**
    * Get project by ID
    */
-  static getProjectById(id: string): Project | undefined {
-    return this.projects.find(project => project.id === id);
+  static async getProjectById(id: string): Promise<Project | null> {
+    try {
+      const response = await projectsApi.getProject(id);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get project:', error);
+      return null;
+    }
   }
 
   /**
    * Create a new project
    */
-  static createProject(projectData: Omit<Project, 'id' | 'tasks'>): Project {
-    const newProject: Project = {
-      ...projectData,
-      id: Date.now().toString(),
-      tasks: [],
-    };
-    
-    this.projects.push(newProject);
-    return newProject;
+  static async createProject(projectData: Omit<Project, 'id'>): Promise<Project> {
+    const response = await projectsApi.createProject(projectData);
+    return response.data;
   }
 
   /**
    * Update an existing project
    */
-  static updateProject(id: string, updates: Partial<Project>): Project | null {
-    const projectIndex = this.projects.findIndex(p => p.id === id);
-    if (projectIndex === -1) return null;
-
-    this.projects[projectIndex] = { ...this.projects[projectIndex], ...updates };
-    return this.projects[projectIndex];
+  static async updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
+    try {
+      const response = await projectsApi.updateProject(id, updates);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to update project:', error);
+      return null;
+    }
   }
 
   /**
    * Delete a project
    */
-  static deleteProject(id: string): boolean {
-    const initialLength = this.projects.length;
-    this.projects = this.projects.filter(p => p.id !== id);
-    return this.projects.length < initialLength;
+  static async deleteProject(id: string): Promise<boolean> {
+    try {
+      await projectsApi.deleteProject(id);
+      return true;
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      return false;
+    }
   }
 
   /**
    * Get projects by type
    */
-  static getProjectsByType(type: Project['type']): Project[] {
-    return this.projects.filter(project => project.type === type);
+  static async getProjectsByType(type: Project['type']): Promise<Project[]> {
+    const projects = await this.getAllProjects();
+    return projects.filter(project => project.type === type);
   }
 
   /**
    * Search projects by name or key
    */
-  static searchProjects(query: string): Project[] {
+  static async searchProjects(query: string): Promise<Project[]> {
+    const projects = await this.getAllProjects();
     const lowercaseQuery = query.toLowerCase();
-    return this.projects.filter(project => 
+    return projects.filter(project => 
       project.name.toLowerCase().includes(lowercaseQuery) ||
       project.key.toLowerCase().includes(lowercaseQuery) ||
       project.description.toLowerCase().includes(lowercaseQuery)

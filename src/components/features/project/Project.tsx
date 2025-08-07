@@ -6,8 +6,8 @@ import Typography from "@mui/material/Typography";
 import TaskDetailModal from "../task/TaskDetailModal";
 import CreateIssueModal from "../CreateIssueModal";
 import ProjectNavigation from "./ProjectNavigation";
-import { projects } from "@/data/projects";
 import type { Task } from "@/types";
+import { useProjects } from "@/hooks/useProjects";
 
 // Constants for consistent styling
 const STYLES = {
@@ -56,8 +56,13 @@ const STYLES = {
  * - Real-time task updates
  */
 const ProjectPage: React.FC = () => {
+  const userId = parseInt(localStorage.getItem('userId') || '0');
+  const role = localStorage.getItem('role') || 'MEMBER';
+
   // Hooks
   const { projectId } = useParams<{ projectId: string }>();
+  const { projects, loading: projectsLoading } = useProjects({ userId, role });
+
 
   // State management
   const [tasks, setTasks] = useState<Task[]>([]);

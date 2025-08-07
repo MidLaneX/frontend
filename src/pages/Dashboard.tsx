@@ -22,12 +22,13 @@ import StarIcon from '@mui/icons-material/Star'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import { Link } from 'react-router-dom'
-import { projects } from "../data/projects";
 import CreateProjectModal from "@/components/features/CreateProjectModal";
 import type { Project } from "../types";
+import { useProjects } from "@/hooks/useProjects";
 
 const Dashboard: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { projects, loading, error } = useProjects();
   const [projectList, setProjectList] = useState(projects);
   const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']); // Example starred projects
 

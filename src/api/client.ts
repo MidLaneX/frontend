@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { ENV } from '../config/env';
+import { ENV,ENV1 } from '../config/env';
 
 // Create axios instance with default configuration
 export const apiClient = axios.create({
@@ -9,6 +9,12 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Projects Service  
+export const projectsApiClient = axios.create({
+  baseURL: ENV1.PROJECTS_SERVICE_URL,
+  // ... config
 });
 
 // Request interceptor
