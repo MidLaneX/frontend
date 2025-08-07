@@ -28,17 +28,33 @@ import { useProjects } from "@/hooks/useProjects";
 
 const Dashboard: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { projects, loading, error } = useProjects();
-  const [projectList, setProjectList] = useState(projects);
+  
+  // Get user info from localStorage or use defaults
+  const userId = parseInt(localStorage.getItem('userId') || '5');
+  const template = 'Scrum'; // Default template
+  
+  const { projects, loading, error, createProject } = useProjects({ userId, template });
   const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']); // Example starred projects
 
-  const handleCreateProject = (newProject: Omit<Project, 'id' | 'tasks'>) => {
-    const project: Project = {
-      ...newProject,
-      id: (projectList.length + 1).toString(),
-      tasks: []
-    };
-    setProjectList(prev => [...prev, project]);
+  const handleCreateProject = async (newProject: Omit<Project, 'id' | 'tasks'>) => {
+    console.log('Dashboard: handleCreateProject called with:', newProject);
+    try {
+      const projectData: Omit<Project, 'id'> = {
+        ...newProject,
+        tasks: [] // Add empty tasks array
+      };
+      console.log('Dashboard: About to call createProject with:', projectData);
+      const result = await createProject(projectData);
+      console.log('Dashboard: createProject returned:', result);
+      if (result) {
+        console.log('Dashboard: Project created successfully!');
+      } else {
+        console.log('Dashboard: Project creation returned null');
+      }
+    } catch (error) {
+      console.error('Dashboard: Failed to create project:', error);
+      // You might want to show a toast notification here
+    }
   };
 
   const toggleStar = (projectId: string, event: React.MouseEvent) => {
@@ -52,14 +68,14 @@ const Dashboard: React.FC = () => {
   };
 
   // Calculate statistics
-  const totalProjects = projectList.length;
-  const totalTasks = projectList.reduce((sum, project) => sum + project.tasks.length, 0);
-  const completedTasks = projectList.reduce((sum, project) => 
+  const totalProjects = projects.length;
+  const totalTasks = projects.reduce((sum: number, project: Project) => sum + project.tasks.length, 0);
+  const completedTasks = projects.reduce((sum: number, project: Project) => 
     sum + project.tasks.filter(task => task.status === 'Done').length, 0
   );
-  const totalTeamMembers = new Set(
-    projectList.flatMap(project => project.teamMembers.map(member => member.name))
-  ).size;
+  // const totalTeamMembers = new Set(
+  //   projects.flatMap((project: Project) => project.teamMembers.map(member => member.name))
+  // ).size;
 
   const getProjectProgress = (project: Project) => {
     if (project.tasks.length === 0) return 0;
@@ -67,15 +83,15 @@ const Dashboard: React.FC = () => {
     return Math.round((completed / project.tasks.length) * 100);
   };
 
-  const getProjectStatus = (project: Project) => {
-    const now = new Date();
-    const start = new Date(project.timeline.start);
-    const end = new Date(project.timeline.end);
+  // const getProjectStatus = (project: Project) => {
+  //   const now = new Date();
+  //   // const start = new Date(project.timeline.start);
+  //   // const end = new Date(project.timeline.end);
     
-    if (now < start) return 'Not Started';
-    if (now > end) return 'Completed';
-    return 'In Progress';
-  };
+  //   if (now < start) return 'Not Started';
+  //   if (now > end) return 'Completed';
+  //   return 'In Progress';
+  // };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,6 +104,20 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, bgcolor: '#FAFBFC', minHeight: '100vh', minWidth: '80vh' }}>
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+          <Typography>Loading projects...</Typography>
+        </Box>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Box sx={{ mb: 3, p: 2, bgcolor: '#FFEBE6', border: '1px solid #FF5630', borderRadius: 1 }}>
+          <Typography color="error">Error loading projects: {error}</Typography>
+        </Box>
+      )}
+
       {/* Header Section */}
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -263,7 +293,7 @@ const Dashboard: React.FC = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
-                  {totalTeamMembers}
+                  {/* {totalTeamMembers} */}
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#5E6C84', fontWeight: 500 }}>
                   Team Members
@@ -296,7 +326,7 @@ const Dashboard: React.FC = () => {
             fontSize: '20px'
           }}
         >
-          Projects ({projectList.length})
+          Projects ({projects.length})
         </Typography>
         
         <Box sx={{ 
@@ -304,10 +334,10 @@ const Dashboard: React.FC = () => {
           gap: 3, 
           gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))' 
         }}>
-          {projectList.map((project) => {
+          {projects.map((project: Project) => {
             const progress = getProjectProgress(project);
-            const status = getProjectStatus(project);
-            const isStarred = starredProjects.includes(project.id);
+            
+            const isStarred = starredProjects.includes(String(project.id));
             
             return (
               <Card 
@@ -377,7 +407,7 @@ const Dashboard: React.FC = () => {
                         <Tooltip title={isStarred ? "Remove from favorites" : "Add to favorites"}>
                           <IconButton
                             size="small"
-                            onClick={(e) => toggleStar(project.id, e)}
+                            onClick={(e) => toggleStar(String(project.id), e)}
                             sx={{ 
                               color: isStarred ? '#FFAB00' : '#5E6C84',
                               '&:hover': { 
@@ -463,10 +493,10 @@ const Dashboard: React.FC = () => {
                           } 
                         }}
                       >
-                        {project.teamMembers.map((member, index) => (
+                        {project.teamMembers.map((member: any, index: number) => (
                           <Tooltip key={member.name} title={`${member.name} (${member.role})`}>
                             <Avatar sx={{ bgcolor: `hsl(${index * 60}, 70%, 50%)` }}>
-                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                             </Avatar>
                           </Tooltip>
                         ))}

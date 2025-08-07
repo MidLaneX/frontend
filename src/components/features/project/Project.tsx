@@ -56,13 +56,13 @@ const STYLES = {
  * - Real-time task updates
  */
 const ProjectPage: React.FC = () => {
-  const userId = parseInt(localStorage.getItem('userId') || '0');
+  // Get user info from localStorage or use defaults
+  const userId = parseInt(localStorage.getItem('userId') || '3');
   const role = localStorage.getItem('role') || 'MEMBER';
 
   // Hooks
   const { projectId } = useParams<{ projectId: string }>();
-  const { projects, loading: projectsLoading } = useProjects({ userId, role });
-
+  const { projects } = useProjects({ userId, template: 'Scrum' });
 
   // State management
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -71,7 +71,7 @@ const ProjectPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Derived state
-  const project = projects.find((p) => p.id === projectId);
+  const project = projects.find((p) => p.id === Number(projectId));
 
   // Effects
   useEffect(() => {

@@ -28,6 +28,6 @@ export const debugLog = (...args: unknown[]) => {
 
 export const ENV1 = {
   // ... existing config
-  PROJECTS_SERVICE_URL: import.meta.env.VITE_PROJECTS_SERVICE_URL || 'http://localhost:8081/api',
-  
+  PROJECTS_SERVICE_URL: 'http://localhost:8089/api',
+
 };

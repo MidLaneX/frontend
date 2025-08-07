@@ -51,6 +51,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ open, onClose, 
       teamMembers: formData.teamMembers.map(name => ({ name, role: 'Team Member' }))
     };
 
+    console.log('CreateProjectModal: Submitting project:', project);
     onCreateProject(project);
     handleClose();
   };
