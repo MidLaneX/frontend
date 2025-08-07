@@ -3,6 +3,7 @@ export * from "./common";
 export * from "./api";
 export * from "./components";
 export * from "./dto";
+export * from "./template";
 
 // Legacy exports for backward compatibility
 // TODO: Remove these after refactoring components

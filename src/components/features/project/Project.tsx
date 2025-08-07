@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
 
 import TaskDetailModal from "../task/TaskDetailModal";
 import CreateIssueModal from "../CreateIssueModal";
-import ProjectNavigation from "./ProjectNavigation";
+import DynamicProjectNavigation from "./DynamicProjectNavigation";
 import type { Task } from "@/types";
 import { useProjects } from "@/hooks/useProjects";
 
@@ -57,12 +58,12 @@ const STYLES = {
  */
 const ProjectPage: React.FC = () => {
   // Get user info from localStorage or use defaults
-  const userId = parseInt(localStorage.getItem('userId') || '3');
-  const role = localStorage.getItem('role') || 'MEMBER';
+  const userId = parseInt(localStorage.getItem('userId') || '5');
+  const template = 'Scrum'; // Default template
 
   // Hooks
   const { projectId } = useParams<{ projectId: string }>();
-  const { projects } = useProjects({ userId, template: 'Scrum' });
+  const { projects } = useProjects({ userId, template });
 
   // State management
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -149,11 +150,22 @@ const ProjectPage: React.FC = () => {
     );
   }
 
+  // Show error if project not found
+  if (!project) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">
+          Project not found. Please check the project ID and try again.
+        </Alert>
+      </Box>
+    );
+  }
+
   // Main render
   return (
     <Box sx={STYLES.container}>
-      \{/* Project Navigation */}
-      <ProjectNavigation
+      {/* Dynamic Project Navigation */}
+      <DynamicProjectNavigation
         project={project}
         tasks={tasks}
         onTaskClick={handleTaskClick}

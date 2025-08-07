@@ -9,9 +9,9 @@ export class ProjectService {
   /**
    * Get all projects for a user
    */
-  static async getAllProjects(userId: number = 5, template: string = 'Scrum'): Promise<Project[]> {
-    const response = await projectsApi.getProjects(userId, template);
-    
+  static async getAllProjects(userId: number = 2, templateType: string = 'scrum'): Promise<Project[]> {
+    const response = await projectsApi.getProjects(userId, templateType);
+    console.log('ProjectService: getAllProjects response:', response.data);
     // Convert ProjectDTO response to Project format for frontend compatibility
     return response.data.map((projectDto: ProjectDTO) => ({
       id: projectDto.id || Math.floor(Math.random() * 10000),
@@ -44,9 +44,10 @@ export class ProjectService {
   /**
    * Get project by ID
    */
-  static async getProjectById(id: number): Promise<Project | null> {
+  static async getProjectById(id: number , template: string): Promise<Project | null> {
     try {
-      const response = await projectsApi.getProject(id);
+      const response = await projectsApi.getProject(id, template);
+      console.log('ProjectService: getProjectById response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Failed to get project:', error);
@@ -54,9 +55,6 @@ export class ProjectService {
     }
   }
 
-  /**
-   * Create a new project
-   */
   static async createProject(projectData: Omit<Project, 'id'>): Promise<Project> {
     console.log('Creating project with data:', projectData);
     

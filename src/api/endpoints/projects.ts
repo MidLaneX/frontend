@@ -4,14 +4,18 @@ import type { ProjectDTO } from '../../types/dto';
 
 export const projectsApi = {
   // Get all projects for a user with query parameters
-  getProjects: (userId: number, template: string = 'Scrum') => {
-    return projectsApiClient.get<ProjectDTO[]>(`/projects?projectId=${userId}&template=${template}`);
+  getProjects: (userId: number, template: string = 'scrum') => {
+    return projectsApiClient.get<ProjectDTO[]>(`/projects/projectsOfUser?userId=${userId}&templateType=${template}`);
   },
+  //http://localhost:8089/api/projects/projectsOfUser?userId=2&templateType=scrum
 
   // Get project by ID
-  getProject: (id: number) => {
-    return projectsApiClient.get<Project>(`/projects/${id}`);
-  },
+ getProject: (id: number, template: string) => {
+  return projectsApiClient.get<Project>(`/projects/${id}`, {
+    params: { template }
+  });
+},
+
 
   // Create new project
   createProject: (data: ProjectDTO, template: string = 'scrum') => {
