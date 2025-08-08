@@ -16,18 +16,19 @@ import {
 
 interface ProjectPageProps {
   // Optional props for flexibility
-  projectId?: string;
-  projectName?: string;
+  projectId?: number;
+
   template?: TemplateType;
 }
 
 const ProjectPage: React.FC<ProjectPageProps> = (props) => {
-  const { id: paramId } = useParams<{ id: string }>();
+ const { projectId, templateType } = useParams<{ projectId:number; templateType: TemplateType }>();
+
   
   // Use props or URL params
-  const projectId = props.projectId || paramId || '1';
+  const projectId = props.projectId || projectId || '1';
   const projectName = props.projectName || 'Sample Project';
-  const template = props.template || 'scrum'; // Default to scrum
+  const template = props.template || templateType || 'scrum'; // Default to scrum
   
   const [activeTab, setActiveTab] = useState(0);
   

@@ -356,7 +356,7 @@ const Dashboard: React.FC = () => {
                   overflow: 'visible'
                 }}
               >
-                <CardActionArea component={Link} to={`/projects/${project.id}`}>
+                <CardActionArea component={Link} to={`/projects/${project.id}/${project.templateType}`}>
                   <CardContent sx={{ p: 3 }}>
                     {/* Project Header */}
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>

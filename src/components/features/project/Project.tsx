@@ -1,8 +1,11 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import Box from "@mui/material/Box";
-import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
+import {
+  Box,
+  Alert,
+  Button,
+  CircularProgress,
+} from "@mui/material";
 
 import DynamicProjectNavigation from "./DynamicProjectNavigation";
 import { useProject } from "@/hooks";
@@ -12,25 +15,6 @@ const STYLES = {
   container: {
     minHeight: "100vh",
     backgroundColor: "#f5f5f5",
-  },
-  header: {
-    backgroundColor: "white",
-    borderBottom: "1px solid #e0e0e0",
-    p: 3,
-  },
-  headerContent: {
-    display: "flex",
-    alignItems: "center",
-    gap: 2,
-    mb: 2,
-  },
-  projectTitle: {
-    fontWeight: 600,
-    color: "#172b4d",
-  },
-  projectDescription: {
-    color: "#5e6c84",
-    lineHeight: 1.5,
   },
   notFoundContainer: {
     display: "flex",
@@ -43,21 +27,20 @@ const STYLES = {
 /**
  * ProjectPage Component
  *
- * A comprehensive project management page that displays project details,
- * dynamic navigation based on template type, and handles task management.
+ * A comprehensive project management page that displays project details
+ * and dynamic navigation based on backend-provided features.
  *
  * Features:
- * - Dynamic project loading with template-specific features
- * - Template-aware navigation tabs
- * - Task creation and editing modals
- * - Real-time task updates
+ * - Dynamic project loading with backend features  
+ * - Backend-driven navigation tabs
+ * - Dynamic component loading
  * - Scalable for any template type
  */
 const ProjectPage: React.FC = () => {
   // Get project ID from URL parameters
   const { projectId } = useParams<{ projectId: string }>();
   
-  // Use the new hook to fetch project with template-specific features
+  // Use the hook to fetch project with template-specific features from backend
   const { 
     project, 
     loading, 
@@ -65,92 +48,13 @@ const ProjectPage: React.FC = () => {
     refetch 
   } = useProject({ 
     projectId: Number(projectId),
-    template: 'scrum' // Default template, could be made dynamic
+    template: 'scrum' // Default template - could be made dynamic
   });
 
-  // State management for modals and tasks
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Effects
-  useEffect(() => {
-    if (project) {
-      setTasks(project.tasks || []);
-    }
-  }, [project]);
-
-  // Event handlers
-  /**
-   * Handles task selection and opens the task detail modal
-   */
-  const handleTaskClick = useCallback((task: Task) => {
-    setSelectedTask(task);
-    setIsTaskModalOpen(true);
-  }, []);
-
-  /**
-   * Opens the create task modal
-   */
-  const handleCreateTask = useCallback(() => {
-    setIsCreateModalOpen(true);
-  }, []);
-
-  /**
-   * Updates a specific task with partial updates
-   */
-  const handleUpdateTask = useCallback(
-    (taskId: string, updates: Partial<Task>) => {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === taskId ? { ...task, ...updates } : task
-        )
-      );
-    },
-    []
-  );
-
-  /**
-   * Creates a new task and adds it to the task list
-   */
-  const handleCreateIssue = useCallback(
-    (issue: Omit<Task, "id" | "comments">) => {
-      const newTask: Task = {
-        ...issue,
-        id: Date.now().toString(),
-        comments: [],
-      };
-      setTasks((prevTasks) => [...prevTasks, newTask]);
-      setIsCreateModalOpen(false);
-    },
-    []
-  );
-
-  /**
-   * Closes the task detail modal
-   */
-  const handleCloseTaskModal = useCallback(() => {
-    setIsTaskModalOpen(false);
-  }, []);
-
-  /**
-   * Closes the create task modal
-   */
-  const handleCloseCreateModal = useCallback(() => {
-    setIsCreateModalOpen(false);
-  }, []);
-
-  // Render guards
   // Loading state
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '200px' 
-      }}>
+      <Box sx={STYLES.notFoundContainer}>
         <CircularProgress />
       </Box>
     );
@@ -160,19 +64,18 @@ const ProjectPage: React.FC = () => {
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-        <Box sx={{ mt: 2 }}>
-          <Button onClick={refetch} variant="outlined">
+        <Alert severity="error" action={
+          <Button color="inherit" size="small" onClick={refetch}>
             Retry
           </Button>
-        </Box>
+        }>
+          {error}
+        </Alert>
       </Box>
     );
   }
 
-  // Project not found state
+  // Project not found
   if (!project) {
     return (
       <Box sx={{ p: 3 }}>
@@ -186,21 +89,8 @@ const ProjectPage: React.FC = () => {
   // Main render
   return (
     <Box sx={STYLES.container}>
-      {/* Dynamic Project Navigation */}
+      {/* Dynamic Project Navigation with Backend Features */}
       <DynamicProjectNavigation
-        project={project}
-      />
-      {/* Modals */}
-      <TaskDetailModal
-        task={selectedTask}
-        open={isTaskModalOpen}
-        onClose={handleCloseTaskModal}
-        onUpdateTask={handleUpdateTask}
-      />
-      <CreateIssueModal
-        open={isCreateModalOpen}
-        onClose={handleCloseCreateModal}
-        onCreateIssue={handleCreateIssue}
         project={project}
       />
     </Box>
