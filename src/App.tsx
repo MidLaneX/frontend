@@ -62,6 +62,8 @@ function AppContent() {
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects/:projectId/:templateType" element={<Project />} />
+          <Route path="/projects/:projectId/:templateType/:featureName?" element={<Project />} />
+
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Box>

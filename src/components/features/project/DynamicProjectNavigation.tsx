@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect, Suspense, lazy } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, Suspense, lazy, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Tabs,
@@ -11,12 +11,16 @@ import {
 } from '@mui/material';
 import type { Project } from '@/types';
 
-// ErrorBoundary to catch lazy-loading errors
+interface ErrorBoundaryProps {
+  fallback: React.ReactNode;
+  children?: React.ReactNode;
+}
+
 class ErrorBoundary extends React.Component<
-  { fallback: React.ReactNode },
+  ErrorBoundaryProps,
   { hasError: boolean }
 > {
-  constructor(props: any) {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
@@ -39,11 +43,14 @@ interface DynamicProjectNavigationProps {
   project: Project;
 }
 
-const FeaturePlaceholder = ({ featureId }: { featureId?: string }) => (
+const normalizeFeaturePath = (name: string) =>
+  name.toLowerCase().replace(/\s+/g, '_'); // consistent with folder names
+
+const FeaturePlaceholder = ({ featureName }: { featureName?: string }) => (
   <Box sx={{ p: 3, textAlign: 'center' }}>
     <Paper sx={{ p: 4, maxWidth: 600, mx: 'auto' }}>
       <Typography variant="h5" gutterBottom>
-        {(featureId || 'Unknown').replace('_', ' ').toUpperCase()} Feature
+        {(featureName || 'Unknown').replace(/_/g, ' ').toUpperCase()} Feature
       </Typography>
       <Typography variant="body2" color="text.secondary">
         This feature is under development or missing.
@@ -53,57 +60,82 @@ const FeaturePlaceholder = ({ featureId }: { featureId?: string }) => (
 );
 
 const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ project }) => {
-  const { featureId } = useParams<{ featureId?: string }>();
+  const { featureName: paramFeatureName, projectId, templateType } = useParams<{
+    featureName?: string;
+    projectId?: string;
+    templateType?: string;
+  }>();
 
+  const navigate = useNavigate();
   const features = project.features || [];
+
+  const normalizedFeatures = React.useMemo(
+    () =>
+      features.map((f) => ({
+        name: f,
+        path: normalizeFeaturePath(f),
+      })),
+    [features]
+  );
+
   const [activeTab, setActiveTab] = useState<string>('');
 
+  // Sync activeTab with URL param and navigate if needed
   useEffect(() => {
-    if (features.length === 0) return;
+    if (normalizedFeatures.length === 0) return;
 
-    // If valid URL param featureId
-    if (featureId && features.some(f => f.path === featureId)) {
-      setActiveTab(featureId);
-    } 
-    // Else if current tab is invalid, set to first feature
-    else if (!activeTab || !features.some(f => f.path === activeTab)) {
-      setActiveTab(features[0].path);
+    const validFeature = paramFeatureName && normalizedFeatures.some(f => f.path === paramFeatureName);
+
+    if (validFeature) {
+      if (paramFeatureName !== activeTab) {
+        setActiveTab(paramFeatureName);
+      }
+    } else {
+      // Redirect to first feature if paramFeatureName invalid or missing
+      if (projectId && templateType && activeTab !== normalizedFeatures[0].path) {
+        navigate(`/projects/${projectId}/${templateType}/${normalizedFeatures[0].path}`, { replace: true });
+      }
+      setActiveTab(normalizedFeatures[0].path);
     }
-  }, [features, featureId, activeTab]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramFeatureName, projectId, templateType, normalizedFeatures]);
 
   const handleTabChange = useCallback(
     (_: React.SyntheticEvent, newValue: string) => {
       setActiveTab(newValue);
+      if (projectId && templateType) {
+        navigate(`/projects/${projectId}/${templateType}/${newValue}`);
+      }
     },
-    []
+    [navigate, projectId, templateType]
   );
 
   const renderFeatureContent = () => {
-    const activeFeature = features.find(f => f.path === activeTab);
-    if (!activeFeature) return <FeaturePlaceholder featureId={activeTab} />;
+    const activeFeature = normalizedFeatures.find(f => f.path === activeTab);
+    if (!activeFeature) return <FeaturePlaceholder featureName={activeTab} />;
 
+    // IMPORTANT: remove extension and use correct relative path for dynamic import
     const FeatureComponent = lazy(() =>
-      import(`./features/${activeFeature.path}`).catch(() => {
-        return {
-          default: () => <FeaturePlaceholder featureId={activeFeature.path} />,
-        };
-      })
+      import(`../components/features/${activeFeature.path}/index`).catch(() => ({
+        default: () => <FeaturePlaceholder featureName={activeFeature.path} />,
+      }))
     );
 
-    return (
-      <ErrorBoundary fallback={<FeaturePlaceholder featureId={activeFeature.path} />}>
-        <Suspense
-          fallback={
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
-              <CircularProgress />
-              <Typography sx={{ ml: 2 }}>Loading {activeFeature.name}...</Typography>
-            </Box>
-          }
-        >
-          <FeatureComponent projectId={project.id} />
-        </Suspense>
-      </ErrorBoundary>
-    );
+   return (
+  <ErrorBoundary fallback={<FeaturePlaceholder featureName={activeFeature.path} />}>
+    <Suspense
+      fallback={
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>Loading {activeFeature.name}...</Typography>
+        </Box>
+      }
+    >
+      <FeatureComponent projectId={project.id.toString()} projectName={project.name} />
+    </Suspense>
+  </ErrorBoundary>
+);
+
   };
 
   if (features.length === 0) {
@@ -121,9 +153,9 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
         onChange={handleTabChange}
         variant="scrollable"
         scrollButtons="auto"
-        aria-label="Project features navigation"
+        aria-label="Project Features Navigation"
       >
-        {features.map((feature) => (
+        {normalizedFeatures.map((feature) => (
           <Tab
             key={feature.path}
             value={feature.path}

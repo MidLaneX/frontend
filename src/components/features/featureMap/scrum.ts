@@ -1,5 +1,5 @@
 import Board from "../board/Board";
-import Backlog from "../backlog/Backlog";
+import Backlog from "../backlog";
 import Summary from "../summary/Summary";
 import Timeline from "../timeline/Timeline";
 
