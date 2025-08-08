@@ -1,14 +1,10 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 
-import TaskDetailModal from "../task/TaskDetailModal";
-import CreateIssueModal from "../CreateIssueModal";
 import DynamicProjectNavigation from "./DynamicProjectNavigation";
-import type { Task } from "@/types";
 import { useProject } from "@/hooks";
 
 // Constants for consistent styling
@@ -193,10 +189,6 @@ const ProjectPage: React.FC = () => {
       {/* Dynamic Project Navigation */}
       <DynamicProjectNavigation
         project={project}
-        tasks={tasks}
-        onTaskClick={handleTaskClick}
-        onCreateTask={handleCreateTask}
-        onUpdateTask={handleUpdateTask}
       />
       {/* Modals */}
       <TaskDetailModal

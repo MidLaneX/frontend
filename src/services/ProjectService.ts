@@ -9,7 +9,7 @@ export class ProjectService {
   /**
    * Get all projects for a user
    */
-  static async getAllProjects(userId: number = 2, templateType: string = 'scrum'): Promise<Project[]> {
+  static async getAllProjects(userId: number = 5, templateType: string = 'scrum'): Promise<Project[]> {
     const response = await projectsApi.getProjects(userId, templateType);
     console.log('ProjectService: getAllProjects response:', response.data);
     // Convert ProjectDTO response to Project format for frontend compatibility

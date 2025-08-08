@@ -12,12 +12,18 @@ import {
 import type { Project } from '@/types';
 import { useProjectFeatures } from '@/hooks';
 
-// Lazy-loaded feature components - only import components that exist
-const ScrumBoardComponent = lazy(() => import('./board/ScrumBoardComponent'));
-const SprintComponent = lazy(() => import('./sprint/SprintComponent'));
-const BacklogComponent = lazy(() => import('./backlog/BacklogComponent'));
-const EstimationComponent = lazy(() => import('./estimation/EstimationComponent'));
-const TimelineComponent = lazy(() => import('./timeline/TimelineComponent'));
+// Lazy-loaded feature components
+const ProjectSummary = lazy(() => import('./ProjectSummary'));
+const ProjectBoard = lazy(() => import('./ProjectBoard'));
+const ProjectBacklog = lazy(() => import('./ProjectBacklog'));
+const ProjectTimeline = lazy(() => import('./ProjectTimeline'));
+
+// Lazy-load additional feature components for different templates
+const SprintComponent = lazy(() => import('../SprintComponent'));
+const BacklogComponent = lazy(() => import('../BacklogComponent'));
+const ScrumBoardComponent = lazy(() => import('../ScrumBoardComponent'));
+const EstimationComponent = lazy(() => import('../EstimationComponent'));
+const TimelineComponent = lazy(() => import('../TimelineComponent'));
 
 // Add placeholder components for features not yet implemented
 const FeaturePlaceholder = lazy(() => Promise.resolve({
@@ -50,10 +56,10 @@ interface DynamicProjectNavigationProps {
 const getFeatureComponent = (featureId: string) => {
   const componentMap: Record<string, React.LazyExoticComponent<any>> = {
     // Core project features
-    'summary': ScrumBoardComponent, // Use ScrumBoard as summary for now
-    'board': ScrumBoardComponent,
-    'backlog': BacklogComponent,
-    'timeline': TimelineComponent,
+    'summary': ProjectSummary,
+    'board': ProjectBoard,
+    'backlog': ProjectBacklog,
+    'timeline': ProjectTimeline,
     
     // Scrum-specific features
     'sprint_board': ScrumBoardComponent,
@@ -64,7 +70,7 @@ const getFeatureComponent = (featureId: string) => {
     'retrospective': FeaturePlaceholder,
     
     // Kanban features
-    'kanban_board': ScrumBoardComponent, // Reuse ScrumBoard for now
+    'kanban_board': ProjectBoard,
     'wip_limits': FeaturePlaceholder,
     'flow_analytics': FeaturePlaceholder,
     
@@ -164,7 +170,12 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({
           </Box>
         }
       >
-        <FeatureComponent />
+        <FeatureComponent 
+          projectId={project.id?.toString() || ''}
+          projectName={project.name || ''}
+          templateType={project.templateType || 'scrum'}
+          project={project}
+        />
       </Suspense>
     );
   }, [activeTab, features, project]);
