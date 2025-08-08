@@ -5,7 +5,7 @@ import { ProjectService } from '../services/ProjectService';
 /**
  * Hook for managing projects
  */
-export const useProjects = ({ userId = 5, template = 'Scrum' }: { userId?: number; template?: string } = {}) => {
+export const useProjects = ({ userId = 5, templateType = 'Scrum' }: { userId?: number; templateType?: string } = {}) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export const useProjects = ({ userId = 5, template = 'Scrum' }: { userId?: numbe
     const loadProjects = async () => {
       try {
         setLoading(true);
-        const allProjects = await ProjectService.getAllProjects(userId, template);
+        const allProjects = await ProjectService.getAllProjects(userId, templateType);
         setProjects(allProjects);
         setError(null);
       } catch (err) {
@@ -25,7 +25,7 @@ export const useProjects = ({ userId = 5, template = 'Scrum' }: { userId?: numbe
     };
 
     loadProjects();
-  }, [userId, template]);
+  }, [userId, templateType]);
 
   const createProject = async (projectData: Omit<Project, 'id'>) => {
     console.log('useProjects: createProject called with:', projectData);
@@ -84,7 +84,7 @@ export const useProjects = ({ userId = 5, template = 'Scrum' }: { userId?: numbe
   const refetch = async () => {
     try {
       setLoading(true);
-      const allProjects = await ProjectService.getAllProjects(userId, template);
+      const allProjects = await ProjectService.getAllProjects(userId, templateType);
       setProjects(allProjects);
       setError(null);
     } catch (err) {
@@ -93,6 +93,8 @@ export const useProjects = ({ userId = 5, template = 'Scrum' }: { userId?: numbe
       setLoading(false);
     }
   };
+
+ 
 
   return {
     projects,

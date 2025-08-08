@@ -1,101 +1,125 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   Box, 
   Typography, 
   Paper, 
-  Tabs, 
-  Tab, 
-  Alert
+  Alert, 
+  CircularProgress 
 } from '@mui/material';
-import { 
-  getFeatureComponent, 
-  getAvailableFeatures,
-  type TemplateType 
-} from './templateRegistry';
+import type { Project } from '@/types';
+import { ProjectService } from '@/services/ProjectService';
+import DynamicProjectNavigation from './DynamicProjectNavigation';
 
-interface ProjectPageProps {
-  // Optional props for flexibility
-  projectId?: number;
+const ProjectPage: React.FC = () => {
+  const { projectId: urlProjectId, templateType: urlTemplateType } = useParams<{
+    projectId?: string;
+    templateType?: string;
+  }>();
 
-  template?: TemplateType;
-}
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const ProjectPage: React.FC<ProjectPageProps> = (props) => {
- const { projectId, templateType } = useParams<{ projectId:number; templateType: TemplateType }>();
+  const projectId = Number(urlProjectId);
+  const templateType = urlTemplateType || 'scrum'; // Default template type fallback
 
-  
-  // Use props or URL params
-  const projectId = props.projectId || projectId || '1';
-  const projectName = props.projectName || 'Sample Project';
-  const template = props.template || templateType || 'scrum'; // Default to scrum
-  
-  const [activeTab, setActiveTab] = useState(0);
-  
-  // Get available features for this template
-  const availableFeatures = getAvailableFeatures(template);
-  
-  if (!availableFeatures.length) {
+  useEffect(() => {
+    if (!projectId || !templateType) {
+      setError('Project ID or Template Type is missing.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    ProjectService.getProjectById(projectId, templateType)
+      .then(res => {
+        if (res) {
+          setProject(res);
+        } else {
+          setError('Project not found.');
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load project:', err);
+        setError('Failed to load project. Please try again later.');
+      })
+      .finally(() => setLoading(false));
+  }, [projectId, templateType]);
+
+  // Loading
+  if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          No features available for template: {template}
-        </Alert>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Loading project...</Typography>
       </Box>
     );
   }
-  
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-  
-  // Get current feature component
-  const currentFeature = availableFeatures[activeTab];
-  const FeatureComponent = getFeatureComponent(template, currentFeature);
-  
+
+  // Error
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+
+  // Project not found
+  if (!project) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">Project not found. Please check the project ID and try again.</Alert>
+      </Box>
+    );
+  }
+
+  // Project has no features
+  if (!project.features || project.features.length === 0) {
+    return (
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+        <Paper elevation={0} sx={{ bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h4" gutterBottom>
+              {project.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Template: {project.templateType?.charAt(0).toUpperCase() + project.templateType?.slice(1)} | Project ID: {project.id}
+            </Typography>
+          </Box>
+        </Paper>
+        <Box sx={{ p: 3 }}>
+          <Alert severity="info">
+            <Typography variant="h6" gutterBottom>No Features Available</Typography>
+            <Typography>
+              This project doesn't have any features configured. The backend should provide features for this project.
+            </Typography>
+          </Alert>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Success - Show the project with DynamicProjectNavigation
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
-      {/* Project Header */}
       <Paper elevation={0} sx={{ bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
         <Box sx={{ p: 3 }}>
-          <Typography variant="h4" gutterBottom>
-            {projectName}
-          </Typography>
+          <Typography variant="h4" gutterBottom>{project.name}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Template: {template.charAt(0).toUpperCase() + template.slice(1)} | Project ID: {projectId}
+            Template: {project.templateType?.charAt(0).toUpperCase() + project.templateType?.slice(1)} | Project ID: {project.id}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Backend Features: [{project.features?.join(', ')}]
           </Typography>
         </Box>
-        
-        {/* Dynamic Navigation Tabs */}
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange}
-          sx={{ px: 3 }}
-        >
-          {availableFeatures.map((feature) => (
-            <Tab 
-              key={feature}
-              label={feature.charAt(0).toUpperCase() + feature.slice(1)}
-            />
-          ))}
-        </Tabs>
       </Paper>
-      
-      {/* Dynamic Feature Content */}
-      <Box>
-        {FeatureComponent ? (
-          <FeatureComponent 
-            projectId={projectId}
-            projectName={projectName}
-          />
-        ) : (
-          <Box sx={{ p: 3 }}>
-            <Alert severity="info">
-              Feature "{currentFeature}" not found for template "{template}"
-            </Alert>
-          </Box>
-        )}
-      </Box>
+
+      {/* Render dynamic feature-based UI */}
+      <DynamicProjectNavigation project={project} />
     </Box>
   );
 };
