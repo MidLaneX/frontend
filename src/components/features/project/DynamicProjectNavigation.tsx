@@ -114,11 +114,23 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
     const activeFeature = normalizedFeatures.find(f => f.path === activeTab);
     if (!activeFeature) return <FeaturePlaceholder featureName={activeTab} />;
 
-    // IMPORTANT: remove extension and use correct relative path for dynamic import
+    console.log('🚀 Loading feature:', {
+      activeFeature,
+      importPath: `../${activeFeature.path}/index`,
+      projectId: project.id,
+      projectName: project.name
+    });
+
+    // IMPORTANT: Use correct relative path for dynamic import
+    // From: src/components/features/project/ 
+    // To:   src/components/features/backlog/index, src/components/features/sprint/index, etc.
     const FeatureComponent = lazy(() =>
-      import(`../components/features/${activeFeature.path}/index`).catch(() => ({
-        default: () => <FeaturePlaceholder featureName={activeFeature.path} />,
-      }))
+      import(`../${activeFeature.path}/index`).catch((error) => {
+        console.error(`❌ Failed to load component for ${activeFeature.path}:`, error);
+        return {
+          default: () => <FeaturePlaceholder featureName={activeFeature.path} />,
+        };
+      })
     );
 
    return (
@@ -131,7 +143,10 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
         </Box>
       }
     >
-      <FeatureComponent projectId={project.id.toString()} projectName={project.name} />
+      <FeatureComponent 
+        projectId={project.id?.toString() || 'unknown'} 
+        projectName={project.name || 'Unknown Project'} 
+      />
     </Suspense>
   </ErrorBoundary>
 );
