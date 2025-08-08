@@ -146,6 +146,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
       <FeatureComponent 
         projectId={project.id?.toString() || 'unknown'} 
         projectName={project.name || 'Unknown Project'} 
+        templateType={templateType }
       />
     </Suspense>
   </ErrorBoundary>

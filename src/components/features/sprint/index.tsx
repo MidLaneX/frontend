@@ -19,7 +19,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 
 interface SprintProps {
   projectId: string;
-  projectName: string;
+  TempltType: string;
 }
 
 const Sprint: React.FC<SprintProps> = () => {
