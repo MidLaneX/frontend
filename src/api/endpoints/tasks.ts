@@ -1,37 +1,34 @@
-import { projectsApiClient } from '../client';
+import { apiClient } from '../client';
 import type { Task } from '../../types';
 
 export const tasksApi = {
   // Get all tasks for a project
-  getTasks: (projectId: string, templateType = 'scrum') => {
-    return projectsApiClient.get<Task[]>(`/projects/${projectId}/tasks?templateType=${templateType}`);
+  getTasks: (projectId: string) => {
+    return apiClient.get<Task[]>(`/projects/${projectId}/tasks`);
   },
 
   // Get task by ID
-  getTask: (projectId: string, taskId: string, templateType = 'scrum') => {
-    return projectsApiClient.get<Task>(`/projects/${projectId}/tasks/${taskId}?templateType=${templateType}`);
+  getTask: (id: string) => {
+    return apiClient.get<Task>(`/tasks/${id}`);
   },
 
   // Create new task
-  createTask: (projectId: string, data: Omit<Task, 'id'>, templateType = 'scrum') => {
-    return projectsApiClient.post<Task>(`/projects/${projectId}/tasks?templateType=${templateType}`, data);
+  createTask: (projectId: string, data: Omit<Task, 'id'>) => {
+    return apiClient.post<Task>(`/projects/${projectId}/tasks`, data);
   },
 
   // Update task
-  updateTask: (projectId: string, taskId: string, data: Partial<Task>, templateType = 'scrum') => {
-    return projectsApiClient.put<Task>(`/projects/${projectId}/tasks/${taskId}?templateType=${templateType}`, data);
+  updateTask: (id: string, data: Partial<Task>) => {
+    return apiClient.put<Task>(`/tasks/${id}`, data);
   },
 
   // Delete task
-  deleteTask: (projectId: string, taskId: string, templateType = 'scrum') => {
-    return projectsApiClient.delete(`/projects/${projectId}/tasks/${taskId}?templateType=${templateType}`);
+  deleteTask: (id: string) => {
+    return apiClient.delete(`/tasks/${id}`);
   },
 
   // Update task status
-  updateTaskStatus: (projectId: string, taskId: string, status: Task['status'], templateType = 'scrum') => {
-    return projectsApiClient.patch<Task>(
-      `/projects/${projectId}/tasks/${taskId}/status?templateType=${templateType}`,
-      { status }
-    );
+  updateTaskStatus: (id: string, status: Task['status']) => {
+    return apiClient.patch<Task>(`/tasks/${id}/status`, { status });
   },
 };

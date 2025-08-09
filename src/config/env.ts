@@ -29,9 +29,3 @@ export const debugLog = (...args: unknown[]) => {
     console.log('[DEBUG]', ...args);
   }
 };
-
-export const ENV1 = {
-  // ... existing config
-  PROJECTS_SERVICE_URL: 'http://localhost:8089/api',
-
-};

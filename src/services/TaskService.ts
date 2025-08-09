@@ -1,5 +1,5 @@
 import type { Task, TaskStatus } from '../types';
-import { tasksApi } from '../api/endpoints/tasks';
+import { ProjectService } from './ProjectService';
 
 /**
  * Service class for managing tasks
@@ -8,114 +8,102 @@ export class TaskService {
   /**
    * Get all tasks for a project
    */
-  static async getTasksByProjectId(projectId: string, templateType = 'scrum'): Promise<Task[]> {
-    try {
-      const response = await tasksApi.getTasks(projectId, templateType);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get tasks:', error);
-      return [];
-    }
+  static getTasksByProjectId(projectId: string): Task[] {
+    const project = ProjectService.getProjectById(projectId);
+    return project?.tasks || [];
   }
 
   /**
    * Get task by ID
    */
-  static async getTaskById(projectId: string, taskId: string, templateType = 'scrum'): Promise<Task | null> {
-    try {
-      const response = await tasksApi.getTask(projectId, taskId, templateType);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get task:', error);
-      return null;
-    }
+  static getTaskById(projectId: string, taskId: string): Task | undefined {
+    const tasks = this.getTasksByProjectId(projectId);
+    return tasks.find(task => task.id === taskId);
   }
 
   /**
    * Create a new task
    */
-  static async createTask(projectId: string, taskData: Omit<Task, 'id'>, templateType = 'scrum'): Promise<Task | null> {
-    try {
-      const response = await tasksApi.createTask(projectId, taskData, templateType);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to create task:', error);
-      return null;
-    }
+  static createTask(projectId: string, taskData: Omit<Task, 'id' | 'comments'>): Task | null {
+    const project = ProjectService.getProjectById(projectId);
+    if (!project) return null;
+
+    const newTask: Task = {
+      ...taskData,
+      id: `${project.key}-${project.tasks.length + 1}`,
+      comments: [],
+    };
+
+    project.tasks.push(newTask);
+    return newTask;
   }
 
   /**
    * Update an existing task
    */
-  static async updateTask(projectId: string, taskId: string, updates: Partial<Task>, templateType = 'scrum'): Promise<Task | null> {
-    try {
-      const response = await tasksApi.updateTask(projectId, taskId, updates, templateType);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to update task:', error);
-      return null;
-    }
+  static updateTask(projectId: string, taskId: string, updates: Partial<Task>): Task | null {
+    const project = ProjectService.getProjectById(projectId);
+    if (!project) return null;
+
+    const taskIndex = project.tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return null;
+
+    project.tasks[taskIndex] = { ...project.tasks[taskIndex], ...updates };
+    return project.tasks[taskIndex];
   }
 
   /**
    * Delete a task
    */
-  static async deleteTask(projectId: string, taskId: string, templateType = 'scrum'): Promise<boolean> {
-    try {
-      await tasksApi.deleteTask(projectId, taskId, templateType);
-      return true;
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-      return false;
-    }
+  static deleteTask(projectId: string, taskId: string): boolean {
+    const project = ProjectService.getProjectById(projectId);
+    if (!project) return false;
+
+    const initialLength = project.tasks.length;
+    project.tasks = project.tasks.filter(t => t.id !== taskId);
+    return project.tasks.length < initialLength;
   }
 
   /**
    * Update task status
    */
-  static async updateTaskStatus(projectId: string, taskId: string, newStatus: TaskStatus, templateType = 'scrum'): Promise<Task | null> {
-    try {
-      const response = await tasksApi.updateTaskStatus(projectId, taskId, newStatus, templateType);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to update task status:', error);
-      return null;
-    }
+  static updateTaskStatus(projectId: string, taskId: string, newStatus: TaskStatus): Task | null {
+    return this.updateTask(projectId, taskId, { status: newStatus });
   }
 
   /**
    * Get tasks by status
    */
-  static async getTasksByStatus(projectId: string, status: TaskStatus, templateType = 'scrum'): Promise<Task[]> {
-    const tasks = await this.getTasksByProjectId(projectId, templateType);
+  static getTasksByStatus(projectId: string, status: TaskStatus): Task[] {
+    const tasks = this.getTasksByProjectId(projectId);
     return tasks.filter(task => task.status === status);
   }
 
   /**
    * Search tasks
    */
-  static async searchTasks(projectId: string, query: string, templateType = 'scrum'): Promise<Task[]> {
-    const tasks = await this.getTasksByProjectId(projectId, templateType);
+  static searchTasks(projectId: string, query: string): Task[] {
+    const tasks = this.getTasksByProjectId(projectId);
     const lowercaseQuery = query.toLowerCase();
-
-    return tasks.filter(task =>
+    
+    return tasks.filter(task => 
       task.title.toLowerCase().includes(lowercaseQuery) ||
       task.description?.toLowerCase().includes(lowercaseQuery) ||
       task.assignee.toLowerCase().includes(lowercaseQuery) ||
-      task.labels.some((label: string) => label.toLowerCase().includes(lowercaseQuery))
+      task.labels.some(label => label.toLowerCase().includes(lowercaseQuery))
     );
   }
 
   /**
    * Filter tasks
    */
-  static async filterTasks(projectId: string, filters: {
+  static filterTasks(projectId: string, filters: {
     assignee?: string[];
     priority?: string[];
     type?: string[];
     status?: string[];
-  }, templateType = 'scrum'): Promise<Task[]> {
-    let tasks = await this.getTasksByProjectId(projectId, templateType);
+  }): Task[] {
+    let tasks = this.getTasksByProjectId(projectId);
 
     if (filters.assignee?.length) {
       tasks = tasks.filter(task => filters.assignee!.includes(task.assignee));
