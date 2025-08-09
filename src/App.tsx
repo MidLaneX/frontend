@@ -6,6 +6,7 @@ import WelcomePage from "@/pages/WelcomePage";
 import Dashboard from "@/pages/Dashboard";
 import Project from "@/pages/Project";
 import LandingPage from "@/pages/LandingPage";
+import AccountSettings from "@/pages/AccountSettings";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { theme } from "@/config/theme";
@@ -74,6 +75,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Project />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/account/settings" 
+            element={
+              <ProtectedRoute>
+                <AccountSettings />
               </ProtectedRoute>
             } 
           />
