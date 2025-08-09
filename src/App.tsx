@@ -6,7 +6,6 @@ import WelcomePage from "@/pages/WelcomePage";
 import Dashboard from "@/pages/Dashboard";
 import Project from "@/pages/Project";
 import LandingPage from "@/pages/LandingPage";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { theme } from "@/config/theme";
 import "./App.css";
@@ -30,16 +29,16 @@ function AppContent() {
   }
 
   // If not authenticated, show only landing page
-  if (!isAuthenticated) {
-    return (
-      <Routes>
-        <Route path="/landing" element={<LandingPage />} />
-        <Route path="*" element={<Navigate to="/landing" replace />} />
-      </Routes>
-    );
-  }
+  // if (!isAuthenticated) {
+  //   return (
+  //     <Routes>
+  //       <Route path="/landing" element={<LandingPage />} />
+  //       <Route path="*" element={<Navigate to="/landing" replace />} />
+  //     </Routes>
+  //   );
+  // }
 
-  // If authenticated, show main app layout
+  // Authenticated layout – now WITHOUT ProtectedRoute
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
       <Navbar />
@@ -48,10 +47,10 @@ function AppContent() {
         component="main"
         sx={{
           position: "fixed",
-          top: "68px", // Start below navbar
-          left: "280px", // Start after sidebar
-          width: "calc(100vw - 280px)", // Full remaining width
-          height: "calc(100vh - 68px)", // Full remaining height
+          top: "68px", // below navbar
+          left: "280px", // after sidebar
+          width: "calc(100vw - 280px)",
+          height: "calc(100vh - 68px)",
           bgcolor: "background.default",
           overflow: "auto",
           padding: 0,
@@ -61,22 +60,10 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/welcome" element={<WelcomePage />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/projects/:projectId" 
-            element={
-              <ProtectedRoute>
-                <Project />
-              </ProtectedRoute>
-            } 
-          />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/projects/:projectId/:templateType" element={<Project />} />
+          <Route path="/projects/:projectId/:templateType/:featureName?" element={<Project />} />
+
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Box>
@@ -97,4 +84,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
