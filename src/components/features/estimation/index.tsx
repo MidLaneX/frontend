@@ -1,256 +1,474 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
   Paper,
+  Grid,
   Card,
-  Button,
+  CardContent,
+  CircularProgress,
+  Alert,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Avatar
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Stack,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts';
+import {
+  Assignment as TaskIcon,
+  BugReport as BugIcon,
+  AutoStories as StoryIcon,
+  EmojiEvents as EpicIcon,
+  TrendingUp as TrendingUpIcon,
+} from '@mui/icons-material';
+import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
+import { TaskService } from '@/services/TaskService';
 
 interface EstimationProps {
-  projectId: string;
-  projectName: string;
+  projectId: number;
+  projectName?: string;
+  templateType: string;
 }
 
-const Estimation: React.FC<EstimationProps> = () => {
-  const [selectedCard, setSelectedCard] = useState<number | null>(null);
+const COLORS = {
+  status: ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'],
+  priority: ['#ff4444', '#ff8800', '#ffcc00', '#88cc00', '#44cc44'],
+  type: ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c'],
+};
 
-  // Fibonacci sequence for planning poker
-  const fibonacciCards = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
-  
-  const stories = [
-    {
-      id: 1,
-      title: 'User Authentication System',
-      description: 'Implement login, logout, and session management',
-      complexity: 'Medium',
-      estimatedPoints: 8,
-      consensus: true,
-      votes: [8, 8, 5, 8, 8]
-    },
-    {
-      id: 2,
-      title: 'Dashboard Analytics',
-      description: 'Create charts and metrics for project overview',
-      complexity: 'High',
-      estimatedPoints: null,
-      consensus: false,
-      votes: [13, 21, 8, 13, 5]
-    },
-    {
-      id: 3,
-      title: 'Profile Settings Page',
-      description: 'Allow users to update their profile information',
-      complexity: 'Low',
-      estimatedPoints: 5,
-      consensus: true,
-      votes: [5, 5, 3, 5, 5]
-    },
-    {
-      id: 4,
-      title: 'Email Notifications',
-      description: 'Send automated emails for various events',
-      complexity: 'Medium',
-      estimatedPoints: null,
-      consensus: false,
-      votes: [8, 13, 5, 8, 21]
-    }
-  ];
+const STATUS_COLORS: Record<TaskStatus, string> = {
+  'Backlog': '#8884d8',
+  'Todo': '#82ca9d',
+  'In Progress': '#ffc658',
+  'Review': '#ff7c7c',
+  'Done': '#8dd1e1',
+};
 
-  const teamMembers = [
-    { name: 'John Doe', avatar: 'JD' },
-    { name: 'Jane Smith', avatar: 'JS' },
-    { name: 'Mike Johnson', avatar: 'MJ' },
-    { name: 'Sarah Wilson', avatar: 'SW' },
-    { name: 'Alex Brown', avatar: 'AB' }
-  ];
+const PRIORITY_COLORS: Record<TaskPriority, string> = {
+  'Highest': '#ff4444',
+  'High': '#ff8800',
+  'Medium': '#ffcc00',
+  'Low': '#88cc00',
+  'Lowest': '#44cc44',
+};
 
-  const handleCardClick = (value: number) => {
-    setSelectedCard(value);
-  };
+const TYPE_ICONS: Record<TaskType, React.ReactNode> = {
+  'Task': <TaskIcon />,
+  'Bug': <BugIcon />,
+  'Story': <StoryIcon />,
+  'Epic': <EpicIcon />,
+};
 
-  const getComplexityColor = (complexity: string) => {
-    switch (complexity) {
-      case 'Low': return 'success';
-      case 'Medium': return 'warning';
-      case 'High': return 'error';
-      default: return 'default';
+const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templateType }) => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTasks = async () => {
+    setLoading(true);
+    try {
+      const data = await TaskService.getTasksByProjectId(projectId, templateType);
+      setTasks(data);
+    } catch {
+      setError('Failed to load tasks.');
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchTasks();
+  }, [projectId, templateType]);
+
+  // Calculate status distribution
+  const statusData = React.useMemo(() => {
+    const statusCount: Record<TaskStatus, number> = {
+      'Backlog': 0,
+      'Todo': 0,
+      'In Progress': 0,
+      'Review': 0,
+      'Done': 0,
+    };
+
+    tasks.forEach(task => {
+      statusCount[task.status]++;
+    });
+
+    return Object.entries(statusCount)
+      .filter(([_, count]) => count > 0)
+      .map(([status, count]) => ({
+        name: status,
+        value: count,
+        fill: STATUS_COLORS[status as TaskStatus],
+      }));
+  }, [tasks]);
+
+  // Calculate priority distribution
+  const priorityData = React.useMemo(() => {
+    const priorityCount: Record<TaskPriority, number> = {
+      'Highest': 0,
+      'High': 0,
+      'Medium': 0,
+      'Low': 0,
+      'Lowest': 0,
+    };
+
+    tasks.forEach(task => {
+      priorityCount[task.priority]++;
+    });
+
+    return Object.entries(priorityCount)
+      .filter(([_, count]) => count > 0)
+      .map(([priority, count]) => ({
+        name: priority,
+        value: count,
+        fill: PRIORITY_COLORS[priority as TaskPriority],
+      }));
+  }, [tasks]);
+
+  // Calculate type distribution
+  const typeData = React.useMemo(() => {
+    const typeCount: Record<TaskType, number> = {
+      'Story': 0,
+      'Bug': 0,
+      'Task': 0,
+      'Epic': 0,
+    };
+
+    tasks.forEach(task => {
+      typeCount[task.type]++;
+    });
+
+    return Object.entries(typeCount)
+      .filter(([_, count]) => count > 0)
+      .map(([type, count], index) => ({
+        name: type,
+        value: count,
+        fill: COLORS.type[index % COLORS.type.length],
+      }));
+  }, [tasks]);
+
+  // Calculate story points by status
+  const storyPointsData = React.useMemo(() => {
+    const pointsByStatus: Record<TaskStatus, number> = {
+      'Backlog': 0,
+      'Todo': 0,
+      'In Progress': 0,
+      'Review': 0,
+      'Done': 0,
+    };
+
+    tasks.forEach(task => {
+      pointsByStatus[task.status] += task.storyPoints || 0;
+    });
+
+    return Object.entries(pointsByStatus)
+      .filter(([_, points]) => points > 0)
+      .map(([status, points]) => ({
+        status,
+        points,
+        fill: STATUS_COLORS[status as TaskStatus],
+      }));
+  }, [tasks]);
+
+  // Recent activities (last 5 tasks)
+  const recentActivities = React.useMemo(() => {
+    return tasks
+      .slice()
+      .sort((a, b) => new Date(b.dueDate || '').getTime() - new Date(a.dueDate || '').getTime())
+      .slice(0, 5);
+  }, [tasks]);
+
+  // Summary statistics
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(task => task.status === 'Done').length;
+  const totalStoryPoints = tasks.reduce((sum, task) => sum + (task.storyPoints || 0), 0);
+  const completedStoryPoints = tasks
+    .filter(task => task.status === 'Done')
+    .reduce((sum, task) => sum + (task.storyPoints || 0), 0);
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Planning Poker Estimation
+        Project Analytics - {projectName}
       </Typography>
 
-      {/* Current Story Being Estimated */}
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Current Story: Dashboard Analytics
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-          Create charts and metrics for project overview
-        </Typography>
-        <Chip label="High Complexity" color="error" />
-      </Paper>
-
-      {/* Planning Poker Cards */}
-      <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Select Your Estimate
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
-          {fibonacciCards.map((value) => (
-            <Card 
-              key={value}
-              sx={{ 
-                width: 60,
-                height: 80,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                border: selectedCard === value ? '2px solid' : '1px solid',
-                borderColor: selectedCard === value ? 'primary.main' : 'divider',
-                backgroundColor: selectedCard === value ? 'primary.light' : 'background.paper',
-                '&:hover': {
-                  backgroundColor: 'action.hover'
-                }
-              }}
-              onClick={() => handleCardClick(value)}
-            >
-              <Typography variant="h6" color={selectedCard === value ? 'white' : 'text.primary'}>
-                {value}
+      {/* Summary Cards */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Total Tasks
               </Typography>
-            </Card>
-          ))}
-          <Card 
-            sx={{ 
-              width: 60,
-              height: 80,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              border: selectedCard === -1 ? '2px solid' : '1px solid',
-              borderColor: selectedCard === -1 ? 'primary.main' : 'divider',
-              backgroundColor: selectedCard === -1 ? 'primary.light' : 'background.paper',
-              '&:hover': {
-                backgroundColor: 'action.hover'
-              }
-            }}
-            onClick={() => handleCardClick(-1)}
-          >
-            <HelpOutlineIcon color={selectedCard === -1 ? 'inherit' : 'action'} />
+              <Typography variant="h4">
+                {totalTasks}
+              </Typography>
+            </CardContent>
           </Card>
-        </Box>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Completed Tasks
+              </Typography>
+              <Typography variant="h4" color="success.main">
+                {completedTasks}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Story Points
+              </Typography>
+              <Typography variant="h4">
+                {completedStoryPoints}/{totalStoryPoints}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Completion Rate
+              </Typography>
+              <Typography variant="h4" color="primary.main">
+                {completionRate}%
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="contained">Submit Vote</Button>
-          <Button variant="outlined">Reveal Cards</Button>
-          <Button variant="outlined">Reset Votes</Button>
-        </Box>
-      </Paper>
+      {/* Charts Section */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {/* Status Overview Circle Chart */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Paper sx={{ p: 3, height: '400px' }}>
+            <Typography variant="h6" gutterBottom>
+              Status Overview
+            </Typography>
+            {statusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="80%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
+                No data available
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
 
-      {/* Team Voting Status */}
-      <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Team Voting Status
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          {teamMembers.map((member) => (
-            <Box key={member.name} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Avatar sx={{ width: 32, height: 32 }}>
-                {member.avatar}
-              </Avatar>
-              <Typography variant="body2">{member.name}</Typography>
-              <Chip 
-                label="Voted" 
-                size="small" 
-                color="success" 
-                variant="outlined"
-              />
-            </Box>
-          ))}
-        </Box>
-      </Paper>
+        {/* Priority Breakdown */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Paper sx={{ p: 3, height: '400px' }}>
+            <Typography variant="h6" gutterBottom>
+              Priority Breakdown
+            </Typography>
+            {priorityData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="80%">
+                <PieChart>
+                  <Pie
+                    data={priorityData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ${value}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {priorityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
+                No data available
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
 
-      {/* Stories Estimation Table */}
-      <Paper elevation={1} sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Stories Estimation
-        </Typography>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Story</TableCell>
-                <TableCell>Complexity</TableCell>
-                <TableCell>Estimates</TableCell>
-                <TableCell>Final Points</TableCell>
-                <TableCell>Consensus</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {stories.map((story) => (
-                <TableRow key={story.id}>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="subtitle2">{story.title}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {story.description}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={story.complexity} 
-                      size="small"
-                      color={getComplexityColor(story.complexity) as any}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {story.votes.map((vote, index) => (
-                        <Chip key={index} label={vote} size="small" variant="outlined" />
-                      ))}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    {story.estimatedPoints ? (
-                      <Typography variant="h6" color="primary">
-                        {story.estimatedPoints}
-                      </Typography>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        Pending
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {story.consensus ? (
-                      <CheckCircleIcon color="success" />
-                    ) : (
-                      <HelpOutlineIcon color="warning" />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+        {/* Work Types */}
+        <Grid item xs={12} md={6} lg={4}>
+          <Paper sx={{ p: 3, height: '400px' }}>
+            <Typography variant="h6" gutterBottom>
+              Types of Work
+            </Typography>
+            {typeData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="80%">
+                <PieChart>
+                  <Pie
+                    data={typeData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ${value}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {typeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
+                No data available
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Story Points by Status Bar Chart */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} lg={8}>
+          <Paper sx={{ p: 3, height: '400px' }}>
+            <Typography variant="h6" gutterBottom>
+              Story Points by Status
+            </Typography>
+            {storyPointsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="80%">
+                <BarChart data={storyPointsData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="status" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="points" name="Story Points">
+                    {storyPointsData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
+                No data available
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Recent Activities */}
+        <Grid item xs={12} lg={4}>
+          <Paper sx={{ p: 3, height: '400px' }}>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TrendingUpIcon />
+              Recent Activities
+            </Typography>
+            <List sx={{ maxHeight: '320px', overflow: 'auto' }}>
+              {recentActivities.length > 0 ? (
+                recentActivities.map((task, index) => (
+                  <React.Fragment key={task.id}>
+                    <ListItem alignItems="flex-start">
+                      <Box sx={{ mr: 2, mt: 0.5 }}>
+                        {TYPE_ICONS[task.type]}
+                      </Box>
+                      <ListItemText
+                        primary={
+                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                            <Typography variant="subtitle2" noWrap>
+                              {task.title}
+                            </Typography>
+                            <Chip 
+                              label={task.status} 
+                              size="small" 
+                              sx={{ 
+                                backgroundColor: STATUS_COLORS[task.status],
+                                color: 'white',
+                              }}
+                            />
+                          </Stack>
+                        }
+                        secondary={
+                          <Box>
+                            <Typography variant="caption" display="block">
+                              Assignee: {task.assignee}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              Priority: {task.priority} | Points: {task.storyPoints || 0}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    {index < recentActivities.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
+                  No recent activities
+                </Typography>
+              )}
+            </List>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
