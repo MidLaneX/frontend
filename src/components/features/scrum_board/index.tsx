@@ -18,13 +18,13 @@ import {
   Stack,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import { TaskService } from '@/services/TaskService';
 
 interface ScrumBoardProps {
-  projectId: string;
-  projectName: string;
+  projectId: number;
+  projectName?: string;
   templateType: string;
 }
 
@@ -70,7 +70,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     fetchTasks();
   }, [projectId, templateType]);
 
-  const handleDelete = async (taskId: string) => {
+  const handleDelete = async (taskId: number) => {
     await TaskService.deleteTask(projectId, taskId, templateType);
     fetchTasks();
   };
@@ -79,7 +79,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     if (!newTaskData.title) return;
 
     if (editTask) {
-      await TaskService.updateTask(projectId, String(editTask.id), newTaskData, templateType);
+      await TaskService.updateTask(projectId, Number(editTask.id), newTaskData, templateType);
     } else {
       await TaskService.createTask(projectId, newTaskData as Omit<Task, 'id'>, templateType);
     }
@@ -90,11 +90,11 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     fetchTasks();
   };
 
-  const handleDragEnd = async (result: any) => {
+  const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
 
     const { draggableId, destination, source } = result;
-    const taskId = draggableId;
+    const taskId = Number(draggableId);
     const newStatus = destination.droppableId as TaskStatus;
 
     if (source.droppableId !== newStatus) {
@@ -137,7 +137,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
           <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
             {statusColumns.map((status) => (
               <Droppable droppableId={status} key={status}>
-                {(provided: import('react-beautiful-dnd').DroppableProvided) => (
+                {(provided) => (
                   <Paper
                     ref={provided.innerRef}
                     {...provided.droppableProps}
@@ -180,7 +180,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
                                   </IconButton>
                                 </Tooltip>
                                 <Tooltip title="Delete">
-                                  <IconButton size="small" onClick={() => handleDelete(task.id)}>
+                                  <IconButton size="small" onClick={() => handleDelete(Number(task.id))}>
                                     <DeleteIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
