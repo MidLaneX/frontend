@@ -28,8 +28,8 @@ import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import { TaskService } from '@/services/TaskService';
 
 interface BacklogProps {
-  projectId: string;
-  projectName: string;
+  projectId: number;
+  projectName?: string;
   templateType: string;
 }
 
@@ -76,7 +76,7 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
     fetchTasks();
   }, [projectId, templateType]);
 
-  const handleDelete = async (taskId: string) => {
+  const handleDelete = async (taskId: number) => {
     await TaskService.deleteTask(projectId, taskId, templateType);
     fetchTasks();
   };
@@ -85,7 +85,7 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
     if (!newTaskData.title) return;
 
     if (editTask) {
-      await TaskService.updateTask(projectId, editTask.id, newTaskData, templateType);
+      await TaskService.updateTask(projectId, Number(editTask.id), newTaskData, templateType);
     } else {
       await TaskService.createTask(projectId, newTaskData as Omit<Task, 'id'>, templateType);
     }
@@ -108,16 +108,16 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
     fetchTasks();
   };
 
-  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+  const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
     await TaskService.updateTaskStatus(projectId, taskId, newStatus, templateType);
     fetchTasks();
   };
 
   const filteredTasks = tasks.filter(
     (task) =>
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.assignee.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.reporter.toLowerCase().includes(searchQuery.toLowerCase())
+      task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.assignee?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.reporter?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -180,7 +180,7 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
                     select
                     size="small"
                     value={task.status}
-                    onChange={(e) => handleStatusChange(task.id, e.target.value as TaskStatus)}
+                    onChange={(e) => handleStatusChange(Number(task.id), e.target.value as TaskStatus)}
                   >
                     {statusOptions.map((status) => (
                       <MenuItem key={status} value={status}>
@@ -202,7 +202,7 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
-                      <IconButton onClick={() => handleDelete(task.id)}>
+                      <IconButton onClick={() => handleDelete(Number(task.id))}>
                         <DeleteIcon />
                       </IconButton>
                     </Tooltip>

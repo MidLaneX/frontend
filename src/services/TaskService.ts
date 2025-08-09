@@ -8,7 +8,7 @@ export class TaskService {
   /**
    * Get all tasks for a project
    */
-  static async getTasksByProjectId(projectId: string, templateType = 'scrum'): Promise<Task[]> {
+  static async getTasksByProjectId(projectId: number, templateType = 'scrum'): Promise<Task[]> {
     try {
       const response = await tasksApi.getTasks(projectId, templateType);
       return response.data;
@@ -21,7 +21,7 @@ export class TaskService {
   /**
    * Get task by ID
    */
-  static async getTaskById(projectId: string, taskId: string, templateType = 'scrum'): Promise<Task | null> {
+  static async getTaskById(projectId: number, taskId: number, templateType = 'scrum'): Promise<Task | null> {
     try {
       const response = await tasksApi.getTask(projectId, taskId, templateType);
       return response.data;
@@ -34,7 +34,7 @@ export class TaskService {
   /**
    * Create a new task
    */
-  static async createTask(projectId: string, taskData: Omit<Task, 'id'>, templateType = 'scrum'): Promise<Task | null> {
+  static async createTask(projectId: number, taskData: Omit<Task, 'id'>, templateType = 'scrum'): Promise<Task | null> {
     try {
       const response = await tasksApi.createTask(projectId, taskData, templateType);
       return response.data;
@@ -47,7 +47,7 @@ export class TaskService {
   /**
    * Update an existing task
    */
-  static async updateTask(projectId: string, taskId: string, updates: Partial<Task>, templateType = 'scrum'): Promise<Task | null> {
+  static async updateTask(projectId: number, taskId: number, updates: Partial<Task>, templateType = 'scrum'): Promise<Task | null> {
     try {
       const response = await tasksApi.updateTask(projectId, taskId, updates, templateType);
       return response.data;
@@ -60,7 +60,7 @@ export class TaskService {
   /**
    * Delete a task
    */
-  static async deleteTask(projectId: string, taskId: string, templateType = 'scrum'): Promise<boolean> {
+  static async deleteTask(projectId: number, taskId: number, templateType = 'scrum'): Promise<boolean> {
     try {
       await tasksApi.deleteTask(projectId, taskId, templateType);
       return true;
@@ -73,7 +73,7 @@ export class TaskService {
   /**
    * Update task status
    */
-  static async updateTaskStatus(projectId: string, taskId: string, newStatus: TaskStatus, templateType = 'scrum'): Promise<Task | null> {
+  static async updateTaskStatus(projectId: number, taskId: number, newStatus: TaskStatus, templateType = 'scrum'): Promise<Task | null> {
     try {
       const response = await tasksApi.updateTaskStatus(projectId, taskId, newStatus, templateType);
       return response.data;
@@ -86,7 +86,7 @@ export class TaskService {
   /**
    * Get tasks by status
    */
-  static async getTasksByStatus(projectId: string, status: TaskStatus, templateType = 'scrum'): Promise<Task[]> {
+  static async getTasksByStatus(projectId: number, status: TaskStatus, templateType = 'scrum'): Promise<Task[]> {
     const tasks = await this.getTasksByProjectId(projectId, templateType);
     return tasks.filter(task => task.status === status);
   }
@@ -94,7 +94,7 @@ export class TaskService {
   /**
    * Search tasks
    */
-  static async searchTasks(projectId: string, query: string, templateType = 'scrum'): Promise<Task[]> {
+  static async searchTasks(projectId: number, query: string, templateType = 'scrum'): Promise<Task[]> {
     const tasks = await this.getTasksByProjectId(projectId, templateType);
     const lowercaseQuery = query.toLowerCase();
 
@@ -109,7 +109,7 @@ export class TaskService {
   /**
    * Filter tasks
    */
-  static async filterTasks(projectId: string, filters: {
+  static async filterTasks(projectId: number, filters: {
     assignee?: string[];
     priority?: string[];
     type?: string[];

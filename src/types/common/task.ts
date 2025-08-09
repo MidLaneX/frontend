@@ -1,6 +1,6 @@
 // Core domain types - Tasks
 export interface Task {
-  id: string;
+  id: number;
   title: string;
   description?: string;
   assignee: string;
@@ -15,7 +15,7 @@ export interface Task {
 }
 
 export interface Comment {
-  id: string;
+  id: number;
   author: string;
   text: string;
   timestamp: string;

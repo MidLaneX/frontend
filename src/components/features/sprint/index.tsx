@@ -19,13 +19,13 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 
 interface SprintProps {
   projectId: string;
-  TempltType: string;
+  templateType: string;
 }
 
 const Sprint: React.FC<SprintProps> = () => {
   // Mock sprint data - replace with API call
   const currentSprint = {
-    name: 'Sprint 3',
+    name: 'Sprint 33',
     goal: 'Implement user authentication and dashboard features',
     startDate: '2024-02-01',
     endDate: '2024-02-14',

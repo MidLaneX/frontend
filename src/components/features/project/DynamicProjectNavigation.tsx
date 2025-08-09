@@ -50,7 +50,7 @@ const FeaturePlaceholder = ({ featureName }: { featureName?: string }) => (
   <Box sx={{ p: 3, textAlign: 'center' }}>
     <Paper sx={{ p: 4, maxWidth: 600, mx: 'auto' }}>
       <Typography variant="h5" gutterBottom>
-        {(featureName || 'Unknown').replace(/_/g, ' ').toUpperCase()} Feature
+        {(featureName || 'Unknown').replace(/_/g, ' ').toLowerCase()} Feature
       </Typography>
       <Typography variant="body2" color="text.secondary">
         This feature is under development or missing.
@@ -60,7 +60,7 @@ const FeaturePlaceholder = ({ featureName }: { featureName?: string }) => (
 );
 
 const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ project }) => {
-  const { featureName: paramFeatureName, projectId, templateType } = useParams<{
+  const { featureName: paramFeatureName, projectId: projectId, templateType: templateType } = useParams<{
     featureName?: string;
     projectId?: string;
     templateType?: string;
@@ -116,16 +116,17 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
 
     console.log('🚀 Loading feature:', {
       activeFeature,
-      importPath: `../${activeFeature.path}/index`,
-      projectId: project.id,
-      projectName: project.name
+      importPath: `../${activeFeature.path}/index.tsx`,
+      projectId: parseInt(project.id),
+      projectName: project.name,
+      templateType: project.templateType,
     });
 
     // IMPORTANT: Use correct relative path for dynamic import
     // From: src/components/features/project/ 
     // To:   src/components/features/backlog/index, src/components/features/sprint/index, etc.
     const FeatureComponent = lazy(() =>
-      import(`../${activeFeature.path}/index`).catch((error) => {
+      import(`../${activeFeature.path}/index.tsx`).catch((error) => {
         console.error(`❌ Failed to load component for ${activeFeature.path}:`, error);
         return {
           default: () => <FeaturePlaceholder featureName={activeFeature.path} />,
