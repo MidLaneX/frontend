@@ -1,38 +1,20 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
+import {
+  Box,
+  Alert,
+  Button,
+  CircularProgress,
+} from "@mui/material";
 
-import TaskDetailModal from "../task/TaskDetailModal";
-import CreateIssueModal from "../CreateIssueModal";
-import ProjectNavigation from "./ProjectNavigation";
-import { projects } from "@/data/projects";
-import type { Task } from "@/types";
+import DynamicProjectNavigation from "./DynamicProjectNavigation";
+import { useProject } from "@/hooks";
 
 // Constants for consistent styling
 const STYLES = {
   container: {
     minHeight: "100vh",
     backgroundColor: "#f5f5f5",
-  },
-  header: {
-    backgroundColor: "white",
-    borderBottom: "1px solid #e0e0e0",
-    p: 3,
-  },
-  headerContent: {
-    display: "flex",
-    alignItems: "center",
-    gap: 2,
-    mb: 2,
-  },
-  projectTitle: {
-    fontWeight: 600,
-    color: "#172b4d",
-  },
-  projectDescription: {
-    color: "#5e6c84",
-    lineHeight: 1.5,
   },
   notFoundContainer: {
     display: "flex",
@@ -45,101 +27,61 @@ const STYLES = {
 /**
  * ProjectPage Component
  *
- * A comprehensive project management page that displays project details,
- * navigation tabs (Summary, Timeline, Backlog, Board), and handles task management.
+ * A comprehensive project management page that displays project details
+ * and dynamic navigation based on backend-provided features.
  *
  * Features:
- * - Project header with title and description
- * - Horizontal navigation tabs similar to Jira
- * - Task creation and editing modals
- * - Drag and drop functionality
- * - Real-time task updates
+ * - Dynamic project loading with backend features  
+ * - Backend-driven navigation tabs
+ * - Dynamic component loading
+ * - Scalable for any template type
  */
 const ProjectPage: React.FC = () => {
-  // Hooks
+  // Get project ID from URL parameters
   const { projectId } = useParams<{ projectId: string }>();
+  
+  // Use the hook to fetch project with template-specific features from backend
+  const { 
+    project, 
+    loading, 
+    error, 
+    refetch 
+  } = useProject({ 
+    projectId: Number(projectId),
+    template: 'scrum' // Default template - could be made dynamic
+  });
 
-  // State management
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Derived state
-  const project = projects.find((p) => p.id === projectId);
-
-  // Effects
-  useEffect(() => {
-    if (project) {
-      setTasks(project.tasks || []);
-    }
-  }, [project]);
-
-  // Event handlers
-  /**
-   * Handles task selection and opens the task detail modal
-   */
-  const handleTaskClick = useCallback((task: Task) => {
-    setSelectedTask(task);
-    setIsTaskModalOpen(true);
-  }, []);
-
-  /**
-   * Opens the create task modal
-   */
-  const handleCreateTask = useCallback(() => {
-    setIsCreateModalOpen(true);
-  }, []);
-
-  /**
-   * Updates a specific task with partial updates
-   */
-  const handleUpdateTask = useCallback(
-    (taskId: string, updates: Partial<Task>) => {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === taskId ? { ...task, ...updates } : task
-        )
-      );
-    },
-    []
-  );
-
-  /**
-   * Creates a new task and adds it to the task list
-   */
-  const handleCreateIssue = useCallback(
-    (issue: Omit<Task, "id" | "comments">) => {
-      const newTask: Task = {
-        ...issue,
-        id: Date.now().toString(),
-        comments: [],
-      };
-      setTasks((prevTasks) => [...prevTasks, newTask]);
-      setIsCreateModalOpen(false);
-    },
-    []
-  );
-
-  /**
-   * Closes the task detail modal
-   */
-  const handleCloseTaskModal = useCallback(() => {
-    setIsTaskModalOpen(false);
-  }, []);
-
-  /**
-   * Closes the create task modal
-   */
-  const handleCloseCreateModal = useCallback(() => {
-    setIsCreateModalOpen(false);
-  }, []);
-
-  // Render guards
-  if (!project) {
+  // Loading state
+  if (loading) {
     return (
       <Box sx={STYLES.notFoundContainer}>
-        <Typography variant="h6">Project not found</Typography>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" action={
+          <Button color="inherit" size="small" onClick={refetch}>
+            Retry
+          </Button>
+        }>
+          {error}
+        </Alert>
+      </Box>
+    );
+  }
+
+  // Project not found
+  if (!project) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">
+          Project not found. Please check the project ID and try again.
+        </Alert>
       </Box>
     );
   }
@@ -147,25 +89,8 @@ const ProjectPage: React.FC = () => {
   // Main render
   return (
     <Box sx={STYLES.container}>
-      \{/* Project Navigation */}
-      <ProjectNavigation
-        project={project}
-        tasks={tasks}
-        onTaskClick={handleTaskClick}
-        onCreateTask={handleCreateTask}
-        onUpdateTask={handleUpdateTask}
-      />
-      {/* Modals */}
-      <TaskDetailModal
-        task={selectedTask}
-        open={isTaskModalOpen}
-        onClose={handleCloseTaskModal}
-        onUpdateTask={handleUpdateTask}
-      />
-      <CreateIssueModal
-        open={isCreateModalOpen}
-        onClose={handleCloseCreateModal}
-        onCreateIssue={handleCreateIssue}
+      {/* Dynamic Project Navigation with Backend Features */}
+      <DynamicProjectNavigation
         project={project}
       />
     </Box>

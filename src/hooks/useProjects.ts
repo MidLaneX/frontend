@@ -5,60 +5,96 @@ import { ProjectService } from '../services/ProjectService';
 /**
  * Hook for managing projects
  */
-export const useProjects = () => {
+export const useProjects = ({ userId = 5, templateType = 'Scrum' }: { userId?: number; templateType?: string } = {}) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        setLoading(true);
+        const allProjects = await ProjectService.getAllProjects(userId, templateType);
+        setProjects(allProjects);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load projects');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProjects();
+  }, [userId, templateType]);
+
+  const createProject = async (projectData: Omit<Project, 'id'>) => {
+    console.log('useProjects: createProject called with:', projectData);
     try {
-      const allProjects = ProjectService.getAllProjects();
-      setProjects(allProjects);
+      setLoading(true);
+      const newProject = await ProjectService.createProject(projectData);
+      console.log('useProjects: Project created successfully:', newProject);
+      setProjects(prev => [...prev, newProject]);
+      setError(null);
+      return newProject;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load projects');
+      console.error('useProjects: Project creation failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create project');
+      return null;
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const createProject = (projectData: Omit<Project, 'id' | 'tasks'>) => {
-    try {
-      const newProject = ProjectService.createProject(projectData);
-      setProjects(prev => [...prev, newProject]);
-      return newProject;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create project');
-      return null;
-    }
   };
 
-  const updateProject = (id: string, updates: Partial<Project>) => {
+  const updateProject = async (id: number, updates: Partial<Project>) => {
     try {
-      const updatedProject = ProjectService.updateProject(id, updates);
+      setLoading(true);
+      const updatedProject = await ProjectService.updateProject(id.toString(), updates);
       if (updatedProject) {
         setProjects(prev => 
           prev.map(p => p.id === id ? updatedProject : p)
         );
+        setError(null);
       }
       return updatedProject;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update project');
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const deleteProject = (id: string) => {
+  const deleteProject = async (id: number) => {
     try {
-      const success = ProjectService.deleteProject(id);
+      setLoading(true);
+      const success = await ProjectService.deleteProject(id.toString());
       if (success) {
         setProjects(prev => prev.filter(p => p.id !== id));
+        setError(null);
       }
       return success;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete project');
       return false;
+    } finally {
+      setLoading(false);
     }
   };
+
+  const refetch = async () => {
+    try {
+      setLoading(true);
+      const allProjects = await ProjectService.getAllProjects(userId, templateType);
+      setProjects(allProjects);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refetch projects');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+ 
 
   return {
     projects,
@@ -67,17 +103,6 @@ export const useProjects = () => {
     createProject,
     updateProject,
     deleteProject,
-    refetch: () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const allProjects = ProjectService.getAllProjects();
-        setProjects(allProjects);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load projects');
-      } finally {
-        setLoading(false);
-      }
-    }
+    refetch,
   };
 };

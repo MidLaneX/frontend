@@ -2,8 +2,10 @@ import type { Task } from './task';
 
 // Core domain types - Projects
 export interface Project {
-  id: string;
+  id: number;
   name: string;
+  templateType: string;
+  features: string[];
   key: string;
   description: string;
   timeline: ProjectTimeline;
