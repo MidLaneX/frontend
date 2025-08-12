@@ -112,7 +112,7 @@ export class TaskService {
   static async updateTaskSprint(
     projectId: number,
     taskId: number,
-    sprintId: number,
+    sprintId: number | null,
     templateType = 'scrum'
   ): Promise<Task | null> {
     try {

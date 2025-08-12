@@ -34,10 +34,13 @@ export const tasksApi = {
       { status }
     );
   },
-  //update tasks
-   updateTaskSprint: (projectId: number, taskId: number, sprintId: number, templateType = 'scrum') => {
-    return projectsApiClient.patch<Task>(
-      `/projects/${projectId}/tasks/${taskId}/${sprintId}?templateType=${templateType}`
+  //update tasks sprint assignment
+   updateTaskSprint: (projectId: number, taskId: number, sprintId: number | null, templateType = 'scrum') => {
+    // If sprintId is 0 or null, we're removing from sprint
+    const sprintIdParam = sprintId === 0 || sprintId === null ? 0 : sprintId;
+    return projectsApiClient.put<Task>(
+      `/projects/${projectId}/tasks/${taskId}/${sprintIdParam}?templateType=${templateType}`,
+      { sprintId: sprintIdParam }
     );
   },
 };
