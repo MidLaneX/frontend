@@ -147,3 +147,22 @@ The project follows a standard React application structure:
 
 Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/MidLaneX/frontend-app/issues).
 
+## 🔐 Authentication & Token Management
+
+This application implements automatic token refresh functionality for seamless user authentication:
+
+### Key Features:
+- **Automatic Token Refresh**: Access tokens are automatically refreshed 5 minutes before expiration
+- **Background Monitoring**: Continuous token status monitoring with periodic checks
+- **Retry Logic**: Failed API requests are automatically retried after token refresh
+- **Secure Storage**: Tokens stored securely in localStorage with proper cleanup
+- **Device Tracking**: Includes device information in refresh requests for security
+
+### Implementation:
+- **TokenManager**: Singleton class handling token storage, validation, and refresh logic
+- **API Interceptors**: Automatic token attachment and refresh on 401 responses
+- **React Hook**: `useTokenRefresh` for monitoring and background token management
+- **Seamless UX**: Users experience no interruptions from token expiration
+
+The system automatically handles JWT access tokens and refresh tokens, ensuring users stay authenticated throughout their session without manual intervention.
+
