@@ -3,6 +3,7 @@ export interface Task {
   id: number;
   title: string;
   description?: string;
+  sprintId: number;
   assignee: string;
   reporter: string;
   dueDate: string;

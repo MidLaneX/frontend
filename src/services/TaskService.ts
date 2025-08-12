@@ -83,6 +83,8 @@ export class TaskService {
     }
   }
 
+
+
   /**
    * Get tasks by status
    */
@@ -104,6 +106,22 @@ export class TaskService {
       task.assignee.toLowerCase().includes(lowercaseQuery) ||
       task.labels.some((label: string) => label.toLowerCase().includes(lowercaseQuery))
     );
+  }
+
+
+  static async updateTaskSprint(
+    projectId: number,
+    taskId: number,
+    sprintId: number,
+    templateType = 'scrum'
+  ): Promise<Task | null> {
+    try {
+      const response = await tasksApi.updateTaskSprint(projectId, taskId, sprintId, templateType);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to update sprint for task ${taskId}:`, error);
+      return null;
+    }
   }
 
   /**

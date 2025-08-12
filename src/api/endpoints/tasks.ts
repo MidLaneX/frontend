@@ -34,4 +34,10 @@ export const tasksApi = {
       { status }
     );
   },
+  //update tasks
+   updateTaskSprint: (projectId: number, taskId: number, sprintId: number, templateType = 'scrum') => {
+    return projectsApiClient.patch<Task>(
+      `/projects/${projectId}/tasks/${taskId}/${sprintId}?templateType=${templateType}`
+    );
+  },
 };
