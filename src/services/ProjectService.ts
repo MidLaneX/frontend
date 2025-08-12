@@ -1,150 +1,76 @@
-import type { Project} from '../types';
-import type { ProjectDTO } from '../types/dto';
-import { projectsApi } from '../api/endpoints/projects';
+import type { Project } from '../types';
+import { projects } from '../data/projects';
 
 /**
  * Service class for managing projects
  */
 export class ProjectService {
-  /**
-   * Get all projects for a user
-   */
-  static async getAllProjects(userId: number = 5, templateType: string = 'scrum'): Promise<Project[]> {
-    const response = await projectsApi.getProjects(userId, templateType);
-    console.log('ProjectService: getAllProjects response:', response.data);
-    // Convert ProjectDTO response to Project format for frontend compatibility
-    return response.data.map((projectDto: ProjectDTO) => ({
-      id: projectDto.id || Math.floor(Math.random() * 10000),
-      name: projectDto.name,
-      templateType: projectDto.templateType,
-      features: projectDto.features,
-      key: this.generateProjectKey(projectDto.name),
-      description: projectDto.name, // Use name as description for now
-      timeline: { 
-        start: new Date().toISOString().split('T')[0],
-        end: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 90 days from now
-      },
-      teamMembers: [], // Default empty array
-      type: 'Software' as const, // Default type
-      tasks: [] // Default empty tasks
-    }));
-  }
+  private static projects: Project[] = [...projects];
 
   /**
-   * Generate project key from project name
+   * Get all projects
    */
-  private static generateProjectKey(name: string): string {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase())
-      .join('')
-      .slice(0, 3);
+  static getAllProjects(): Project[] {
+    return this.projects;
   }
 
   /**
    * Get project by ID
    */
-  static async getProjectById(id: number , template: string): Promise<Project | null> {
-    try {
-      const response = await projectsApi.getProject(id, template);
-      console.log('ProjectService: getProjectById response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get project:', error);
-      return null;
-    }
+  static getProjectById(id: string): Project | undefined {
+    return this.projects.find(project => project.id === id);
   }
 
-  static async createProject(projectData: Omit<Project, 'id'>): Promise<Project> {
-    console.log('Creating project with data:', projectData);
-    
-    // Get userId from localStorage or use default
-    const userId = parseInt(localStorage.getItem('userId') || '5');
-    
-    const dto: ProjectDTO = {
-      userId: userId,
-      name: projectData.name,
-      templateType: 'Scrum', // Default template type
-      features: [] // Default empty features
+  /**
+   * Create a new project
+   */
+  static createProject(projectData: Omit<Project, 'id' | 'tasks'>): Project {
+    const newProject: Project = {
+      ...projectData,
+      id: Date.now().toString(),
+      tasks: [],
     };
     
-    console.log('Sending DTO to API:', dto);
-    console.log('API URL:', 'POST /projects?template=scrum');
-    
-    try {
-      const response = await projectsApi.createProject(dto, 'scrum');
-      console.log('API Response:', response.data);
-      
-      // Convert ProjectDTO response back to Project format
-      return {
-        id: response.data.id || Math.floor(Math.random() * 10000),
-        name: response.data.name,
-        templateType: response.data.templateType,
-        features: response.data.features,
-        key: this.generateProjectKey(response.data.name),
-        description: projectData.description || response.data.name,
-        timeline: projectData.timeline,
-        teamMembers: projectData.teamMembers,
-        type: projectData.type,
-        tasks: projectData.tasks
-      };
-    } catch (error) {
-      console.error('Project creation failed:', error);
-      throw error;
-    }
+    this.projects.push(newProject);
+    return newProject;
   }
 
   /**
    * Update an existing project
    */
-  static async updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
-    try {
-      // Convert Project updates to ProjectDTO format
-      const dto: Partial<ProjectDTO> = {
-        id: parseInt(id),
-        name: updates.name,
-        // Only include fields that exist in ProjectDTO
-      };
-      
-      const response = await projectsApi.updateProject(id, dto);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to update project:', error);
-      return null;
-    }
+  static updateProject(id: string, updates: Partial<Project>): Project | null {
+    const projectIndex = this.projects.findIndex(p => p.id === id);
+    if (projectIndex === -1) return null;
+
+    this.projects[projectIndex] = { ...this.projects[projectIndex], ...updates };
+    return this.projects[projectIndex];
   }
 
   /**
    * Delete a project
    */
-  static async deleteProject(id: string): Promise<boolean> {
-    try {
-      await projectsApi.deleteProject(id);
-      return true;
-    } catch (error) {
-      console.error('Failed to delete project:', error);
-      return false;
-    }
+  static deleteProject(id: string): boolean {
+    const initialLength = this.projects.length;
+    this.projects = this.projects.filter(p => p.id !== id);
+    return this.projects.length < initialLength;
   }
 
   /**
-   * Get projects by type (using frontend filtering since backend doesn't support this)
+   * Get projects by type
    */
-  static async getProjectsByType(type: Project['type'], userId: number = 3, role: string = 'MEMBER'): Promise<Project[]> {
-    const projects = await this.getAllProjects(userId, role);
-    return projects.filter(project => project.type === type);
+  static getProjectsByType(type: Project['type']): Project[] {
+    return this.projects.filter(project => project.type === type);
   }
 
   /**
    * Search projects by name or key
    */
-  static async searchProjects(query: string, userId: number = 3, role: string = 'MEMBER'): Promise<Project[]> {
-    const projects = await this.getAllProjects(userId, role);
+  static searchProjects(query: string): Project[] {
     const lowercaseQuery = query.toLowerCase();
-    return projects.filter(project => 
+    return this.projects.filter(project => 
       project.name.toLowerCase().includes(lowercaseQuery) ||
-      project.key?.toLowerCase().includes(lowercaseQuery) ||
-      project.description?.toLowerCase().includes(lowercaseQuery)
+      project.key.toLowerCase().includes(lowercaseQuery) ||
+      project.description.toLowerCase().includes(lowercaseQuery)
     );
   }
 }

@@ -1,5 +1,5 @@
 import type { Task, TaskStatus } from '../types';
-import { tasksApi } from '../api/endpoints/tasks';
+import { ProjectService } from './ProjectService';
 
 /**
  * Service class for managing tasks
@@ -104,13 +104,45 @@ export class TaskService {
   static async searchTasks(projectId: number, query: string, templateType = 'scrum'): Promise<Task[]> {
     const tasks = await this.getTasksByProjectId(projectId, templateType);
     const lowercaseQuery = query.toLowerCase();
-
-    return tasks.filter(task =>
+    
+    return tasks.filter(task => 
       task.title.toLowerCase().includes(lowercaseQuery) ||
       task.description?.toLowerCase().includes(lowercaseQuery) ||
       task.assignee.toLowerCase().includes(lowercaseQuery) ||
-      task.labels.some((label: string) => label.toLowerCase().includes(lowercaseQuery))
+      task.labels.some(label => label.toLowerCase().includes(lowercaseQuery))
     );
+  }
+
+
+  static async updateTaskSprint(
+    projectId: number,
+    taskId: number,
+    sprintId: number | null,
+    templateType = 'scrum'
+  ): Promise<Task | null> {
+    try {
+      const response = await tasksApi.updateTaskSprint(projectId, taskId, sprintId, templateType);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to update sprint for task ${taskId}:`, error);
+      return null;
+    }
+  }
+
+
+  static async updateTaskSprint(
+    projectId: number,
+    taskId: number,
+    sprintId: number | null,
+    templateType = 'scrum'
+  ): Promise<Task | null> {
+    try {
+      const response = await tasksApi.updateTaskSprint(projectId, taskId, sprintId, templateType);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to update sprint for task ${taskId}:`, error);
+      return null;
+    }
   }
 
 
@@ -137,8 +169,8 @@ export class TaskService {
     priority?: string[];
     type?: string[];
     status?: string[];
-  }, templateType = 'scrum'): Promise<Task[]> {
-    let tasks = await this.getTasksByProjectId(projectId, templateType);
+  }): Task[] {
+    let tasks = this.getTasksByProjectId(projectId);
 
     if (filters.assignee?.length) {
       tasks = tasks.filter(task => filters.assignee!.includes(task.assignee));

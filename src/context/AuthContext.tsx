@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { authApi } from '../api/endpoints/auth';
+import { authApi, type SocialLoginRequest } from '../api/endpoints/auth';
 
 export interface User {
   userId: number;
@@ -13,13 +13,14 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (userData: SignupData) => Promise<void>;
+  socialLogin: (data: SocialLoginRequest) => Promise<void>;
   logout: () => void;
 }
 
 export interface SignupData {
   email: string;
   password: string;
-  phone?: string; // Make phone optional with ?
+  phone?: string; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -128,6 +129,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const socialLogin = async (data: SocialLoginRequest): Promise<void> => {
+    try {
+      const response = await authApi.socialLogin(data);
+
+      console.log("Social login response:", response);
+      
+      // Backend sends: { token, userId, email }
+      const { token, userId, email: userEmail } = response;
+      
+      // Store token
+      localStorage.setItem('authToken', token);
+      
+      // Create user object from response
+      const newUser: User = {
+        userId,
+        email: userEmail,
+      };
+      
+      console.log("Social login user data:", newUser);
+      
+      // Update user state
+      setUser(newUser);
+    } catch (error: any) {
+      // Re-throw the error to preserve the original error structure
+      throw error;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('authToken');
     setUser(null);
@@ -139,6 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     signup,
+    socialLogin,
     logout,
   };
 
