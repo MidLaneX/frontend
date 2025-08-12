@@ -75,10 +75,15 @@ export class TaskService {
    */
   static async updateTaskStatus(projectId: number, taskId: number, newStatus: TaskStatus, templateType = 'scrum'): Promise<Task | null> {
     try {
+      console.log(`Updating task ${taskId} status to "${newStatus}" for project ${projectId}`);
       const response = await tasksApi.updateTaskStatus(projectId, taskId, newStatus, templateType);
+      console.log('Task status update response:', response);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update task status:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.message);
       return null;
     }
   }

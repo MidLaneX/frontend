@@ -28,7 +28,7 @@ export const tasksApi = {
   },
 
   // Update task status
-  updateTaskStatus: (projectId: number, taskId: number, status: Task['status'], templateType = 'scrum') => {
+  updateTaskStatus: (projectId: number, taskId: number, status: string, templateType = 'scrum') => {
     return projectsApiClient.patch<Task>(
       `/projects/${projectId}/tasks/${taskId}/status?templateType=${templateType}`,
       { status }

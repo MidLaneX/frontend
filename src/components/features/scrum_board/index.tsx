@@ -47,7 +47,7 @@ import {
   Star as StoryIcon,
   Timeline as SprintIcon,
 } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import type { SprintDTO } from '@/types/featurevise/sprint';
 import { TaskService } from '@/services/TaskService';
@@ -116,13 +116,19 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
 
   // Filter tasks to only show those assigned to the latest sprint
   const sprintTasks = useMemo(() => {
-    return tasks.filter(task => 
+    const filtered = tasks.filter(task => 
       task.sprintId && 
       task.sprintId > 0 && 
       latestSprint && 
       task.sprintId === latestSprint.id &&
       task.status !== 'Backlog' // Exclude backlog items from board
     );
+    
+    console.log('All tasks:', tasks.length);
+    console.log('Latest sprint:', latestSprint);
+    console.log('Sprint tasks:', filtered.length, filtered.map(t => ({ id: t.id, title: t.title, status: t.status, sprintId: t.sprintId })));
+    
+    return filtered;
   }, [tasks, latestSprint]);
 
   // Group tasks by epic (simplified - just group all non-epic tasks together)
@@ -154,7 +160,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     const nonEpicTasks = sprintTasks.filter(task => task.type !== 'Epic');
     if (nonEpicTasks.length > 0) {
       result.push({
-        id: 'stories-tasks',
+        id: -1, // Use a negative number as a virtual group id
         title: 'Stories & Tasks',
         type: 'Story',
         status: 'Todo',
@@ -204,20 +210,68 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
+    console.log('🔥 Drag end result:', result);
+    
+    if (!result.destination) {
+      console.log('❌ No destination - drag cancelled');
+      return;
+    }
 
     const { draggableId, destination, source } = result;
-    const taskId = Number(draggableId);
+    // Extract actual task ID from draggableId (remove 'task-' prefix)
+    const taskId = Number(draggableId.replace('task-', ''));
     const newStatus = destination.droppableId as TaskStatus;
+    const oldStatus = source.droppableId as TaskStatus;
 
-    if (source.droppableId !== newStatus) {
-      try {
-        await TaskService.updateTaskStatus(projectId, taskId, newStatus, templateType);
-        await fetchTasks(); // Refresh to show updated state
-      } catch (error) {
-        console.error('Failed to update task status:', error);
-        setError('Failed to update task status');
+    // Check if status actually changed
+    if (oldStatus === newStatus) {
+      console.log('ℹ️ Same status - no update needed');
+      return;
+    }
+
+    console.log(`🔄 Moving task ${taskId} from "${oldStatus}" to "${newStatus}"`);
+
+    // Find the task to verify it exists
+    const task = tasks.find(t => Number(t.id) === taskId);
+    if (!task) {
+      console.error('❌ Task not found:', taskId);
+      setError(`Task ${taskId} not found`);
+      return;
+    }
+
+    console.log('✅ Found task:', { id: task.id, title: task.title, currentStatus: task.status });
+
+    // Optimistic update - immediately update the UI
+    const originalTasks = [...tasks];
+    setTasks(prevTasks => 
+      prevTasks.map(t => 
+        Number(t.id) === taskId 
+          ? { ...t, status: newStatus }
+          : t
+      )
+    );
+
+    try {
+      console.log(`🚀 Calling TaskService.updateTaskStatus(${projectId}, ${taskId}, "${newStatus}", "${templateType}")`);
+      
+      const updatedTask = await TaskService.updateTaskStatus(projectId, taskId, newStatus, templateType);
+      
+      if (!updatedTask) {
+        throw new Error('No response from server');
       }
+      
+      console.log('✅ Task status updated successfully:', updatedTask);
+      
+      // Clear any existing errors
+      setError(null);
+      
+    } catch (error) {
+      console.error('❌ Failed to update task status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Failed to update task status: ${errorMessage}`);
+      
+      // Revert optimistic update on error
+      setTasks(originalTasks);
     }
   };
 
@@ -247,6 +301,26 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     }
   };
 
+  const getStatusColor = (status: TaskStatus) => {
+    switch (status) {
+      case 'Todo': return { bg: 'rgba(102, 102, 102, 0.1)', border: '#666666', text: '#333333' };
+      case 'In Progress': return { bg: 'rgba(255, 152, 0, 0.1)', border: '#ff9800', text: '#e65100' };
+      case 'Review': return { bg: 'rgba(156, 39, 176, 0.1)', border: '#9c27b0', text: '#7b1fa2' };
+      case 'Done': return { bg: 'rgba(76, 175, 80, 0.1)', border: '#4caf50', text: '#2e7d32' };
+      default: return { bg: 'rgba(102, 102, 102, 0.1)', border: '#666666', text: '#333333' };
+    }
+  };
+
+  const getStatusIcon = (status: TaskStatus) => {
+    switch (status) {
+      case 'Todo': return '📋';
+      case 'In Progress': return '🔄';
+      case 'Review': return '👀';
+      case 'Done': return '✅';
+      default: return '📋';
+    }
+  };
+
   const getPriorityColor = (priority: TaskPriority) => {
     switch (priority) {
       case 'Highest': return '#d32f2f';
@@ -259,80 +333,29 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
   };
 
   const renderTaskCard = (task: Task) => (
-    <Fade in timeout={300}>
-      <Card
-        elevation={2}
-        sx={{
-          mb: 2,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          cursor: 'grab',
-          transition: 'all 0.2s ease-in-out',
-          '&:hover': {
-            transform: 'translateY(-1px)',
-            boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-            borderColor: 'primary.main',
-          },
-          '&:active': {
-            cursor: 'grabbing',
-            transform: 'rotate(3deg)',
-          },
-        }}
-      >
-        <CardContent sx={{ p: 2, pb: '16px !important' }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
-            {getTaskIcon(task.type)}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  fontWeight: 600,
-                  color: 'text.primary',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                }}
-              >
-                {task.title}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <IconButton
-                size="small"
-                sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditTask(task);
-                  setNewTaskData(task);
-                  setOpenDialog(true);
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                color="error"
-                sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(Number(task.id));
-                }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          </Box>
-
-          {task.description && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
+    <Card
+      elevation={2}
+      sx={{
+        mb: 2,
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-1px)',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+          borderColor: 'primary.main',
+        },
+      }}
+    >
+      <CardContent sx={{ p: 2, pb: '16px !important' }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+          {getTaskIcon(task.type)}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="subtitle2"
               sx={{
-                mb: 1.5,
-                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: 'text.primary',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 display: '-webkit-box',
@@ -340,64 +363,107 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
                 WebkitBoxOrient: 'vertical',
               }}
             >
-              {task.description}
+              {task.title}
             </Typography>
-          )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <IconButton
+              size="small"
+              sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditTask(task);
+                setNewTaskData(task);
+                setOpenDialog(true);
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(Number(task.id));
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1, minWidth: 0 }}>
+        {task.description && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              mb: 1.5,
+              fontSize: '0.8rem',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {task.description}
+          </Typography>
+        )}
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1, minWidth: 0 }}>
+            <Chip
+              label={task.priority}
+              size="small"
+              icon={<FlagIcon />}
+              sx={{
+                height: 20,
+                fontSize: '0.7rem',
+                backgroundColor: `${getPriorityColor(task.priority)}20`,
+                color: getPriorityColor(task.priority),
+                '& .MuiChip-icon': { fontSize: '0.8rem' },
+              }}
+            />
+            {task.storyPoints && task.storyPoints > 0 && (
               <Chip
-                label={task.priority}
+                label={`${task.storyPoints} SP`}
                 size="small"
-                icon={<FlagIcon />}
+                variant="outlined"
                 sx={{
                   height: 20,
                   fontSize: '0.7rem',
-                  backgroundColor: `${getPriorityColor(task.priority)}20`,
-                  color: getPriorityColor(task.priority),
-                  '& .MuiChip-icon': { fontSize: '0.8rem' },
                 }}
               />
-              {task.storyPoints && task.storyPoints > 0 && (
-                <Chip
-                  label={`${task.storyPoints} SP`}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    height: 20,
-                    fontSize: '0.7rem',
-                  }}
-                />
-              )}
-            </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
-              {task.assignee && (
-                <Tooltip title={`Assigned to: ${task.assignee}`}>
-                  <Avatar
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      fontSize: '0.7rem',
-                      backgroundColor: 'primary.main',
-                    }}
-                  >
-                    {task.assignee.charAt(0).toUpperCase()}
-                  </Avatar>
-                </Tooltip>
-              )}
-              {task.comments && task.comments.length > 0 && (
-                <Tooltip title={`${task.comments.length} comments`}>
-                  <Badge badgeContent={task.comments.length} color="secondary" max={9}>
-                    <CommentIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                  </Badge>
-                </Tooltip>
-              )}
-            </Box>
+            )}
           </Box>
-        </CardContent>
-      </Card>
-    </Fade>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
+            {task.assignee && (
+              <Tooltip title={`Assigned to: ${task.assignee}`}>
+                <Avatar
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    fontSize: '0.7rem',
+                    backgroundColor: 'primary.main',
+                  }}
+                >
+                  {task.assignee.charAt(0).toUpperCase()}
+                </Avatar>
+              </Tooltip>
+            )}
+            {task.comments && task.comments.length > 0 && (
+              <Tooltip title={`${task.comments.length} comments`}>
+                <Badge badgeContent={task.comments.length} color="secondary" max={9}>
+                  <CommentIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                </Badge>
+              </Tooltip>
+            )}
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
   );
 
   return (
@@ -417,13 +483,45 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <SprintIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+          <Avatar
+            sx={{
+              bgcolor: 'primary.main',
+              width: 48,
+              height: 48,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            }}
+          >
+            <SprintIcon sx={{ fontSize: 24 }} />
+          </Avatar>
           <Box>
-            <Typography variant="h5" fontWeight={700} color="text.primary">
+            <Typography variant="h4" fontWeight={700} color="text.primary">
               {latestSprint?.name || 'Active Sprint'}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {projectName} • {sprintTasks.length} issues
+            <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip
+                label={`${sprintTasks.length} issues`}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.75rem', height: 20 }}
+              />
+              {latestSprint && (
+                <Chip
+                  label={`${new Date(latestSprint.startDate).toLocaleDateString() } - ${new Date(latestSprint.endDate).toLocaleDateString()}`}
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                  sx={{ fontSize: '0.75rem', height: 20 }}
+                />
+              )}
+              {latestSprint?.goal && (
+                <Chip
+                  label={latestSprint.goal}
+                  size="small"
+                  variant="filled"
+                  color="primary"
+                  sx={{ fontSize: '0.75rem', height: 20, maxWidth: 200 }}
+                />
+              )}
             </Typography>
           </Box>
         </Box>
@@ -569,7 +667,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
               <Alert severity="error">{error}</Alert>
             </Box>
           ) : (
-            <DragDropContext onDragEnd={handleDragEnd}>
+            <DragDropContext onDragEnd={handleDragEnd} key="scrum-board-dnd">
               <Box
                 sx={{
                   flex: 1,
@@ -582,7 +680,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
               >
                 {statusColumns.map((status) => (
                   <Droppable droppableId={status} key={status}>
-                    {(provided, snapshot) => (
+                    {(provided: any, snapshot: any) => (
                       <Paper
                         ref={provided.innerRef}
                         {...provided.droppableProps}
@@ -659,8 +757,8 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
                           {sprintTasks
                             .filter((task) => task.status === status)
                             .map((task, index) => (
-                              <Draggable key={String(task.id)} draggableId={String(task.id)} index={index}>
-                                {(dragProvided, dragSnapshot) => (
+                              <Draggable key={`task-${task.id}`} draggableId={`task-${task.id}`} index={index}>
+                                {(dragProvided: any, dragSnapshot: any) => (
                                   <Box
                                     ref={dragProvided.innerRef}
                                     {...dragProvided.draggableProps}
@@ -671,6 +769,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
                                         : dragProvided.draggableProps.style?.transform,
                                       opacity: dragSnapshot.isDragging ? 0.8 : 1,
                                       transition: dragSnapshot.isDragging ? 'none' : 'transform 0.2s ease',
+                                      cursor: dragSnapshot.isDragging ? 'grabbing' : 'grab',
                                     }}
                                   >
                                     {renderTaskCard(task)}
