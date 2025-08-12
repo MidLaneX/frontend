@@ -6,7 +6,9 @@ import WelcomePage from "@/pages/WelcomePage";
 import Dashboard from "@/pages/Dashboard";
 import Project from "@/pages/Project";
 import LandingPage from "@/pages/LandingPage";
+
 import AccountSettings from "@/pages/AccountSettings";
+
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
@@ -82,6 +84,7 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
+
           <Route 
             path="/account/settings" 
             element={
@@ -90,6 +93,7 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
+
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Box>
