@@ -1,6 +1,6 @@
 import type { Task, TaskStatus } from '../types';
 import { ProjectService } from './ProjectService';
-
+import {taskApi} from '../api/endpoints/tasks';
 /**
  * Service class for managing tasks
  */

@@ -1,4 +1,4 @@
-import { apiClient } from '../client';
+import { projectsApiClient,apiClient } from '../client';
 import type { Task } from '../../types';
 
 export const tasksApi = {
