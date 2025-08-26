@@ -30,7 +30,7 @@ const Dashboard: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   // Get user info from localStorage or use defaults
-  const userId = parseInt(localStorage.getItem('userId') || '5');
+  const userId = parseInt(localStorage.getItem('userId') || '1');
   const template = 'Scrum'; // Default template
   
   const { projects, loading, error, createProject } = useProjects({ userId, template });

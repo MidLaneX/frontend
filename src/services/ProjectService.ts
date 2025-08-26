@@ -9,7 +9,7 @@ export class ProjectService {
   /**
    * Get all projects for a user
    */
-  static async getAllProjects(userId: number = 5, templateType: string = 'scrum'): Promise<Project[]> {
+  static async getAllProjects(userId: number = 1, templateType: string = 'scrum'): Promise<Project[]> {
     const response = await projectsApi.getProjects(userId, templateType);
     console.log('ProjectService: getAllProjects response:', response.data);
     // Convert ProjectDTO response to Project format for frontend compatibility
@@ -59,7 +59,7 @@ export class ProjectService {
     console.log('Creating project with data:', projectData);
     
     // Get userId from localStorage or use default
-    const userId = parseInt(localStorage.getItem('userId') || '5');
+    const userId = parseInt(localStorage.getItem('userId') || '1');
     
     const dto: ProjectDTO = {
       userId: userId,
@@ -97,11 +97,11 @@ export class ProjectService {
   /**
    * Update an existing project
    */
-  static async updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
+  static async updateProject(id: number, updates: Partial<Project>): Promise<Project | null> {
     try {
       // Convert Project updates to ProjectDTO format
       const dto: Partial<ProjectDTO> = {
-        id: parseInt(id),
+        id: id,
         name: updates.name,
         // Only include fields that exist in ProjectDTO
       };
@@ -117,7 +117,7 @@ export class ProjectService {
   /**
    * Delete a project
    */
-  static async deleteProject(id: string): Promise<boolean> {
+  static async deleteProject(id: number): Promise<boolean> {
     try {
       await projectsApi.deleteProject(id);
       return true;
@@ -130,7 +130,7 @@ export class ProjectService {
   /**
    * Get projects by type (using frontend filtering since backend doesn't support this)
    */
-  static async getProjectsByType(type: Project['type'], userId: number = 3, role: string = 'MEMBER'): Promise<Project[]> {
+  static async getProjectsByType(type: Project['type'], userId: number = 1, role: string = 'MEMBER'): Promise<Project[]> {
     const projects = await this.getAllProjects(userId, role);
     return projects.filter(project => project.type === type);
   }

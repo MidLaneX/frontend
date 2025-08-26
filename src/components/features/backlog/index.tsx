@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import TaskCard from '../task/TaskCard';
 import {
   Box,
   Typography,
@@ -37,6 +38,7 @@ import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import type { SprintDTO } from '@/types/featurevise/sprint';
 import { TaskService } from '@/services/TaskService';
 import { SprintService } from '@/services/SprintService';
+import CreateTaskModal from '../task/CreateTaskModal';
 
 interface BacklogProps {
   projectId: number;
@@ -58,19 +60,7 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
 
-  const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: '',
-    description: '',
-    priority: 'Medium',
-    status: 'Backlog',
-    type: 'Task',
-    assignee: '',
-    reporter: '',
-    dueDate: '',
-    storyPoints: 3,
-    labels: [],
-    comments: [],
-  });
+  // Remove newTaskData, CreateTaskModal manages its own form state
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -104,30 +94,15 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
     fetchTasks();
   };
 
-  const handleSave = async () => {
-    if (!newTaskData.title) return;
-
+  const handleSave = async (taskData: Partial<Task>, editTask?: Task | null) => {
+    if (!taskData.title) return;
     if (editTask) {
-      await TaskService.updateTask(projectId, Number(editTask.id), newTaskData, templateType);
+      await TaskService.updateTask(projectId, Number(editTask.id), taskData, templateType);
     } else {
-      await TaskService.createTask(projectId, newTaskData as Omit<Task, 'id'>, templateType);
+      await TaskService.createTask(projectId, taskData as Omit<Task, 'id'>, templateType);
     }
-
     setOpenDialog(false);
     setEditTask(null);
-    setNewTaskData({
-      title: '',
-      description: '',
-      priority: 'Medium',
-      status: 'Backlog',
-      type: 'Task',
-      assignee: '',
-      reporter: '',
-      dueDate: '',
-      storyPoints: 3,
-      labels: [],
-      comments: [],
-    });
     fetchTasks();
   };
 
@@ -224,229 +199,7 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
     return Math.round((completedTasks / sprintTasks.length) * 100);
   }, [sprintTasks]);
 
-  const renderTaskCard = (task: Task) => {
-    const priorityColors = {
-      'Highest': { color: '#d32f2f', bg: 'rgba(211, 47, 47, 0.1)' },
-      'High': { color: '#f57c00', bg: 'rgba(245, 124, 0, 0.1)' },
-      'Medium': { color: '#1976d2', bg: 'rgba(25, 118, 210, 0.1)' },
-      'Low': { color: '#388e3c', bg: 'rgba(56, 142, 60, 0.1)' },
-      'Lowest': { color: '#7b1fa2', bg: 'rgba(123, 31, 162, 0.1)' }
-    };
-
-    const typeColors = {
-      'Story': { color: '#4caf50', bg: 'rgba(76, 175, 80, 0.1)' },
-      'Bug': { color: '#f44336', bg: 'rgba(244, 67, 54, 0.1)' },
-      'Task': { color: '#2196f3', bg: 'rgba(33, 150, 243, 0.1)' },
-      'Epic': { color: '#9c27b0', bg: 'rgba(156, 39, 176, 0.1)' }
-    };
-
-    const statusColors = {
-      'Backlog': { color: '#757575', bg: 'rgba(117, 117, 117, 0.1)' },
-      'Todo': { color: '#1976d2', bg: 'rgba(25, 118, 210, 0.1)' },
-      'In Progress': { color: '#ff9800', bg: 'rgba(255, 152, 0, 0.1)' },
-      'Review': { color: '#9c27b0', bg: 'rgba(156, 39, 176, 0.1)' },
-      'Done': { color: '#4caf50', bg: 'rgba(76, 175, 80, 0.1)' }
-    };
-
-    const priorityColor = priorityColors[task.priority as keyof typeof priorityColors] || priorityColors.Medium;
-    const typeColor = typeColors[task.type as keyof typeof typeColors] || typeColors.Task;
-    const statusColor = statusColors[task.status as keyof typeof statusColors] || statusColors.Todo;
-
-    return (
-      <Card
-        elevation={2}
-        sx={{
-          mb: 2,
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          transition: 'all 0.2s ease',
-          cursor: 'grab',
-          '&:hover': {
-            transform: 'translateY(-1px)',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
-            borderColor: 'primary.main',
-          },
-          '&:active': {
-            cursor: 'grabbing',
-          },
-          background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(250,252,255,1) 100%)',
-        }}
-      >
-        <CardContent sx={{ p: 2.5, pb: '20px !important' }}>
-          {/* Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                fontWeight: 600,
-                color: 'text.primary',
-                lineHeight: 1.3,
-                flex: 1,
-                mr: 1
-              }}
-            >
-              {task.title}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <IconButton 
-                size="small" 
-                color="primary"
-                onClick={() => {
-                  setEditTask(task);
-                  setNewTaskData(task);
-                  setOpenDialog(true);
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" color="error" onClick={() => handleDelete(Number(task.id))}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          </Box>
-
-          {/* Description */}
-          {task.description && (
-            <Typography 
-              variant="body2" 
-              color="text.secondary" 
-              sx={{ 
-                mb: 1.5,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                lineHeight: 1.4
-              }}
-            >
-              {task.description}
-            </Typography>
-          )}
-
-          {/* Tags */}
-          <Stack direction="row" spacing={0.8} sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.8 }}>
-            <Chip
-              label={task.type}
-              size="small"
-              sx={{
-                backgroundColor: typeColor.bg,
-                color: typeColor.color,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                height: 22,
-                '& .MuiChip-label': { px: 1 },
-              }}
-            />
-            <Chip
-              label={task.priority}
-              size="small"
-              sx={{
-                backgroundColor: priorityColor.bg,
-                color: priorityColor.color,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                height: 22,
-                '& .MuiChip-label': { px: 1 },
-              }}
-            />
-            <Chip
-              label={`${task.storyPoints ?? 0} SP`}
-              size="small"
-              variant="outlined"
-              sx={{
-                fontSize: '0.75rem',
-                height: 22,
-                '& .MuiChip-label': { px: 1 },
-              }}
-            />
-          </Stack>
-
-          {/* Assignee & Reporter */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {task.assignee && (
-                <Tooltip title={`Assigned to: ${task.assignee}`} arrow>
-                  <Chip
-                    label={task.assignee}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontSize: '0.7rem', height: 20 }}
-                  />
-                </Tooltip>
-              )}
-              {task.reporter && (
-                <Tooltip title={`Reporter: ${task.reporter}`} arrow>
-                  <Chip
-                    label={task.reporter}
-                    size="small"
-                    variant="outlined"
-                    color="secondary"
-                    sx={{ fontSize: '0.7rem', height: 20 }}
-                  />
-                </Tooltip>
-              )}
-            </Box>
-            {task.dueDate && (
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: new Date(task.dueDate) < new Date() ? 'error.main' : 'text.secondary',
-                  fontWeight: 500
-                }}
-              >
-                Due: {task.dueDate.slice(0, 10)}
-              </Typography>
-            )}
-          </Box>
-
-          {/* Status Dropdown */}
-          <TextField
-            select
-            size="small"
-            fullWidth
-            value={task.status}
-            onChange={(e) => handleStatusChange(Number(task.id), e.target.value as TaskStatus)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                backgroundColor: statusColor.bg,
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: statusColor.color,
-                },
-              },
-              '& .MuiInputBase-input': {
-                color: statusColor.color,
-                fontWeight: 600,
-                fontSize: '0.8rem',
-              },
-            }}
-          >
-            {statusOptions.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Labels */}
-          {task.labels?.length > 0 && (
-            <Box sx={{ mt: 1.5 }}>
-              {task.labels.map((label) => (
-                <Chip 
-                  key={label} 
-                  label={label} 
-                  size="small" 
-                  variant="outlined"
-                  sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem', height: 18 }} 
-                />
-              ))}
-            </Box>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
+  // Use TaskCard for rendering each task
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -464,7 +217,10 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
           <Button 
             variant="contained" 
             startIcon={<AddIcon />} 
-            onClick={() => setOpenDialog(true)}
+            onClick={() => {
+              setEditTask(null);
+              setOpenDialog(true);
+            }}
             sx={{ 
               borderRadius: 3,
               px: 3,
@@ -648,7 +404,16 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
                                     : provided.draggableProps.style?.transform,
                                 }}
                               >
-                                {renderTaskCard(task)}
+                                <TaskCard
+                                  task={task}
+                                  statusOptions={statusOptions}
+                                  onEdit={(t) => {
+                                    setEditTask(t);
+                                    setOpenDialog(true);
+                                  }}
+                                  onDelete={handleDelete}
+                                  onStatusChange={handleStatusChange}
+                                />
                               </div>
                             )}
                           </Draggable>
@@ -755,7 +520,16 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
                                   : provided.draggableProps.style?.transform,
                               }}
                             >
-                              {renderTaskCard(task)}
+                              <TaskCard
+                                task={task}
+                                statusOptions={statusOptions}
+                                onEdit={(t) => {
+                                  setEditTask(t);
+                                  setOpenDialog(true);
+                                }}
+                                onDelete={handleDelete}
+                                onStatusChange={handleStatusChange}
+                              />
                             </div>
                           )}
                         </Draggable>
@@ -771,98 +545,20 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
         </>
         )}
 
-      {/* Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editTask ? 'Edit Task' : 'Create Task'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Title"
-            margin="dense"
-            value={newTaskData.title}
-            onChange={(e) => setNewTaskData({ ...newTaskData, title: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            label="Description"
-            margin="dense"
-            multiline
-            value={newTaskData.description}
-            onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            label="Assignee"
-            margin="dense"
-            value={newTaskData.assignee}
-            onChange={(e) => setNewTaskData({ ...newTaskData, assignee: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            label="Reporter"
-            margin="dense"
-            value={newTaskData.reporter}
-            onChange={(e) => setNewTaskData({ ...newTaskData, reporter: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            label="Due Date"
-            type="date"
-            margin="dense"
-            value={newTaskData.dueDate?.slice(0, 10) || ''}
-            onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value })}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            select
-            fullWidth
-            label="Priority"
-            margin="dense"
-            value={newTaskData.priority}
-            onChange={(e) => setNewTaskData({ ...newTaskData, priority: e.target.value as TaskPriority })}
-          >
-            {priorityOptions.map((p) => (
-              <MenuItem key={p} value={p}>{p}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            fullWidth
-            label="Status"
-            margin="dense"
-            value={newTaskData.status}
-            onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value as TaskStatus })}
-          >
-            {statusOptions.map((s) => (
-              <MenuItem key={s} value={s}>{s}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            fullWidth
-            label="Type"
-            margin="dense"
-            value={newTaskData.type}
-            onChange={(e) => setNewTaskData({ ...newTaskData, type: e.target.value as TaskType })}
-          >
-            {typeOptions.map((t) => (
-              <MenuItem key={t} value={t}>{t}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            fullWidth
-            label="Story Points"
-            type="number"
-            margin="dense"
-            value={newTaskData.storyPoints ?? ''}
-            onChange={(e) => setNewTaskData({ ...newTaskData, storyPoints: Number(e.target.value) })}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave}>Save</Button>
-        </DialogActions>
-      </Dialog>
+      {/* Create/Edit Task Modal */}
+      <CreateTaskModal
+        open={openDialog}
+        onClose={() => {
+          setOpenDialog(false);
+          setEditTask(null);
+        }}
+        onSave={handleSave}
+        editTask={editTask}
+        initialData={editTask || undefined}
+        statusOptions={statusOptions}
+        priorityOptions={priorityOptions}
+        typeOptions={typeOptions}
+      />
     </Box>
     </DragDropContext>
   );
