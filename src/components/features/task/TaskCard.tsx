@@ -6,7 +6,13 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
-import type { Task } from "@/types";
+import IconButton from '@mui/material/IconButton';
+import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
+import Stack from '@mui/material/Stack';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import type { Task, TaskStatus } from "@/types";
 import BugReportIcon from '@mui/icons-material/BugReport';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
@@ -19,6 +25,10 @@ import RemoveIcon from '@mui/icons-material/Remove';
 
 interface TaskCardProps {
   task: Task;
+  statusOptions?: TaskStatus[];
+  onEdit?: (task: Task) => void;
+  onDelete?: (taskId: number) => void;
+  onStatusChange?: (taskId: number, newStatus: TaskStatus) => void;
   onClick?: () => void;
 }
 
@@ -53,7 +63,8 @@ const getTypeIcon = (type: string) => {
   }
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
+
+const TaskCard: React.FC<TaskCardProps> = ({ task, statusOptions, onEdit, onDelete, onStatusChange, onClick }) => {
   const {
     attributes,
     listeners,
@@ -107,76 +118,66 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         sx={{ p: 2, "&:last-child": { pb: 2 } }}
         onClick={handleClick}
       >
-        <Typography
-          variant="body2"
-          sx={{
-            color: "#172B4D",
-            fontWeight: 500,
-            mb: 1,
-            lineHeight: 1.3,
-            cursor: "pointer",
-          }}
-        >
-          {task.title}
-        </Typography>
-
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+          <Stack direction="row" alignItems="center" spacing={1}>
             {getTypeIcon(task.type)}
             {getPriorityIcon(task.priority)}
-            <Typography
-              variant="caption"
-              sx={{
-                color: "#5E6C84",
-                fontWeight: 500,
-                bgcolor: "#F4F5F7",
-                px: 1,
-                py: 0.5,
-                borderRadius: 0.5,
-              }}
-            >
+            <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 500, bgcolor: '#F4F5F7', px: 1, py: 0.5, borderRadius: 0.5 }}>
               {task.id}
             </Typography>
             {task.storyPoints && (
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "#0052CC",
-                  fontWeight: 600,
-                  bgcolor: "#E3FCEF",
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 0.5,
-                  minWidth: 20,
-                  textAlign: "center",
-                }}
-              >
-                {task.storyPoints}
-              </Typography>
+              <Chip label={`SP: ${task.storyPoints}`} size="small" sx={{ bgcolor: '#E3FCEF', color: '#0052CC', fontWeight: 600 }} />
             )}
-          </Box>
-
-          <Avatar
-            sx={{
-              width: 24,
-              height: 24,
-              fontSize: 10,
-              bgcolor: "#0052CC",
-            }}
-          >
-            {task.assignee
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()}
+            {task.status && (
+              <Chip label={task.status} size="small" sx={{ bgcolor: '#F4F5F7', color: '#172B4D', fontWeight: 500 }} />
+            )}
+          </Stack>
+          <Avatar sx={{ width: 24, height: 24, fontSize: 10, bgcolor: '#0052CC' }}>
+            {task.assignee?.split(' ').map((n) => n[0]).join('').toUpperCase()}
           </Avatar>
-        </Box>
+        </Stack>
+
+        <Typography variant="body2" sx={{ color: '#172B4D', fontWeight: 600, mt: 1, mb: 0.5, lineHeight: 1.3 }}>
+          {task.title}
+        </Typography>
+        {task.description && (
+          <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '0.95rem', mb: 1 }}>
+            {task.description.length > 120 ? `${task.description.slice(0, 120)}...` : task.description}
+          </Typography>
+        )}
+
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
+          {statusOptions && onStatusChange && (
+            <Tooltip title="Change status">
+              <Box>
+                {statusOptions.map((status) => (
+                  <Chip
+                    key={status}
+                    label={status}
+                    size="small"
+                    color={task.status === status ? 'primary' : 'default'}
+                    onClick={() => onStatusChange(task.id, status)}
+                    sx={{ mr: 0.5, cursor: 'pointer', fontWeight: 500 }}
+                  />
+                ))}
+              </Box>
+            </Tooltip>
+          )}
+          {onEdit && (
+            <Tooltip title="Edit task">
+              <IconButton size="small" onClick={() => onEdit(task)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {onDelete && (
+            <Tooltip title="Delete task">
+              <IconButton size="small" onClick={() => onDelete(task.id)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
       </CardContent>
     </Card>
   );

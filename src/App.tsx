@@ -16,10 +16,14 @@ import { theme } from "@/config/theme";
 import "./App.css";
 
 function AppContent() {
+<<<<<<< HEAD
+  const { isLoading } = useAuth();
+=======
   const { isAuthenticated, isLoading } = useAuth();
   
   // Initialize token refresh monitoring
   useTokenRefresh();
+>>>>>>> d6ec73920076e0ad902599266742a453515c27b9
 
   if (isLoading) {
     return (

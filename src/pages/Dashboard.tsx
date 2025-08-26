@@ -28,7 +28,16 @@ import type { Project } from "../types";
 
 const Dashboard: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+<<<<<<< HEAD
+  
+  // Get user info from localStorage or use defaults
+  const userId = parseInt(localStorage.getItem('userId') || '1');
+  const template = 'Scrum'; // Default template
+  
+  const { projects, loading, error, createProject } = useProjects({ userId, template });
+=======
   const [projectList, setProjectList] = useState(projects);
+>>>>>>> d6ec73920076e0ad902599266742a453515c27b9
   const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']); // Example starred projects
 
   const handleCreateProject = (newProject: Omit<Project, 'id' | 'tasks'>) => {
