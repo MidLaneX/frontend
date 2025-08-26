@@ -14,20 +14,15 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
-  Chip,
-  Avatar,
-  Checkbox,
-  ListItemText,
-  OutlinedInput,
 } from '@mui/material';
 import { Group as GroupIcon } from '@mui/icons-material';
-import type { CreateTeamRequest, OrganizationMember } from '../../types/api/organizations';
+import type { CreateTeamRequest, TeamType } from '../../types/api/organizations';
 
 interface CreateTeamModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: CreateTeamRequest) => Promise<void>;
-  organizationMembers: OrganizationMember[];
+  organizationId: number;
   organizationName: string;
   loading?: boolean;
 }
@@ -36,17 +31,29 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
   open,
   onClose,
   onSubmit,
-  organizationMembers,
+  organizationId,
   organizationName,
   loading = false,
 }) => {
   const [formData, setFormData] = useState<CreateTeamRequest>({
     name: '',
     description: '',
-    leadId: '',
-    memberIds: [],
+    teamType: 'development',
+    maxMembers: 10,
+    organizationId: organizationId,
   });
   const [error, setError] = useState<string>('');
+
+  const teamTypes: { value: TeamType; label: string }[] = [
+    { value: 'development', label: 'Development' },
+    { value: 'design', label: 'Design' },
+    { value: 'marketing', label: 'Marketing' },
+    { value: 'sales', label: 'Sales' },
+    { value: 'support', label: 'Support' },
+    { value: 'operations', label: 'Operations' },
+    { value: 'management', label: 'Management' },
+    { value: 'other', label: 'Other' },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +64,19 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
       return;
     }
 
+    if (formData.maxMembers < 1) {
+      setError('Max members must be at least 1');
+      return;
+    }
+
     try {
-      await onSubmit(formData);
+      await onSubmit({
+        ...formData,
+        organizationId: organizationId,
+      });
       handleClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create team');
+      setError(err.message || 'Failed to create team');
     }
   };
 
@@ -69,31 +84,13 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
     setFormData({
       name: '',
       description: '',
-      leadId: '',
-      memberIds: [],
+      teamType: 'development',
+      maxMembers: 10,
+      organizationId: organizationId,
     });
     setError('');
     onClose();
   };
-
-  const handleMemberChange = (event: any) => {
-    const value = event.target.value;
-    setFormData(prev => ({
-      ...prev,
-      memberIds: typeof value === 'string' ? value.split(',') : value,
-    }));
-  };
-
-  const getSelectedMemberNames = () => {
-    return organizationMembers
-      .filter(member => formData.memberIds?.includes(member.id))
-      .map(member => `${member.firstName || 'Unknown'} ${member.lastName || 'Name'}`)
-      .join(', ');
-  };
-
-  const availableLeads = organizationMembers.filter(member => 
-    ['admin', 'member'].includes(member.role)
-  );
 
   return (
     <Dialog
@@ -128,7 +125,7 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
             {/* Basic Information */}
             <Box>
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                Team Information
+                Basic Information
               </Typography>
               
               <TextField
@@ -136,12 +133,10 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
                 label="Team Name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                margin="normal"
                 required
+                autoFocus
                 placeholder="Enter team name"
-                sx={{ mb: 2 }}
-                InputProps={{
-                  startAdornment: <GroupIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
               />
 
               <TextField
@@ -149,97 +144,50 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
                 label="Description"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                margin="normal"
                 multiline
                 rows={3}
-                placeholder="Describe the team's purpose and responsibilities"
+                placeholder="Describe the team's purpose and goals"
               />
             </Box>
 
-            {/* Team Lead Selection */}
-            {availableLeads.length > 0 && (
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Team Lead
-                </Typography>
-                <FormControl fullWidth>
-                  <InputLabel>Select Team Lead (Optional)</InputLabel>
-                  <Select
-                    value={formData.leadId || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, leadId: e.target.value }))}
-                    label="Select Team Lead (Optional)"
-                  >
-                    <MenuItem value="">
-                      <Typography color="text.secondary">No team lead</Typography>
+            {/* Team Configuration */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Team Configuration
+              </Typography>
+              
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Team Type</InputLabel>
+                <Select
+                  value={formData.teamType}
+                  onChange={(e) => setFormData(prev => ({ ...prev, teamType: e.target.value as TeamType }))}
+                  label="Team Type"
+                >
+                  {teamTypes.map((type) => (
+                    <MenuItem key={type.value} value={type.value}>
+                      {type.label}
                     </MenuItem>
-                    {availableLeads.map((member) => (
-                      <MenuItem key={member.id} value={member.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
-                            {member.firstName?.[0] || 'U'}{member.lastName?.[0] || 'N'}
-                          </Avatar>
-                          <Box>
-                            <Typography variant="body2">
-                              {member.firstName || 'Unknown'} {member.lastName || 'Name'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {member.email}
-                            </Typography>
-                          </Box>
-                          <Chip 
-                            label={member.role} 
-                            size="small" 
-                            sx={{ ml: 'auto' }}
-                          />
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-            )}
+                  ))}
+                </Select>
+              </FormControl>
 
-            {/* Team Members Selection */}
-            {organizationMembers.length > 0 && (
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Team Members
-                </Typography>
-                <FormControl fullWidth>
-                  <InputLabel>Select Members (Optional)</InputLabel>
-                  <Select
-                    multiple
-                    value={formData.memberIds || []}
-                    onChange={handleMemberChange}
-                    input={<OutlinedInput label="Select Members (Optional)" />}
-                    renderValue={() => getSelectedMemberNames() || 'No members selected'}
-                  >
-                    {organizationMembers.map((member) => (
-                      <MenuItem key={member.id} value={member.id}>
-                        <Checkbox 
-                          checked={(formData.memberIds || []).includes(member.id)} 
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                          <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
-                            {member.firstName?.[0] || 'U'}{member.lastName?.[0] || 'N'}
-                          </Avatar>
-                          <ListItemText
-                            primary={`${member.firstName || 'Unknown'} ${member.lastName || 'Name'}`}
-                            secondary={member.email}
-                          />
-                          <Chip 
-                            label={member.role} 
-                            size="small" 
-                          />
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  You can add more members to the team later
-                </Typography>
-              </Box>
-            )}
+              <TextField
+                fullWidth
+                label="Maximum Members"
+                type="number"
+                value={formData.maxMembers}
+                onChange={(e) => setFormData(prev => ({ ...prev, maxMembers: parseInt(e.target.value) || 0 }))}
+                margin="normal"
+                inputProps={{ min: 1, max: 100 }}
+                helperText="Maximum number of members that can join this team"
+              />
+            </Box>
+
+            {/* Information Note */}
+            <Alert severity="info">
+              After creating the team, you can add members and assign a team lead from the team management page.
+            </Alert>
           </Box>
         </DialogContent>
 
@@ -254,10 +202,11 @@ const CreateTeamModal: React.FC<CreateTeamModalProps> = ({
           <Button
             type="submit"
             variant="contained"
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : undefined}
+            disabled={loading || !formData.name.trim()}
+            startIcon={loading ? <CircularProgress size={20} /> : <GroupIcon />}
+            sx={{ minWidth: 120 }}
           >
-            Create Team
+            {loading ? 'Creating...' : 'Create Team'}
           </Button>
         </DialogActions>
       </Box>

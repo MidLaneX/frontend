@@ -103,9 +103,9 @@ export class OrganizationService {
     }
   }
 
-  static async createTeam(orgId: string, teamData: CreateTeamRequest): Promise<Team> {
+  static async createTeam(teamData: CreateTeamRequest): Promise<Team> {
     try {
-      return await organizationsApi.createTeam(orgId, teamData);
+      return await organizationsApi.createTeam(teamData);
     } catch (error) {
       console.error('Failed to create team:', error);
       throw error;

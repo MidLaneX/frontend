@@ -1,6 +1,6 @@
 import type { Task, TaskStatus } from '../types';
-import { ProjectService } from './ProjectService';
-import {taskApi} from '../api/endpoints/tasks';
+import { tasksApi } from '../api/endpoints/tasks';
+
 /**
  * Service class for managing tasks
  */
@@ -88,8 +88,6 @@ export class TaskService {
     }
   }
 
-
-
   /**
    * Get tasks by status
    */
@@ -113,39 +111,9 @@ export class TaskService {
     );
   }
 
-
-  static async updateTaskSprint(
-    projectId: number,
-    taskId: number,
-    sprintId: number | null,
-    templateType = 'scrum'
-  ): Promise<Task | null> {
-    try {
-      const response = await tasksApi.updateTaskSprint(projectId, taskId, sprintId, templateType);
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to update sprint for task ${taskId}:`, error);
-      return null;
-    }
-  }
-
-
-  static async updateTaskSprint(
-    projectId: number,
-    taskId: number,
-    sprintId: number | null,
-    templateType = 'scrum'
-  ): Promise<Task | null> {
-    try {
-      const response = await tasksApi.updateTaskSprint(projectId, taskId, sprintId, templateType);
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to update sprint for task ${taskId}:`, error);
-      return null;
-    }
-  }
-
-
+  /**
+   * Update task sprint
+   */
   static async updateTaskSprint(
     projectId: number,
     taskId: number,
@@ -169,25 +137,27 @@ export class TaskService {
     priority?: string[];
     type?: string[];
     status?: string[];
-  }): Task[] {
-    let tasks = this.getTasksByProjectId(projectId);
+  }): Promise<Task[]> {
+    const tasks = await this.getTasksByProjectId(projectId);
+
+    let filteredTasks = tasks;
 
     if (filters.assignee?.length) {
-      tasks = tasks.filter(task => filters.assignee!.includes(task.assignee));
+      filteredTasks = filteredTasks.filter(task => filters.assignee!.includes(task.assignee));
     }
 
     if (filters.priority?.length) {
-      tasks = tasks.filter(task => filters.priority!.includes(task.priority));
+      filteredTasks = filteredTasks.filter(task => filters.priority!.includes(task.priority));
     }
 
     if (filters.type?.length) {
-      tasks = tasks.filter(task => filters.type!.includes(task.type));
+      filteredTasks = filteredTasks.filter(task => filters.type!.includes(task.type));
     }
 
     if (filters.status?.length) {
-      tasks = tasks.filter(task => filters.status!.includes(task.status));
+      filteredTasks = filteredTasks.filter(task => filters.status!.includes(task.status));
     }
 
-    return tasks;
+    return filteredTasks;
   }
 }

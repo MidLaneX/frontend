@@ -72,7 +72,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const Organization: React.FC = () => {
+const OrganizationPage: React.FC = () => {
   const { user } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -184,9 +184,8 @@ const Organization: React.FC = () => {
   };
 
   const handleCreateTeam = async (data: CreateTeamRequest) => {
-    if (!selectedOrg) return;
     try {
-      const newTeam = await OrganizationService.createTeam(selectedOrg.id, data);
+      const newTeam = await OrganizationService.createTeam(data);
       setTeams(prev => [...prev, newTeam]);
     } catch (err: any) {
       throw err;
@@ -635,7 +634,7 @@ const Organization: React.FC = () => {
             open={createTeamModalOpen}
             onClose={() => setCreateTeamModalOpen(false)}
             onSubmit={handleCreateTeam}
-            organizationMembers={members}
+            organizationId={parseInt(selectedOrg.id)}
             organizationName={selectedOrg.name}
           />
         </>
@@ -644,4 +643,4 @@ const Organization: React.FC = () => {
   );
 };
 
-export default Organization;
+export default OrganizationPage;

@@ -121,8 +121,14 @@ export const organizationsApi = {
     return response.data;
   },
 
-  createTeam: async (orgId: string, data: CreateTeamRequest): Promise<Team> => {
-    const response = await organizationsApiClient.post(`/organizations/${orgId}/teams`, data);
+  createTeam: async (data: CreateTeamRequest): Promise<Team> => {
+    // Get the current user's ID as the creator
+    const creatorId = tokenManager.getUserId();
+    if (!creatorId) {
+      throw new Error('User not authenticated');
+    }
+    
+    const response = await organizationsApiClient.post(`/users/teams?creatorId=${creatorId}`, data);
     return response.data;
   },
 

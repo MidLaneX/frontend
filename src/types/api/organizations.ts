@@ -78,8 +78,9 @@ export interface TeamMember {
 export interface CreateTeamRequest {
   name: string;
   description?: string;
-  leadId?: string;
-  memberIds?: string[];
+  teamType: TeamType;
+  maxMembers: number;
+  organizationId: number;
 }
 
 export interface UpdateTeamMemberRequest {
@@ -90,6 +91,8 @@ export interface UpdateTeamMemberRequest {
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
 
 export type TeamRole = 'lead' | 'member';
+
+export type TeamType = 'development' | 'design' | 'marketing' | 'sales' | 'support' | 'operations' | 'management' | 'other';
 
 // UI-specific types
 export interface OrganizationCardProps {
