@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -22,38 +22,63 @@ import StarIcon from '@mui/icons-material/Star'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import { Link } from 'react-router-dom'
-import CreateProjectModal from "@/components/features/CreateProjectModal";
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
 import type { Project } from "../types";
-import { useProjects } from "@/hooks/useProjects";
+import { ProjectService } from '@/services/ProjectService';
 
 const Dashboard: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   // Get user info from localStorage or use defaults
   const userId = parseInt(localStorage.getItem('userId') || '5');
-  const template = 'Scrum'; // Default template
-  
-  const { projects, loading, error, createProject } = useProjects({ userId, template });
-  const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']); // Example starred projects
+  const [orgId, setOrgId] = useState(1);
+  const [role, setRole] = useState('ADMIN');
+  const [templateType, setTemplateType] = useState('scrum');
+  const [teamIds, setTeamIds] = useState<number[]>([]);
 
-  const handleCreateProject = async (newProject: Omit<Project, 'id' | 'tasks'>) => {
-    console.log('Dashboard: handleCreateProject called with:', newProject);
-    try {
-      const projectData: Omit<Project, 'id'> = {
-        ...newProject,
-        tasks: [] // Add empty tasks array
-      };
-      console.log('Dashboard: About to call createProject with:', projectData);
-      const result = await createProject(projectData);
-      console.log('Dashboard: createProject returned:', result);
-      if (result) {
-        console.log('Dashboard: Project created successfully!');
-      } else {
-        console.log('Dashboard: Project creation returned null');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']);
+
+  // Fetch projects when filters change
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoading(true);
+      try {
+        const data = await ProjectService.getAllProjects(userId, orgId, role, templateType, teamIds);
+        setProjects(data);
+      } catch (err) {
+        setError('Failed to load projects');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Dashboard: Failed to create project:', error);
-      // You might want to show a toast notification here
+    };
+    fetchProjects();
+  }, [userId, orgId, role, templateType, teamIds]);
+
+  // Create project handler
+  const [newProject, setNewProject] = useState({
+    orgId: 1,
+    name: '',
+    type: 'Internal',
+    templateType: 'scrum'
+  });
+
+  const handleCreateProject = async () => {
+    setLoading(true);
+    try {
+      const result = await ProjectService.createProject(newProject, newProject.templateType);
+      setProjects(prev => [...prev, result]);
+      setNewProject({ orgId: orgId, name: '', type: 'Internal', templateType: templateType });
+    } catch (err) {
+      setError('Failed to create project');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -118,30 +143,94 @@ const Dashboard: React.FC = () => {
         </Box>
       )}
 
-      {/* Header Section */}
+      {/* Header Section & Create Project Form */}
       <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box>
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                fontWeight: 600,
-                color: '#172B4D',
-                mb: 1,
-                fontSize: '28px'
-              }}
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontWeight: 600,
+            color: '#172B4D',
+            mb: 2,
+            fontSize: '28px'
+          }}
+        >
+          Projects Overview
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 3 }}>
+          <FormControl sx={{ minWidth: 120 }}>
+            <TextField
+              label="Org ID"
+              type="number"
+              value={orgId}
+              onChange={e => setOrgId(Number(e.target.value))}
+              size="small"
+            />
+          </FormControl>
+          <FormControl sx={{ minWidth: 120 }}>
+            <TextField
+              label="User ID"
+              type="number"
+              value={userId}
+              size="small"
+              disabled
+            />
+          </FormControl>
+          <FormControl sx={{ minWidth: 120 }}>
+            <TextField
+              label="Role"
+              value={role}
+              onChange={e => setRole(e.target.value)}
+              size="small"
+            />
+          </FormControl>
+          <FormControl sx={{ minWidth: 120 }}>
+            <TextField
+              label="Template Type"
+              value={templateType}
+              onChange={e => setTemplateType(e.target.value)}
+              size="small"
+            />
+          </FormControl>
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel>Team IDs</InputLabel>
+            <Select
+              multiple
+              value={teamIds}
+              onChange={e => setTeamIds(typeof e.target.value === 'string' ? e.target.value.split(',').map(Number) : e.target.value as number[])}
+              label="Team IDs"
+              size="small"
+              renderValue={selected => (selected as number[]).join(', ')}
             >
-              Projects Overview
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#5E6C84', fontSize: '16px' }}>
-              Monitor and manage all your MidLineX projects 
-              with real-time insights
-            </Typography>
-          </Box>
+              {[1,2,3,4,5].map(id => (
+                <MenuItem key={id} value={id}>{id}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+        {/* Create Project Form */}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
+          <TextField
+            label="Project Name"
+            value={newProject.name}
+            onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
+            size="small"
+          />
+          <TextField
+            label="Type"
+            value={newProject.type}
+            onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
+            size="small"
+          />
+          <TextField
+            label="Template Type"
+            value={newProject.templateType}
+            onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
+            size="small"
+          />
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={handleCreateProject}
             sx={{
               bgcolor: '#0052CC',
               textTransform: 'none',
@@ -334,7 +423,7 @@ const Dashboard: React.FC = () => {
           gap: 3, 
           gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))' 
         }}>
-          {projects.map((project: Project) => {
+          {Array.isArray(projects) && projects.map((project: Project) => {
             const progress = getProjectProgress(project);
             
             const isStarred = starredProjects.includes(String(project.id));
@@ -493,7 +582,7 @@ const Dashboard: React.FC = () => {
                           } 
                         }}
                       >
-                        {project.teamMembers.map((member: any, index: number) => (
+                        {(project.teamMembers ?? []).map((member: any, index: number) => (
                           <Tooltip key={member.name} title={`${member.name} (${member.role})`}>
                             <Avatar sx={{ bgcolor: `hsl(${index * 60}, 70%, 50%)` }}>
                               {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
@@ -539,11 +628,65 @@ const Dashboard: React.FC = () => {
         </Box>
       </Box>
 
-      <CreateProjectModal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreateProject={handleCreateProject}
-      />
+      {/* Modal for creating a project */}
+      {/* You can replace this with your actual modal implementation */}
+      {isCreateModalOpen && (
+        <Box sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          bgcolor: 'rgba(0,0,0,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1300
+        }}>
+          <Paper sx={{ p: 4, minWidth: 320, borderRadius: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Create Project</Typography>
+            <TextField
+              label="Project Name"
+              value={newProject.name}
+              onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Type"
+              value={newProject.type}
+              onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Template Type"
+              value={newProject.templateType}
+              onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+              <Button
+                variant="contained"
+                onClick={async () => {
+                  await handleCreateProject();
+                  setIsCreateModalOpen(false);
+                }}
+                sx={{ bgcolor: '#0052CC', color: 'white' }}
+              >
+                Create
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => setIsCreateModalOpen(false)}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
     </Box>
   )
 }

@@ -5,7 +5,7 @@ export const ENV = {
   DEV: import.meta.env.DEV,
   
   // API Configuration
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api',
   
   // App Configuration
   APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
@@ -28,6 +28,6 @@ export const debugLog = (...args: unknown[]) => {
 
 export const ENV1 = {
   // ... existing config
-  PROJECTS_SERVICE_URL: 'http://localhost:8089/api',
+  PROJECTS_SERVICE_URL: 'http://localhost:8080/api',
 
 };

@@ -1,12 +1,17 @@
 // Backend DTO types to match your Java DTOs
 
 export interface ProjectDTO {
-  id?: number;
-  userId: number;
+  id: number;
+  orgId: number;
   name: string;
+  type: string;
   templateType: string;
   features: string[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
 }
+
 
 // Create project request DTO - matches your backend requirement
 export interface CreateProjectDTO {

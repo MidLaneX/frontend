@@ -1,5 +1,5 @@
-import type { Project} from '../types';
-import type { ProjectDTO } from '../types/dto';
+import type { Project } from '../types';
+import type { ProjectDTO, CreateProjectDTO, GetProjectsPayload, UserProjectRequestDTO } from '../types/dto';
 import { projectsApi } from '../api/endpoints/projects';
 
 /**
@@ -9,25 +9,61 @@ export class ProjectService {
   /**
    * Get all projects for a user
    */
-  static async getAllProjects(userId: number = 5, templateType: string = 'scrum'): Promise<Project[]> {
-    const response = await projectsApi.getProjects(userId, templateType);
-    console.log('ProjectService: getAllProjects response:', response.data);
-    // Convert ProjectDTO response to Project format for frontend compatibility
-    return response.data.map((projectDto: ProjectDTO) => ({
-      id: projectDto.id || Math.floor(Math.random() * 10000),
-      name: projectDto.name,
-      templateType: projectDto.templateType,
-      features: projectDto.features,
-      key: this.generateProjectKey(projectDto.name),
-      description: projectDto.name, // Use name as description for now
-      timeline: { 
-        start: new Date().toISOString().split('T')[0],
-        end: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 90 days from now
+  static async getAllProjects(userId: number = 5, orgId: number = 1, role: string = 'ADMIN', templateType: string = 'scrum', teamIds: number[] = []): Promise<Project[]> {
+    // Build UserProjectRequestDTO
+    const userProjectRequestDTO: UserProjectRequestDTO = { userId, role };
+    // Build payload
+    const payload: GetProjectsPayload = {
+      projectDTO: {
+        id: 0,
+        orgId,
+        name: '',
+        type: '',
+        templateType,
+        features: [],
+        createdAt: '',
+        updatedAt: '',
+        createdBy: String(userId)
       },
-      teamMembers: [], // Default empty array
-      type: 'Software' as const, // Default type
-      tasks: [] // Default empty tasks
+      userProjectRequestDTO
+    };
+    // Call new API route
+    const response = await projectsApi.getProjects(userId, orgId, role, templateType, teamIds);
+    const data = Array.isArray(response.data) ? response.data : [];
+    return data.map((dto: ProjectDTO): Project => ({
+      id: dto.id,
+      name: dto.name,
+      templateType: dto.templateType,
+      features: dto.features || [],
+      key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
+      description: dto.name || '',
+      timeline: {
+        start: dto.createdAt || new Date().toISOString().split('T')[0],
+        end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      },
+      type: dto.type,
+      tasks: []
     }));
+  }
+
+  static async createProject(createData: CreateProjectDTO, templateType: string): Promise<Project> {
+    // Call new API route
+    const response = await projectsApi.createProject(createData, templateType);
+    const dto = response.data;
+    return {
+      id: dto.id,
+      name: dto.name,
+      templateType: dto.templateType,
+      features: dto.features || [],
+      key: dto.name.toUpperCase().replace(/\s+/g, '_'),
+      description: dto.name,
+      timeline: {
+        start: dto.createdAt || new Date().toISOString().split('T')[0],
+        end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      },
+      type: dto.type,
+      tasks: []
+    };
   }
 
   /**
@@ -55,44 +91,8 @@ export class ProjectService {
     }
   }
 
-  static async createProject(projectData: Omit<Project, 'id'>): Promise<Project> {
-    console.log('Creating project with data:', projectData);
-    
-    // Get userId from localStorage or use default
-    const userId = parseInt(localStorage.getItem('userId') || '5');
-    
-    const dto: ProjectDTO = {
-      userId: userId,
-      name: projectData.name,
-      templateType: 'Scrum', // Default template type
-      features: [] // Default empty features
-    };
-    
-    console.log('Sending DTO to API:', dto);
-    console.log('API URL:', 'POST /projects?template=scrum');
-    
-    try {
-      const response = await projectsApi.createProject(dto, 'scrum');
-      console.log('API Response:', response.data);
-      
-      // Convert ProjectDTO response back to Project format
-      return {
-        id: response.data.id || Math.floor(Math.random() * 10000),
-        name: response.data.name,
-        templateType: response.data.templateType,
-        features: response.data.features,
-        key: this.generateProjectKey(response.data.name),
-        description: projectData.description || response.data.name,
-        timeline: projectData.timeline,
-        teamMembers: projectData.teamMembers,
-        type: projectData.type,
-        tasks: projectData.tasks
-      };
-    } catch (error) {
-      console.error('Project creation failed:', error);
-      throw error;
-    }
-  }
+ 
+  
 
   /**
    * Update an existing project
