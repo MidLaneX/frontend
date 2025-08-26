@@ -11,11 +11,15 @@ import AccountSettings from "@/pages/AccountSettings";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { theme } from "@/config/theme";
 import "./App.css";
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  
+  // Initialize token refresh monitoring
+  useTokenRefresh();
 
   if (isLoading) {
     return (
