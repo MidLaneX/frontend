@@ -12,8 +12,8 @@ export interface Organization {
   ownerName: string;
   createdAt: string;
   updatedAt: string;
-  memberCount: number;
-  teamCount: number;
+  member_count: number;
+  team_count: number;
   settings?: OrganizationSettings;
 }
 

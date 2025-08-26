@@ -361,12 +361,12 @@ const OrganizationPage: React.FC = () => {
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Chip
-                          label={`${org.memberCount} members`}
+                          label={`${org.member_count} members`}
                           size="small"
                           icon={<PeopleIcon fontSize="small" />}
                         />
                         <Chip
-                          label={`${org.teamCount} teams`}
+                          label={`${org.team_count} teams`}
                           size="small"
                           icon={<GroupIcon fontSize="small" />}
                         />
