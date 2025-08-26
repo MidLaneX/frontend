@@ -20,7 +20,6 @@ import NotificationsIcon from '@mui/icons-material/Notifications'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import AppsIcon from '@mui/icons-material/Apps'
 import SettingsIcon from '@mui/icons-material/Settings'
-import PersonIcon from '@mui/icons-material/Person'
 import LogoutIcon from '@mui/icons-material/Logout'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import WorkIcon from '@mui/icons-material/Work'
@@ -140,12 +139,12 @@ const Navbar: React.FC = () => {
               transition: 'all 0.3s ease'
             }}
           >
-            MidLineX
+            MidLaneX
           </Typography>
         </Box>
         
         {/* Navigation Links */}
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+        {/* <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
           <Tooltip title="View your assigned work" arrow>
             <Button 
               color="inherit" 
@@ -253,7 +252,7 @@ const Navbar: React.FC = () => {
               Dashboards
             </Button>
           </Tooltip>
-        </Box>
+        </Box> */}
         
         {/* Search - Centered */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', mx: 4 }}>
@@ -509,6 +508,14 @@ const Navbar: React.FC = () => {
           anchorEl={appsMenuAnchor}
           open={Boolean(appsMenuAnchor)}
           onClose={handleCloseMenus}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
           PaperProps={{
             sx: {
               mt: 1,
@@ -605,6 +612,14 @@ const Navbar: React.FC = () => {
           anchorEl={notificationsAnchor}
           open={Boolean(notificationsAnchor)}
           onClose={handleCloseMenus}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
           PaperProps={{
             sx: {
               mt: 1,
@@ -719,6 +734,14 @@ const Navbar: React.FC = () => {
           anchorEl={profileMenuAnchor}
           open={Boolean(profileMenuAnchor)}
           onClose={handleCloseMenus}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
           PaperProps={{
             sx: {
               mt: 1,
@@ -763,18 +786,7 @@ const Navbar: React.FC = () => {
               </Box>
             </Box>
           </Box>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 3 }}>
-            <PersonIcon sx={{ mr: 2.5, fontSize: 22, color: '#5E6C84' }} />
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                Profile
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#5E6C84' }}>
-                View and edit your profile
-              </Typography>
-            </Box>
-          </MenuItem>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 3 }}>
+          <MenuItem onClick={handleCloseMenus} component={Link} to="/account/settings" sx={{ py: 2, px: 3 }}>
             <SettingsIcon sx={{ mr: 2.5, fontSize: 22, color: '#5E6C84' }} />
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>

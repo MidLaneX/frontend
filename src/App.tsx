@@ -6,12 +6,24 @@ import WelcomePage from "@/pages/WelcomePage";
 import Dashboard from "@/pages/Dashboard";
 import Project from "@/pages/Project";
 import LandingPage from "@/pages/LandingPage";
+
+import AccountSettings from "@/pages/AccountSettings";
+
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { theme } from "@/config/theme";
 import "./App.css";
 
 function AppContent() {
+<<<<<<< HEAD
   const { isLoading } = useAuth();
+=======
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  // Initialize token refresh monitoring
+  useTokenRefresh();
+>>>>>>> d6ec73920076e0ad902599266742a453515c27b9
 
   if (isLoading) {
     return (
@@ -29,16 +41,16 @@ function AppContent() {
   }
 
   // If not authenticated, show only landing page
-  // if (!isAuthenticated) {
-  //   return (
-  //     <Routes>
-  //       <Route path="/landing" element={<LandingPage />} />
-  //       <Route path="*" element={<Navigate to="/landing" replace />} />
-  //     </Routes>
-  //   );
-  // }
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="*" element={<Navigate to="/landing" replace />} />
+      </Routes>
+    );
+  }
 
-  // Authenticated layout – now WITHOUT ProtectedRoute
+  // If authenticated, show main app layout
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
       <Navbar />
@@ -47,10 +59,10 @@ function AppContent() {
         component="main"
         sx={{
           position: "fixed",
-          top: "68px", // below navbar
-          left: "280px", // after sidebar
-          width: "calc(100vw - 280px)",
-          height: "calc(100vh - 68px)",
+          top: "68px", // Start below navbar
+          left: "280px", // Start after sidebar
+          width: "calc(100vw - 280px)", // Full remaining width
+          height: "calc(100vh - 68px)", // Full remaining height
           bgcolor: "background.default",
           overflow: "auto",
           padding: 0,
@@ -60,9 +72,31 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/welcome" element={<WelcomePage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/projects/:projectId/:templateType" element={<Project />} />
-          <Route path="/projects/:projectId/:templateType/:featureName?" element={<Project />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/projects/:projectId" 
+            element={
+              <ProtectedRoute>
+                <Project />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/account/settings" 
+            element={
+              <ProtectedRoute>
+                <AccountSettings />
+              </ProtectedRoute>
+            } 
+          />
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
@@ -84,4 +118,4 @@ function App() {
   );
 }
 
-export default App;
+export default App

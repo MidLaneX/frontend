@@ -48,12 +48,9 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ open, onClose, 
         start: formData.startDate,
         end: formData.endDate
       },
-      teamMembers: formData.teamMembers.map(name => ({ name, role: 'Team Member' })),
-      templateType: 'Default', // or another default value as appropriate
-      features: [] // or provide a default array of features if needed
+      teamMembers: formData.teamMembers.map(name => ({ name, role: 'Team Member' }))
     };
 
-    console.log('CreateProjectModal: Submitting project:', project);
     onCreateProject(project);
     handleClose();
   };

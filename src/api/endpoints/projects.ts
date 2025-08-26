@@ -1,6 +1,5 @@
-import { projectsApiClient } from '../client';
+import { apiClient } from '../client';
 import type { Project } from '../../types';
-import type { ProjectDTO } from '../../types/dto';
 
 export const projectsApi = {
   // Get all projects for a user with query parameters (default userId=1)
@@ -10,10 +9,9 @@ export const projectsApi = {
   },
   //http://localhost:8089/api/projects/projectsOfUser?userId=1&templateType=scrum
 
-  // Get project by ID with template-specific features
-  getProject: (id: number, templateType: string = 'scrum') => {
-    console.log('API: Fetching project:', id, 'templateType:', templateType);
-    return projectsApiClient.get<Project>(`/projects/${id}/${templateType}`);
+  // Get project by ID
+  getProject: (id: string) => {
+    return apiClient.get<Project>(`/projects/${id}`);
   },
 
   // Get project features (for dynamic navigation)
@@ -25,11 +23,8 @@ export const projectsApi = {
 
 
   // Create new project
-  createProject: (data: ProjectDTO, template: string = 'scrum') => {
-    console.log('API: Creating project with data:', data);
-    console.log('API: Using base URL:', projectsApiClient.defaults.baseURL);
-    console.log('API: Template parameter:', template);
-    return projectsApiClient.post<ProjectDTO>(`/projects?template=${template}`, data);
+  createProject: (data: Omit<Project, 'id'>) => {
+    return apiClient.post<Project>('/projects', data);
   },
 
   // Update project
