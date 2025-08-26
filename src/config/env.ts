@@ -6,7 +6,8 @@ export const ENV = {
   
   // API Configuration for API gateway
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
-  
+  PROJECTS_SERVICE_URL: import.meta.env.VITE_PROJECTS_SERVICE_URL || 'http://localhost:8083/api',
+
   // Social Authentication
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
   FACEBOOK_APP_ID: import.meta.env.VITE_FACEBOOK_APP_ID || '',

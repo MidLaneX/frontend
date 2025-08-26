@@ -12,10 +12,9 @@ export const apiClient = axios.create({
   },
 });
 
-<<<<<<< HEAD
 // Projects Service  
 export const projectsApiClient = axios.create({
-  baseURL: ENV1.PROJECTS_SERVICE_URL,
+  baseURL: ENV.PROJECTS_SERVICE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -54,8 +53,6 @@ projectsApiClient.interceptors.response.use(
   }
 );
 
-=======
->>>>>>> main
 // Request interceptor
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
