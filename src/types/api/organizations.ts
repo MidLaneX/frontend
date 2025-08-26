@@ -37,8 +37,8 @@ export interface OrganizationMember {
   userId: string;
   username: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   role: MemberRole;
   joinedAt: string;
   avatar?: string;
@@ -52,7 +52,7 @@ export interface AddMemberRequest {
 
 export interface Team {
   id: string;
-  name: string;
+  team_name: string;
   description?: string;
   organizationId: string;
   leadId?: string;

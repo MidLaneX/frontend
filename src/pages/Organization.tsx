@@ -422,7 +422,7 @@ const OrganizationPage: React.FC = () => {
                           </Avatar>
                           <Box>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                              {member.firstName || 'Unknown'} {member.lastName || 'Name'}
+                              {member.first_name || 'Unknown'} {member.last_name || 'Name'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               {member.email}
@@ -493,7 +493,7 @@ const OrganizationPage: React.FC = () => {
                           </Avatar>
                           <Box>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                              {team.name}
+                              {team.team_name}
                             </Typography>
                             {team.leadName && (
                               <Typography variant="body2" color="text.secondary">
