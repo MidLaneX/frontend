@@ -31,7 +31,7 @@ export const tasksApi = {
   updateTaskStatus: (projectId: number, taskId: number, status: string, templateType = 'scrum') => {
     return projectsApiClient.patch<Task>(
       `/projects/${projectId}/tasks/${taskId}/status?templateType=${templateType}`,
-      { status }
+      { status : status }
     );
   },
   //update tasks sprint assignment
