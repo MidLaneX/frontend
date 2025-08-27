@@ -5,6 +5,7 @@ import { Navbar, Sidebar } from "@/components/layout";
 import WelcomePage from "@/pages/WelcomePage";
 import Dashboard from "@/pages/Dashboard";
 import Project from "@/pages/Project";
+import OrganizationPage from "@/pages/Organization";
 import LandingPage from "@/pages/LandingPage";
 
 import AccountSettings from "@/pages/AccountSettings";
@@ -81,6 +82,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Project />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/organizations" 
+            element={
+              <ProtectedRoute>
+                <OrganizationPage />
               </ProtectedRoute>
             } 
           />

@@ -57,6 +57,7 @@ const Sidebar: React.FC = () => {
   const mainNavigation: NavigationItem[] = [
     { name: 'Your work', icon: <WorkIcon />, path: '/', badge: 3 },
     { name: 'Projects', icon: <FolderIcon />, path: '/projects' },
+    { name: 'Organizations', icon: <FolderIcon />, path: '/organizations' },
     { name: 'Filters', icon: <FormatListBulletedIcon />, path: '/filters' },
     { name: 'Dashboards', icon: <DashboardIcon />, path: '/dashboards' },
     { name: 'People', icon: <PeopleIcon />, path: '/people' },

@@ -8,13 +8,13 @@ interface TokenData {
   expiresIn: number;
   userEmail: string;
   role: string;
-  expiresAt: number; // Calculated expiration timestamp
+  userId?: number;
+  expiresAt: number;
 }
 
 const TOKEN_STORAGE_KEY = 'auth_tokens';
-const REFRESH_THRESHOLD = 10; // Refresh token 10 seconds before expiry (for testing with 60s tokens)
+const REFRESH_THRESHOLD = 10;
 
-// Get device info for refresh requests
 const getDeviceInfo = (): string => {
   const userAgent = navigator.userAgent;
   const platform = navigator.platform;
@@ -37,7 +37,6 @@ export class TokenManager {
     return TokenManager.instance;
   }
 
-  // Load tokens from localStorage
   private loadTokens(): void {
     try {
       const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -50,9 +49,7 @@ export class TokenManager {
     }
   }
 
-  // Save tokens to localStorage
-  private saveTokens(data: AuthResponse | RefreshTokenResponse): void {
-    // Convert snake_case response to camelCase for internal storage
+  private saveTokens(data: AuthResponse | RefreshTokenResponse, userId?: number): void {
     const tokenData: TokenData = {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
@@ -60,86 +57,66 @@ export class TokenManager {
       expiresIn: data.expires_in,
       userEmail: data.user_email,
       role: data.role,
-      expiresAt: Date.now() + (data.expires_in * 1000), // Convert seconds to milliseconds
+      userId: userId || data.user_id || this.tokenData?.userId, // Extract user_id from response
+      expiresAt: Date.now() + (data.expires_in * 1000),
     };
     
     this.tokenData = tokenData;
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenData));
-    
-    // Log token info for testing
-    console.log('Tokens saved:', {
-      expiresIn: data.expires_in,
-      expiresAt: new Date(tokenData.expiresAt).toLocaleTimeString(),
-      refreshThreshold: REFRESH_THRESHOLD
-    });
   }
 
-  // Clear all tokens
   public clearTokens(): void {
     this.tokenData = null;
     localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem('authToken'); // Clear legacy token if exists
+    localStorage.removeItem('authToken');
   }
 
-  // Get current access token
   public getAccessToken(): string | null {
     return this.tokenData?.accessToken || null;
   }
 
-  // Get current refresh token
   public getRefreshToken(): string | null {
     return this.tokenData?.refreshToken || null;
   }
 
-  // Get user email
+  public getUserId(): number | null {
+    return this.tokenData?.userId || null;
+  }
+
+  public setUserId(userId: number): void {
+    if (this.tokenData) {
+      this.tokenData.userId = userId;
+      localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(this.tokenData));
+    }
+  }
+
   public getUserEmail(): string | null {
     return this.tokenData?.userEmail || null;
   }
 
-  // Get user role
   public getUserRole(): string | null {
     return this.tokenData?.role || null;
   }
 
-  // Check if tokens exist
   public hasTokens(): boolean {
     return !!this.tokenData?.accessToken && !!this.tokenData?.refreshToken;
   }
 
-  // Check if access token is expired or about to expire
   public isTokenExpired(): boolean {
     if (!this.tokenData) return true;
     
     const now = Date.now();
     const expiresAt = this.tokenData.expiresAt;
-    const threshold = REFRESH_THRESHOLD * 1000; // Convert to milliseconds
+    const threshold = REFRESH_THRESHOLD * 1000;
     
-    const willExpireSoon = now >= (expiresAt - threshold);
-    
-    // Log token status for testing
-    if (willExpireSoon) {
-      console.log('Token will expire soon:', {
-        now: new Date(now).toLocaleTimeString(),
-        expiresAt: new Date(expiresAt).toLocaleTimeString(),
-        timeLeft: Math.floor((expiresAt - now) / 1000) + 's',
-        threshold: REFRESH_THRESHOLD + 's'
-      });
-    }
-    
-    return willExpireSoon;
+    return now >= (expiresAt - threshold);
   }
 
-  // Set tokens from login/signup response
-  public setTokens(data: AuthResponse): void {
-    this.saveTokens(data);
-    console.log(data);
+  public setTokens(data: AuthResponse, userId?: number): void {
+    this.saveTokens(data, userId);
   }
 
-  // Refresh access token
   public async refreshAccessToken(): Promise<boolean> {
-    console.log('Attempting to refresh access token...');
-    
-    // If there's already a refresh in progress, wait for it
     if (this.refreshPromise) {
       try {
         await this.refreshPromise;
@@ -151,7 +128,6 @@ export class TokenManager {
 
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
-      console.log('No refresh token available');
       this.clearTokens();
       return false;
     }
@@ -160,10 +136,8 @@ export class TokenManager {
     
     try {
       await this.refreshPromise;
-      console.log('Token refresh successful');
       return true;
     } catch (error) {
-      console.error('Token refresh failed:', error);
       this.clearTokens();
       return false;
     } finally {
@@ -172,19 +146,13 @@ export class TokenManager {
   }
 
   private async performTokenRefresh(refreshToken: string): Promise<void> {
-    try {
-      const response = await authApi.refreshToken({
-        refreshToken,
-        deviceInfo: getDeviceInfo(),
-      });
-
-      this.saveTokens(response);
-    } catch (error) {
-      throw error;
-    }
+    const response = await authApi.refreshToken({
+      refreshToken,
+      deviceInfo: getDeviceInfo(),
+    });
+    this.saveTokens(response); // user_id will be extracted from response automatically
   }
 
-  // Get valid access token (refresh if needed)
   public async getValidAccessToken(): Promise<string | null> {
     if (!this.hasTokens()) {
       return null;
@@ -200,16 +168,13 @@ export class TokenManager {
     return this.getAccessToken();
   }
 
-  // Check if user is authenticated
   public isAuthenticated(): boolean {
     return this.hasTokens() && !this.isTokenExpired();
   }
 
-  // Migrate from old token format (if exists)
   public migrateFromLegacyToken(): boolean {
     const legacyToken = localStorage.getItem('authToken');
     if (legacyToken && !this.hasTokens()) {
-      // We can't migrate without refresh token, so just clear the legacy token
       localStorage.removeItem('authToken');
       return false;
     }

@@ -58,17 +58,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const validToken = await tokenManager.getValidAccessToken();
           
           if (validToken) {
-            // Try to get user info from backend
-            try {
-              const response = await authApi.me();
+            // Use stored user data from tokenManager instead of calling /me
+            const storedUserId = tokenManager.getUserId();
+            const storedEmail = tokenManager.getUserEmail();
+            const storedRole = tokenManager.getUserRole();
+            
+            if (storedUserId && storedEmail && storedRole) {
               const userData: User = {
-                userId: response.userId,
-                email: response.email,
-                role: tokenManager.getUserRole() || 'USER',
+                userId: storedUserId,
+                email: storedEmail,
+                role: storedRole,
               };
               setUser(userData);
-            } catch (error) {
-              // If /me fails, clear tokens
+            } else {
+              // No stored user data available, clear tokens
               tokenManager.clearTokens();
             }
           } else {
@@ -96,26 +99,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
       console.log("Login response:", response);
       
-      // Store tokens using token manager
+      // Store tokens using token manager - user_id will be extracted automatically
       tokenManager.setTokens(response);
       
       console.log("Login successful, tokens stored");
       
       // Create user object from response
       const userData: User = {
-        userId: 0, // We'll get this from /me endpoint
+        userId: response.user_id, // Extract user_id from backend response
         email: response.user_email,
         role: response.role,
       };
-      
-      // Get actual user data from /me endpoint
-      try {
-        const meResponse = await authApi.me();
-        userData.userId = meResponse.userId;
-        userData.email = meResponse.email;
-      } catch (error) {
-        console.warn('Failed to get user info from /me endpoint:', error);
-      }
       
       console.log("User data:", userData);
       
@@ -133,24 +127,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       console.log("Signup response:", response);
       
-      // Store tokens using token manager
+      // Store tokens using token manager - user_id will be extracted automatically
       tokenManager.setTokens(response);
       
       // Create user object from response
       const newUser: User = {
-        userId: 0, // We'll get this from /me endpoint
+        userId: response.user_id, // Extract user_id from backend response
         email: response.user_email,
         role: response.role,
       };
-      
-      // Get actual user data from /me endpoint
-      try {
-        const meResponse = await authApi.me();
-        newUser.userId = meResponse.userId;
-        newUser.email = meResponse.email;
-      } catch (error) {
-        console.warn('Failed to get user info from /me endpoint:', error);
-      }
       
       console.log("Signup user data:", newUser);
       
@@ -168,24 +153,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       console.log("Social login response:", response);
       
-      // Store tokens using token manager
+      // Store tokens using token manager - user_id will be extracted automatically
       tokenManager.setTokens(response);
       
       // Create user object from response
       const newUser: User = {
-        userId: 0, // We'll get this from /me endpoint
+        userId: response.user_id, // Extract user_id from backend response
         email: response.user_email,
         role: response.role,
       };
-      
-      // Get actual user data from /me endpoint
-      try {
-        const meResponse = await authApi.me();
-        newUser.userId = meResponse.userId;
-        newUser.email = meResponse.email;
-      } catch (error) {
-        console.warn('Failed to get user info from /me endpoint:', error);
-      }
       
       console.log("Social login user data:", newUser);
       
