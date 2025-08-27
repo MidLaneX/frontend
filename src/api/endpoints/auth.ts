@@ -16,9 +16,26 @@ export interface SocialLoginRequest {
 
 // Update interfaces to match backend response format
 export interface AuthResponse {
-  token: string;
-  userId: number;
-  email: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  user_email: string;
+  role: string;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+  deviceInfo: string;
+}
+
+export interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  user_email: string;
+  role: string;
 }
 
 export interface MeResponse {
@@ -39,6 +56,11 @@ export const authApi = {
 
   socialLogin: async (data: SocialLoginRequest): Promise<AuthResponse> => {
     const response = await apiClient.post<AuthResponse>('/auth/initial/social/login', data);
+    return response.data;
+  },
+
+  refreshToken: async (data: RefreshTokenRequest): Promise<RefreshTokenResponse> => {
+    const response = await apiClient.post<RefreshTokenResponse>('/auth/initial/refresh', data);
     return response.data;
   },
 
