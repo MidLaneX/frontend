@@ -27,14 +27,17 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
+import CircularProgress from '@mui/material/CircularProgress';
 import type { Project } from "../types";
 import { ProjectService } from '@/services/ProjectService';
+import { useAuth } from '@/context/AuthContext';
 
 const Dashboard: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
-  // Get user info from localStorage or use defaults
-  const userId = parseInt(localStorage.getItem('userId') || '5');
+  // Get user info from auth context or use defaults
+  const userId = user?.userId || parseInt(localStorage.getItem('userId') || '5');
   const [orgId, setOrgId] = useState(1);
   const [role, setRole] = useState('ADMIN');
   const [templateType, setTemplateType] = useState('scrum');
@@ -45,21 +48,38 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']);
 
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   // Fetch projects when filters change
   useEffect(() => {
     const fetchProjects = async () => {
+      if (!isAuthenticated || !userId) {
+        return;
+      }
+      
       setLoading(true);
+      setError(null);
       try {
+        console.log('Fetching projects for user:', userId);
         const data = await ProjectService.getAllProjects(userId, orgId, role, templateType, teamIds);
-        setProjects(data);
+        console.log('Fetched projects:', data);
+        setProjects(data || []);
       } catch (err) {
-        setError('Failed to load projects');
+        console.error('Error fetching projects:', err);
+        setError('Failed to load projects. Please try again.');
       } finally {
         setLoading(false);
       }
     };
     fetchProjects();
-  }, [userId, orgId, role, templateType, teamIds]);
+  }, [userId, orgId, role, templateType, teamIds, isAuthenticated]);
 
   // Create project handler
   const [newProject, setNewProject] = useState({
@@ -70,13 +90,22 @@ const Dashboard: React.FC = () => {
   });
 
   const handleCreateProject = async () => {
+    if (!newProject.name.trim()) {
+      setError('Project name is required');
+      return;
+    }
+    
     setLoading(true);
+    setError(null);
     try {
+      console.log('Creating project:', newProject);
       const result = await ProjectService.createProject(newProject, newProject.templateType);
+      console.log('Created project:', result);
       setProjects(prev => [...prev, result]);
       setNewProject({ orgId: orgId, name: '', type: 'Internal', templateType: templateType });
     } catch (err) {
-      setError('Failed to create project');
+      console.error('Error creating project:', err);
+      setError('Failed to create project. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -93,17 +122,17 @@ const Dashboard: React.FC = () => {
   };
 
   // Calculate statistics
-  const totalProjects = projectList.length;
-  const totalTasks = projectList.reduce((sum, project) => sum + project.tasks.length, 0);
-  const completedTasks = projectList.reduce((sum, project) => 
-    sum + project.tasks.filter(task => task.status === 'Done').length, 0
+  const totalProjects = projects.length;
+  const totalTasks = projects.reduce((sum, project) => sum + (project.tasks?.length || 0), 0);
+  const completedTasks = projects.reduce((sum, project) => 
+    sum + (project.tasks?.filter(task => task.status === 'Done').length || 0), 0
   );
   const totalTeamMembers = new Set(
-    projectList.flatMap(project => project.teamMembers.map(member => member.name))
+    projects.flatMap(project => (project.teamMembers || []).map(member => member.name))
   ).size;
 
   const getProjectProgress = (project: Project) => {
-    if (project.tasks.length === 0) return 0;
+    if (!project.tasks || project.tasks.length === 0) return 0;
     const completed = project.tasks.filter(task => task.status === 'Done').length;
     return Math.round((completed / project.tasks.length) * 100);
   };
@@ -132,14 +161,22 @@ const Dashboard: React.FC = () => {
       {/* Loading State */}
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-          <Typography>Loading projects...</Typography>
+          <CircularProgress size={40} />
+          <Typography sx={{ ml: 2 }}>Loading projects...</Typography>
         </Box>
       )}
 
       {/* Error State */}
       {error && (
         <Box sx={{ mb: 3, p: 2, bgcolor: '#FFEBE6', border: '1px solid #FF5630', borderRadius: 1 }}>
-          <Typography color="error">Error loading projects: {error}</Typography>
+          <Typography color="error">{error}</Typography>
+          <Button 
+            size="small" 
+            onClick={() => setError(null)} 
+            sx={{ mt: 1, color: '#FF5630' }}
+          >
+            Dismiss
+          </Button>
         </Box>
       )}
 
@@ -405,25 +442,54 @@ const Dashboard: React.FC = () => {
       </Box>
 
       {/* Projects Section */}
-      <Box>
-        <Typography 
-          variant="h5" 
-          sx={{ 
-            fontWeight: 600,
-            color: '#172B4D',
-            mb: 3,
-            fontSize: '20px'
-          }}
-        >
-          Projects ({projectList.length})
-        </Typography>
-        
-        <Box sx={{ 
-          display: 'grid', 
-          gap: 3, 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))' 
-        }}>
-          {Array.isArray(projects) && projects.map((project: Project) => {
+      {!loading && !error && (
+        <Box>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              color: '#172B4D',
+              mb: 3,
+              fontSize: '20px'
+            }}
+          >
+            Projects ({projects.length})
+          </Typography>
+          
+          {projects.length === 0 ? (
+            <Box sx={{ 
+              textAlign: 'center', 
+              py: 8,
+              bgcolor: 'white',
+              borderRadius: 2,
+              border: '1px solid #DFE1E6'
+            }}>
+              <Typography variant="h6" sx={{ color: '#5E6C84', mb: 1 }}>
+                No projects found
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#5E6C84', mb: 3 }}>
+                Create your first project to get started
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setIsCreateModalOpen(true)}
+                sx={{
+                  bgcolor: '#0052CC',
+                  textTransform: 'none',
+                  fontWeight: 600
+                }}
+              >
+                Create Project
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ 
+              display: 'grid', 
+              gap: 3, 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))' 
+            }}>
+              {Array.isArray(projects) && projects.map((project: Project) => {
             const progress = getProjectProgress(project);
             const status = getProjectStatus(project);
             const isStarred = starredProjects.includes(project.id);
@@ -582,10 +648,10 @@ const Dashboard: React.FC = () => {
                           } 
                         }}
                       >
-                        {(project.teamMembers ?? []).map((member: any, index: number) => (
+                        {(project.teamMembers || []).map((member: any, index: number) => (
                           <Tooltip key={member.name} title={`${member.name} (${member.role})`}>
                             <Avatar sx={{ bgcolor: `hsl(${index * 60}, 70%, 50%)` }}>
-                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                             </Avatar>
                           </Tooltip>
                         ))}
@@ -593,7 +659,7 @@ const Dashboard: React.FC = () => {
                       
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Chip 
-                          label={`${project.tasks.length} issues`}
+                          label={`${(project.tasks || []).length} issues`}
                           size="small"
                           icon={<AssignmentIcon sx={{ fontSize: 14 }} />}
                           sx={{
@@ -626,7 +692,9 @@ const Dashboard: React.FC = () => {
             );
           })}
         </Box>
-      </Box>
+          )}
+        </Box>
+      )}
 
       {/* Modal for creating a project */}
       {/* You can replace this with your actual modal implementation */}

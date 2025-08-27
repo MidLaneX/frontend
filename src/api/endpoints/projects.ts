@@ -1,5 +1,6 @@
-import { apiClient } from '../client';
+import { apiClient, projectsApiClient } from '../client';
 import type { Project } from '../../types';
+import type { ProjectDTO } from '../../types/dto';
 
 export const projectsApi = {
   // Get all projects for a user with query parameters
