@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
 
 import TaskDetailModal from "../task/TaskDetailModal";
 import CreateIssueModal from "../CreateIssueModal";
 import ProjectNavigation from "./ProjectNavigation";
-import { projects } from "@/data/projects";
-import type { Task } from "@/types";
+import { ProjectService } from "@/services/ProjectService";
+import type { Task, Project } from "@/types";
 
 // Constants for consistent styling
 const STYLES = {
@@ -60,20 +61,43 @@ const ProjectPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
 
   // State management
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Derived state
-  const project = projects.find((p) => p.id === projectId);
-
-  // Effects
+  // Fetch project data
   useEffect(() => {
-    if (project) {
-      setTasks(project.tasks || []);
-    }
-  }, [project]);
+    const fetchProject = async () => {
+      if (!projectId) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        console.log('Fetching project:', projectId);
+        const projectData = await ProjectService.getProjectById(parseInt(projectId), 'scrum');
+        console.log('Fetched project data:', projectData);
+        
+        if (projectData) {
+          setProject(projectData);
+          setTasks(projectData.tasks || []);
+        } else {
+          setError('Project not found');
+        }
+      } catch (err) {
+        console.error('Error fetching project:', err);
+        setError('Failed to load project data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [projectId]);
 
   // Event handlers
   /**
@@ -98,7 +122,7 @@ const ProjectPage: React.FC = () => {
     (taskId: string, updates: Partial<Task>) => {
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
-          task.id === taskId ? { ...task, ...updates } : task
+          String(task.id) === taskId ? { ...task, ...updates } : task
         )
       );
     },
@@ -112,7 +136,7 @@ const ProjectPage: React.FC = () => {
     (issue: Omit<Task, "id" | "comments">) => {
       const newTask: Task = {
         ...issue,
-        id: Date.now().toString(),
+        id: Date.now(), // Generate unique numeric ID
         comments: [],
       };
       setTasks((prevTasks) => [...prevTasks, newTask]);
@@ -136,10 +160,20 @@ const ProjectPage: React.FC = () => {
   }, []);
 
   // Render guards
-  if (!project) {
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !project) {
     return (
       <Box sx={STYLES.notFoundContainer}>
-        <Typography variant="h6">Project not found</Typography>
+        <Typography variant="h6" color="error">
+          {error || 'Project not found'}
+        </Typography>
       </Box>
     );
   }

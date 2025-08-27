@@ -54,7 +54,7 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({
   onUpdateTask,
 }) => {
   // State
-  const [activeTab, setActiveTab] = useState<TabValue>("board");
+  const [activeTab, setActiveTab] = useState<TabValue>("summary");
 
   // Event handlers
   const handleTabChange = useCallback(
@@ -68,32 +68,44 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({
    * Renders the content for the currently active tab
    */
   const renderTabContent = useCallback(() => {
-    switch (activeTab) {
-      case "summary":
-        return <ProjectSummary project={project} tasks={tasks} />;
-      case "timeline":
-        return <ProjectTimeline project={project} tasks={tasks} />;
-      case "backlog":
-        return (
-          <ProjectBacklog
-            tasks={tasks}
-            onTaskClick={onTaskClick}
-            onCreateTask={onCreateTask}
-            onUpdateTask={onUpdateTask}
-          />
-        );
-      case "board":
-        return (
-          <ProjectBoard
-            project={project}
-            tasks={tasks}
-            onTaskClick={onTaskClick}
-            onCreateTask={onCreateTask}
-            onTaskUpdate={onUpdateTask}
-          />
-        );
-      default:
-        return <ProjectSummary project={project} tasks={tasks} />;
+    console.log('Rendering tab content for:', activeTab);
+    try {
+      switch (activeTab) {
+        case "summary":
+          return <ProjectSummary project={project} tasks={tasks} />;
+        case "timeline":
+          return <ProjectTimeline project={project} tasks={tasks} />;
+        case "backlog":
+          return (
+            <ProjectBacklog
+              tasks={tasks}
+              onTaskClick={onTaskClick}
+              onCreateTask={onCreateTask}
+              onUpdateTask={onUpdateTask}
+            />
+          );
+        case "board":
+          return (
+            <ProjectBoard
+              project={project}
+              tasks={tasks}
+              onTaskClick={onTaskClick}
+              onCreateTask={onCreateTask}
+              onTaskUpdate={onUpdateTask}
+            />
+          );
+        default:
+          return <ProjectSummary project={project} tasks={tasks} />;
+      }
+    } catch (error) {
+      console.error('Error rendering tab content:', error);
+      return (
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+          <Typography color="error">
+            Error loading {activeTab} view. Please try refreshing the page.
+          </Typography>
+        </Box>
+      );
     }
   }, [activeTab, project, tasks, onTaskClick, onCreateTask, onUpdateTask]);
 
@@ -146,7 +158,7 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <AvatarGroup max={5}>
-              {project.teamMembers.map((member, index) => (
+              {(project.teamMembers || []).map((member, index) => (
                 <Avatar
                   key={index}
                   sx={{

@@ -64,30 +64,8 @@ const Sidebar: React.FC = () => {
   ];
 
   const recentProjects: ProjectItem[] = [
-    {
-      id: '1',
-      name: 'E-Commerce Platform',
-      key: 'ECP',
-      avatar: '🛒',
-      type: 'Software',
-      starred: true
-    },
-    {
-      id: '2',
-      name: 'Mobile App Development',
-      key: 'MAD',
-      avatar: '📱',
-      type: 'Software',
-      starred: false
-    },
-    {
-      id: '3',
-      name: 'Marketing Campaign',
-      key: 'MC',
-      avatar: '📢',
-      type: 'Business',
-      starred: true
-    }
+    // Remove hardcoded projects - will be populated from API data
+    // TODO: Implement dynamic recent projects from user's actual project data
   ];
 
   const isActivePath = (path: string) => {

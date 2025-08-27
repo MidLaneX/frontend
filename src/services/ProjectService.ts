@@ -80,52 +80,34 @@ export class ProjectService {
     try {
       const response = await projectsApi.getProject(id, template);
       console.log('ProjectService: getProjectById response:', response.data);
-      return response.data;
+      
+      // If response.data is already a Project object, return it
+      if (response.data && typeof response.data === 'object' && 'teamMembers' in response.data) {
+        return response.data as Project;
+      }
+      
+      // If response.data is a ProjectDTO, transform it to Project
+      const dto = response.data as ProjectDTO;
+      if (dto) {
+        return {
+          id: String(dto.id),
+          name: dto.name,
+          key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
+          description: dto.name || '',
+          timeline: {
+            start: dto.createdAt || new Date().toISOString().split('T')[0],
+            end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          },
+          type: dto.type as any,
+          teamMembers: [], // Initialize empty team members array
+          tasks: [] // Initialize empty tasks array
+        };
+      }
+      
+      return null;
     } catch (error) {
       console.error('Failed to get project:', error);
       return null;
     }
-  }
-
- 
-  
-
-  /**
-   * Update an existing project
-   */
-  static updateProject(id: string, updates: Partial<Project>): Project | null {
-    const projectIndex = this.projects.findIndex(p => p.id === id);
-    if (projectIndex === -1) return null;
-
-    this.projects[projectIndex] = { ...this.projects[projectIndex], ...updates };
-    return this.projects[projectIndex];
-  }
-
-  /**
-   * Delete a project
-   */
-  static deleteProject(id: string): boolean {
-    const initialLength = this.projects.length;
-    this.projects = this.projects.filter(p => p.id !== id);
-    return this.projects.length < initialLength;
-  }
-
-  /**
-   * Get projects by type
-   */
-  static getProjectsByType(type: Project['type']): Project[] {
-    return this.projects.filter(project => project.type === type);
-  }
-
-  /**
-   * Search projects by name or key
-   */
-  static searchProjects(query: string): Project[] {
-    const lowercaseQuery = query.toLowerCase();
-    return this.projects.filter(project => 
-      project.name.toLowerCase().includes(lowercaseQuery) ||
-      project.key.toLowerCase().includes(lowercaseQuery) ||
-      project.description.toLowerCase().includes(lowercaseQuery)
-    );
   }
 }
