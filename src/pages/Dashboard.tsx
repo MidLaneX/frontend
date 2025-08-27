@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -22,22 +22,93 @@ import StarIcon from '@mui/icons-material/Star'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import { Link } from 'react-router-dom'
-import { projects } from "../data/projects";
-import CreateProjectModal from "@/components/features/CreateProjectModal";
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
+import CircularProgress from '@mui/material/CircularProgress';
 import type { Project } from "../types";
+import { ProjectService } from '@/services/ProjectService';
+import { useAuth } from '@/context/AuthContext';
 
 const Dashboard: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [projectList, setProjectList] = useState(projects);
-  const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']); // Example starred projects
+  
+  // Get user info from auth context or use defaults
+  const userId = user?.userId || parseInt(localStorage.getItem('userId') || '5');
+  const [orgId, setOrgId] = useState(1);
+  const [role, setRole] = useState('ADMIN');
+  const [templateType, setTemplateType] = useState('scrum');
+  const [teamIds, setTeamIds] = useState<number[]>([]);
 
-  const handleCreateProject = (newProject: Omit<Project, 'id' | 'tasks'>) => {
-    const project: Project = {
-      ...newProject,
-      id: (projectList.length + 1).toString(),
-      tasks: []
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']);
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Fetch projects when filters change
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!isAuthenticated || !userId) {
+        return;
+      }
+      
+      setLoading(true);
+      setError(null);
+      try {
+        console.log('Fetching projects for user:', userId);
+        const data = await ProjectService.getAllProjects(userId, orgId, role, templateType, teamIds);
+        console.log('Fetched projects:', data);
+        setProjects(data || []);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        setError('Failed to load projects. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     };
-    setProjectList(prev => [...prev, project]);
+    fetchProjects();
+  }, [userId, orgId, role, templateType, teamIds, isAuthenticated]);
+
+  // Create project handler
+  const [newProject, setNewProject] = useState({
+    orgId: 1,
+    name: '',
+    type: 'Internal',
+    templateType: 'scrum'
+  });
+
+  const handleCreateProject = async () => {
+    if (!newProject.name.trim()) {
+      setError('Project name is required');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('Creating project:', newProject);
+      const result = await ProjectService.createProject(newProject, newProject.templateType);
+      console.log('Created project:', result);
+      setProjects(prev => [...prev, result]);
+      setNewProject({ orgId: orgId, name: '', type: 'Internal', templateType: templateType });
+    } catch (err) {
+      console.error('Error creating project:', err);
+      setError('Failed to create project. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleStar = (projectId: string, event: React.MouseEvent) => {
@@ -51,17 +122,17 @@ const Dashboard: React.FC = () => {
   };
 
   // Calculate statistics
-  const totalProjects = projectList.length;
-  const totalTasks = projectList.reduce((sum, project) => sum + project.tasks.length, 0);
-  const completedTasks = projectList.reduce((sum, project) => 
-    sum + project.tasks.filter(task => task.status === 'Done').length, 0
+  const totalProjects = projects.length;
+  const totalTasks = projects.reduce((sum, project) => sum + (project.tasks?.length || 0), 0);
+  const completedTasks = projects.reduce((sum, project) => 
+    sum + (project.tasks?.filter(task => task.status === 'Done').length || 0), 0
   );
   const totalTeamMembers = new Set(
-    projectList.flatMap(project => project.teamMembers.map(member => member.name))
+    projects.flatMap(project => (project.teamMembers || []).map(member => member.name))
   ).size;
 
   const getProjectProgress = (project: Project) => {
-    if (project.tasks.length === 0) return 0;
+    if (!project.tasks || project.tasks.length === 0) return 0;
     const completed = project.tasks.filter(task => task.status === 'Done').length;
     return Math.round((completed / project.tasks.length) * 100);
   };
@@ -87,30 +158,116 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, bgcolor: '#FAFBFC', minHeight: '100vh', minWidth: '80vh' }}>
-      {/* Header Section */}
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+          <CircularProgress size={40} />
+          <Typography sx={{ ml: 2 }}>Loading projects...</Typography>
+        </Box>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Box sx={{ mb: 3, p: 2, bgcolor: '#FFEBE6', border: '1px solid #FF5630', borderRadius: 1 }}>
+          <Typography color="error">{error}</Typography>
+          <Button 
+            size="small" 
+            onClick={() => setError(null)} 
+            sx={{ mt: 1, color: '#FF5630' }}
+          >
+            Dismiss
+          </Button>
+        </Box>
+      )}
+
+      {/* Header Section & Create Project Form */}
       <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box>
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                fontWeight: 600,
-                color: '#172B4D',
-                mb: 1,
-                fontSize: '28px'
-              }}
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontWeight: 600,
+            color: '#172B4D',
+            mb: 2,
+            fontSize: '28px'
+          }}
+        >
+          Projects Overview
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 3 }}>
+          <FormControl sx={{ minWidth: 120 }}>
+            <TextField
+              label="Org ID"
+              type="number"
+              value={orgId}
+              onChange={e => setOrgId(Number(e.target.value))}
+              size="small"
+            />
+          </FormControl>
+          <FormControl sx={{ minWidth: 120 }}>
+            <TextField
+              label="User ID"
+              type="number"
+              value={userId}
+              size="small"
+              disabled
+            />
+          </FormControl>
+          <FormControl sx={{ minWidth: 120 }}>
+            <TextField
+              label="Role"
+              value={role}
+              onChange={e => setRole(e.target.value)}
+              size="small"
+            />
+          </FormControl>
+          <FormControl sx={{ minWidth: 120 }}>
+            <TextField
+              label="Template Type"
+              value={templateType}
+              onChange={e => setTemplateType(e.target.value)}
+              size="small"
+            />
+          </FormControl>
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel>Team IDs</InputLabel>
+            <Select
+              multiple
+              value={teamIds}
+              onChange={e => setTeamIds(typeof e.target.value === 'string' ? e.target.value.split(',').map(Number) : e.target.value as number[])}
+              label="Team IDs"
+              size="small"
+              renderValue={selected => (selected as number[]).join(', ')}
             >
-              Projects Overview
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#5E6C84', fontSize: '16px' }}>
-              Monitor and manage all your MidLineX projects 
-              with real-time insights
-            </Typography>
-          </Box>
+              {[1,2,3,4,5].map(id => (
+                <MenuItem key={id} value={id}>{id}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+        {/* Create Project Form */}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
+          <TextField
+            label="Project Name"
+            value={newProject.name}
+            onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
+            size="small"
+          />
+          <TextField
+            label="Type"
+            value={newProject.type}
+            onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
+            size="small"
+          />
+          <TextField
+            label="Template Type"
+            value={newProject.templateType}
+            onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
+            size="small"
+          />
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={handleCreateProject}
             sx={{
               bgcolor: '#0052CC',
               textTransform: 'none',
@@ -285,25 +442,54 @@ const Dashboard: React.FC = () => {
       </Box>
 
       {/* Projects Section */}
-      <Box>
-        <Typography 
-          variant="h5" 
-          sx={{ 
-            fontWeight: 600,
-            color: '#172B4D',
-            mb: 3,
-            fontSize: '20px'
-          }}
-        >
-          Projects ({projectList.length})
-        </Typography>
-        
-        <Box sx={{ 
-          display: 'grid', 
-          gap: 3, 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))' 
-        }}>
-          {projectList.map((project) => {
+      {!loading && !error && (
+        <Box>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              color: '#172B4D',
+              mb: 3,
+              fontSize: '20px'
+            }}
+          >
+            Projects ({projects.length})
+          </Typography>
+          
+          {projects.length === 0 ? (
+            <Box sx={{ 
+              textAlign: 'center', 
+              py: 8,
+              bgcolor: 'white',
+              borderRadius: 2,
+              border: '1px solid #DFE1E6'
+            }}>
+              <Typography variant="h6" sx={{ color: '#5E6C84', mb: 1 }}>
+                No projects found
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#5E6C84', mb: 3 }}>
+                Create your first project to get started
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setIsCreateModalOpen(true)}
+                sx={{
+                  bgcolor: '#0052CC',
+                  textTransform: 'none',
+                  fontWeight: 600
+                }}
+              >
+                Create Project
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ 
+              display: 'grid', 
+              gap: 3, 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))' 
+            }}>
+              {Array.isArray(projects) && projects.map((project: Project) => {
             const progress = getProjectProgress(project);
             const status = getProjectStatus(project);
             const isStarred = starredProjects.includes(project.id);
@@ -462,10 +648,10 @@ const Dashboard: React.FC = () => {
                           } 
                         }}
                       >
-                        {project.teamMembers.map((member, index) => (
+                        {(project.teamMembers || []).map((member: any, index: number) => (
                           <Tooltip key={member.name} title={`${member.name} (${member.role})`}>
                             <Avatar sx={{ bgcolor: `hsl(${index * 60}, 70%, 50%)` }}>
-                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                             </Avatar>
                           </Tooltip>
                         ))}
@@ -473,7 +659,7 @@ const Dashboard: React.FC = () => {
                       
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Chip 
-                          label={`${project.tasks.length} issues`}
+                          label={`${(project.tasks || []).length} issues`}
                           size="small"
                           icon={<AssignmentIcon sx={{ fontSize: 14 }} />}
                           sx={{
@@ -506,13 +692,69 @@ const Dashboard: React.FC = () => {
             );
           })}
         </Box>
-      </Box>
+          )}
+        </Box>
+      )}
 
-      <CreateProjectModal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreateProject={handleCreateProject}
-      />
+      {/* Modal for creating a project */}
+      {/* You can replace this with your actual modal implementation */}
+      {isCreateModalOpen && (
+        <Box sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          bgcolor: 'rgba(0,0,0,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1300
+        }}>
+          <Paper sx={{ p: 4, minWidth: 320, borderRadius: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Create Project</Typography>
+            <TextField
+              label="Project Name"
+              value={newProject.name}
+              onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Type"
+              value={newProject.type}
+              onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Template Type"
+              value={newProject.templateType}
+              onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+              <Button
+                variant="contained"
+                onClick={async () => {
+                  await handleCreateProject();
+                  setIsCreateModalOpen(false);
+                }}
+                sx={{ bgcolor: '#0052CC', color: 'white' }}
+              >
+                Create
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => setIsCreateModalOpen(false)}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
     </Box>
   )
 }

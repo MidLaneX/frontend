@@ -22,6 +22,7 @@ export interface AuthResponse {
   expires_in: number;
   user_email: string;
   role: string;
+  user_id: number; // Backend sends user_id (snake_case)
 }
 
 export interface RefreshTokenRequest {
@@ -36,11 +37,7 @@ export interface RefreshTokenResponse {
   expires_in: number;
   user_email: string;
   role: string;
-}
-
-export interface MeResponse {
-  userId: number;
-  email: string;
+  user_id: number; // Backend sends user_id (snake_case)
 }
 
 export const authApi = {
@@ -61,11 +58,6 @@ export const authApi = {
 
   refreshToken: async (data: RefreshTokenRequest): Promise<RefreshTokenResponse> => {
     const response = await apiClient.post<RefreshTokenResponse>('/auth/initial/refresh', data);
-    return response.data;
-  },
-
-  me: async (): Promise<MeResponse> => {
-    const response = await apiClient.get<MeResponse>('/auth/me');
     return response.data;
   },
 

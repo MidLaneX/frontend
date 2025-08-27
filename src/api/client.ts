@@ -14,7 +14,7 @@ export const apiClient = axios.create({
 
 // Projects Service  
 export const projectsApiClient = axios.create({
-  baseURL: ENV.PROJECTS_SERVICE_URL,
+  baseURL: ENV.API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
