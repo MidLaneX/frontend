@@ -55,7 +55,7 @@ const Sidebar: React.FC = () => {
   const [recentExpanded, setRecentExpanded] = useState(true);
 
   const mainNavigation: NavigationItem[] = [
-    { name: 'Your work', icon: <WorkIcon />, path: '/', badge: 3 },
+    // { name: 'Your work', icon: <WorkIcon />, path: '/', badge: 3 },
     { name: 'Projects', icon: <FolderIcon />, path: '/projects' },
     { name: 'Organizations', icon: <FolderIcon />, path: '/organizations' },
     { name: 'Filters', icon: <FormatListBulletedIcon />, path: '/filters' },

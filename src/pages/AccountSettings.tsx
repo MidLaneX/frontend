@@ -286,7 +286,7 @@ const AccountSettings: React.FC = () => {
                     boxShadow: '0 4px 12px rgba(255,87,34,0.3)'
                   }}
                 >
-                  {profileData.firstName[0]}{profileData.lastName[0]}
+                  {(profileData.firstName?.[0] || '').toUpperCase()}{(profileData.lastName?.[0] || '').toUpperCase()}
                 </Avatar>
                 <Tooltip title="Change profile picture">
                   <IconButton 
