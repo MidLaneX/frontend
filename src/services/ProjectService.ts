@@ -9,7 +9,7 @@ export class ProjectService {
   /**
    * Get all projects for a user
    */
-  static async getAllProjects(userId: number = 5, orgId: number = 1, role: string = 'ADMIN', templateType: string = 'scrum', teamIds: number[] = []): Promise<Project[]> {
+  static async getAllProjects(userId: number = 1, orgId: number = 1, role: string = 'ADMIN', templateType: string = 'scrum', teamIds: number[] = []): Promise<Project[]> {
     // Build UserProjectRequestDTO
     const userProjectRequestDTO: UserProjectRequestDTO = { userId, role };
     // Build payload

@@ -5,7 +5,7 @@ import type { ProjectDTO } from '../../types/dto';
 export const projectsApi = {
   // Get all projects for a user with query parameters
   getProjects: (
-    userId: number = 5,
+    userId: number = 1,
     orgId: number = 1,
     role: string = 'ADMIN',
     templateType: string = 'scrum',

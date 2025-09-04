@@ -34,7 +34,7 @@ const Dashboard: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   // Get user info from localStorage or use defaults
-  const userId = parseInt(localStorage.getItem('userId') || '5');
+  const userId = parseInt(localStorage.getItem('userId') || '1');
   const [orgId, setOrgId] = useState(1);
   const [role, setRole] = useState('ADMIN');
   const [templateType, setTemplateType] = useState('scrum');
