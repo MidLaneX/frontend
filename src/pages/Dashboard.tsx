@@ -40,6 +40,32 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdProp }) => {
   const { user, isAuthenticated } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createStep, setCreateStep] = useState<'type' | 'template' | 'details'>('type');
+  const [selectedProjectType, setSelectedProjectType] = useState<string>('');
+  const [selectedTemplateType, setSelectedTemplateType] = useState<string>('');
+  // Project type and template options
+  const projectTypeOptions = [
+    { type: 'Classic', img: 'https://img.icons8.com/color/96/briefcase.png' },
+    { type: 'Business', img: 'https://img.icons8.com/color/96/business.png' },
+    { type: 'Software', img: 'https://img.icons8.com/color/96/source-code.png' }
+  ];
+  const templateOptions: Record<string, { template: string; img: string }[]> = {
+    Software: [
+      { template: 'Scrum', img: 'https://img.icons8.com/color/96/agile.png' },
+      { template: 'Kanban', img: 'https://img.icons8.com/color/96/kanban.png' },
+      { template: 'Waterfall', img: 'https://img.icons8.com/color/96/waterfall.png' }
+    ],
+    Business: [
+      { template: 'Lean', img: 'https://img.icons8.com/color/96/strategy.png' },
+      { template: 'Six Sigma', img: 'https://img.icons8.com/color/96/sigma.png' },
+      { template: 'Startup', img: 'https://img.icons8.com/color/96/startup.png' }
+    ],
+    Classic: [
+      { template: 'Traditional', img: 'https://img.icons8.com/color/96/organization.png' },
+      { template: 'Matrix', img: 'https://img.icons8.com/color/96/matrix.png' },
+      { template: 'Functional', img: 'https://img.icons8.com/color/96/functional.png' }
+    ]
+  };
 
   // Use props if provided, otherwise fallback
   const userId = userIdProp || user?.userId || parseInt(localStorage.getItem('userId') || '5');
@@ -90,8 +116,11 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
   const [newProject, setNewProject] = useState({
     orgId: orgIdProp || orgId,
     name: '',
-    type: 'Internal',
-    templateType: 'scrum'
+    type: '',
+    templateType: '',
+    description: '',
+    teamId: '',
+    createdBy: user?.name || ''
   });
 
   const handleCreateProject = async () => {
@@ -105,13 +134,23 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
       // Always use the current orgId for project creation
       const projectToCreate = {
         ...newProject,
-        orgId: orgId || orgIdProp
+        orgId: orgId || orgIdProp,
+        userId: userId,
+        role: role,
+        type: selectedProjectType,
+        templateType: selectedTemplateType,
+        teamId: newProject.teamId,
+        createdBy: newProject.createdBy || user?.name || ''
       };
       console.log('Creating project:', projectToCreate);
       const result = await ProjectService.createProject(projectToCreate, projectToCreate.templateType);
       console.log('Created project:', result);
       setProjects(prev => [...prev, result]);
-      setNewProject({ orgId: orgId || orgIdProp, name: '', type: 'Internal', templateType: templateType });
+      setNewProject({ orgId: orgId || orgIdProp, name: '', type: '', templateType: '', description: '', teamId: '', createdBy: user?.name || '' });
+      setSelectedProjectType('');
+      setSelectedTemplateType('');
+      setCreateStep('type');
+      setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Error creating project:', err);
       setError('Failed to create project. Please try again.');
@@ -253,30 +292,12 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
             </Select>
           </FormControl>
         </Box>
-        {/* Create Project Form */}
+        {/* Create Project Button only triggers modal */}
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
-          <TextField
-            label="Project Name"
-            value={newProject.name}
-            onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
-            size="small"
-          />
-          <TextField
-            label="Type"
-            value={newProject.type}
-            onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
-            size="small"
-          />
-          <TextField
-            label="Template Type"
-            value={newProject.templateType}
-            onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
-            size="small"
-          />
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={handleCreateProject}
+            onClick={() => setIsCreateModalOpen(true)}
             sx={{
               bgcolor: '#0052CC',
               textTransform: 'none',
@@ -705,8 +726,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         </Box>
       )}
 
-      {/* Modal for creating a project */}
-      {/* You can replace this with your actual modal implementation */}
+      {/* Advanced Modal for creating a project */}
       {isCreateModalOpen && (
         <Box sx={{
           position: 'fixed',
@@ -714,53 +734,131 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
           left: 0,
           width: '100vw',
           height: '100vh',
-          bgcolor: 'rgba(0,0,0,0.3)',
+          bgcolor: 'rgba(0,0,0,0.35)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1300
+          zIndex: 2000,
         }}>
-          <Paper sx={{ p: 4, minWidth: 320, borderRadius: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Create Project</Typography>
-            <TextField
-              label="Project Name"
-              value={newProject.name}
-              onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              label="Type"
-              value={newProject.type}
-              onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              label="Template Type"
-              value={newProject.templateType}
-              onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-              <Button
-                variant="contained"
-                onClick={async () => {
-                  await handleCreateProject();
-                  setIsCreateModalOpen(false);
-                }}
-                sx={{ bgcolor: '#0052CC', color: 'white' }}
-              >
-                Create
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => setIsCreateModalOpen(false)}
-              >
-                Cancel
-              </Button>
-            </Box>
+          <Paper sx={{
+            p: { xs: 2, sm: 4 },
+            width: { xs: '90vw', sm: 420, md: 480 },
+            maxWidth: '98vw',
+            borderRadius: 3,
+            boxShadow: 16,
+            position: 'relative',
+            zIndex: 2100,
+            mx: 'auto',
+            my: { xs: 2, sm: 0 },
+            background: 'white',
+            overflowY: 'auto',
+            maxHeight: { xs: '90vh', sm: '80vh' }
+          }}>
+            {createStep === 'type' && (
+              <>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>Select Project Type</Typography>
+                <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', mb: 2 }}>
+                  {projectTypeOptions.map(opt => (
+                    <Button key={opt.type} onClick={() => { setSelectedProjectType(opt.type); setCreateStep('template'); }} sx={{ p: 2, borderRadius: 2, bgcolor: selectedProjectType === opt.type ? '#E3FCEF' : 'white', boxShadow: selectedProjectType === opt.type ? 4 : 1, minWidth: 120, flexDirection: 'column', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <img src={opt.img} alt={opt.type} style={{ width: 48, height: 48 }} />
+                      <Typography sx={{ fontWeight: 600, mt: 1 }}>{opt.type}</Typography>
+                    </Button>
+                  ))}
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                  <Button variant="outlined" onClick={() => { setIsCreateModalOpen(false); setCreateStep('type'); setSelectedProjectType(''); setSelectedTemplateType(''); }}>Cancel</Button>
+                </Box>
+              </>
+            )}
+            {createStep === 'template' && (
+              <>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>Select Template Type</Typography>
+                <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', mb: 2 }}>
+                  {templateOptions[selectedProjectType]?.map(opt => (
+                    <Button key={opt.template} onClick={() => { setSelectedTemplateType(opt.template); setCreateStep('details'); }} sx={{ p: 2, borderRadius: 2, bgcolor: selectedTemplateType === opt.template ? '#E3FCEF' : 'white', boxShadow: selectedTemplateType === opt.template ? 4 : 1, minWidth: 120, flexDirection: 'column', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <img src={opt.img} alt={opt.template} style={{ width: 48, height: 48 }} />
+                      <Typography sx={{ fontWeight: 600, mt: 1 }}>{opt.template}</Typography>
+                    </Button>
+                  ))}
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                  <Button variant="outlined" onClick={() => setCreateStep('type')}>Back</Button>
+                  <Button variant="outlined" onClick={() => { setIsCreateModalOpen(false); setCreateStep('type'); setSelectedProjectType(''); setSelectedTemplateType(''); }}>Cancel</Button>
+                </Box>
+              </>
+            )}
+            {createStep === 'details' && (
+              <>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>Project Details</Typography>
+                <TextField
+                  label="Project Name"
+                  value={newProject.name}
+                  onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Description"
+                  value={newProject.description}
+                  onChange={e => setNewProject(p => ({ ...p, description: e.target.value }))}
+                  fullWidth
+                  multiline
+                  rows={2}
+                  sx={{ mb: 2 }}
+                />
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>Team ID</InputLabel>
+                  <Select
+                    label="Team ID"
+                    value={newProject.teamId}
+                    onChange={e => setNewProject(p => ({ ...p, teamId: e.target.value }))}
+                  >
+                    {[1,2,3,4,5].map(id => (
+                      <MenuItem key={id} value={id}>{id}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <TextField
+                  label="Created By"
+                  value={newProject.createdBy}
+                  onChange={e => setNewProject(p => ({ ...p, createdBy: e.target.value }))}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Organization ID"
+                  value={orgId}
+                  disabled
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="User ID"
+                  value={userId}
+                  disabled
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Role"
+                  value={role}
+                  disabled
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleCreateProject}
+                    sx={{ bgcolor: '#0052CC', color: 'white' }}
+                  >
+                    Create
+                  </Button>
+                  <Button variant="outlined" onClick={() => setCreateStep('template')}>Back</Button>
+                  <Button variant="outlined" onClick={() => { setIsCreateModalOpen(false); setCreateStep('type'); setSelectedProjectType(''); setSelectedTemplateType(''); }}>Cancel</Button>
+                </Box>
+              </>
+            )}
           </Paper>
         </Box>
       )}
