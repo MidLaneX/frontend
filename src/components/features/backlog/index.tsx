@@ -149,11 +149,11 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
       
       if (updatedTask) {
         console.log('Task status updated successfully:', updatedTask);
-        // Immediately update the local state for better UX
+        // Update the local state with the response from the server
         setTasks(currentTasks => 
           currentTasks.map(task => 
             task.id === taskId 
-              ? { ...task, status: newStatus }
+              ? { ...task, ...updatedTask }
               : task
           )
         );
@@ -161,30 +161,17 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
         setError(null);
       } else {
         console.error('Failed to update task status - no response from server');
-        setError('Failed to update task status. Please check if the backend server is running and try again.');
+        setError('Failed to update task status. Please try again.');
       }
     } catch (error: any) {
       console.error('Error updating task status:', error);
       
-      // Check if this is a network error (backend not running)
-      if (error?.code === 'ERR_NETWORK' || error?.message?.includes('ERR_FAILED')) {
-        console.warn('Backend server not available, updating status locally only');
-        // Update the local state anyway for better UX during development
-        setTasks(currentTasks => 
-          currentTasks.map(task => 
-            task.id === taskId 
-              ? { ...task, status: newStatus }
-              : task
-          )
-        );
-        setError('Backend server is not running. Status updated locally only. Changes will not be persisted.');
-        return;
-      }
-      
       // Provide more specific error messages based on the error type
       let errorMessage = 'Failed to update task status. Please try again.';
       
-      if (error?.response?.status === 401) {
+      if (error?.code === 'ERR_NETWORK' || error?.message?.includes('ERR_FAILED')) {
+        errorMessage = 'Cannot connect to the server. Please check if the backend server is running at http://localhost:8080 and try again.';
+      } else if (error?.response?.status === 401) {
         errorMessage = 'You are not authorized to update this task. Please log in again.';
       } else if (error?.response?.status === 404) {
         errorMessage = 'Task not found. It may have been deleted by another user.';

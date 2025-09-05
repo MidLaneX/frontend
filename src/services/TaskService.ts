@@ -101,17 +101,6 @@ export class TaskService {
       } else if (error.request) {
         console.error('TaskService: Error request:', error.request);
         console.error('TaskService: No response received from server');
-        
-        // Check if this is a network error (backend not running)
-        if (error.code === 'ERR_NETWORK' || error.message.includes('ERR_FAILED')) {
-          console.warn('TaskService: Backend server not available, using local-only mode');
-          // Return a mock successful response for local development
-          return {
-            id: taskId,
-            status: newStatus,
-            // Add other required fields as needed
-          } as Task;
-        }
       } else {
         console.error('TaskService: Error message:', error.message);
       }

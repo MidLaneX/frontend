@@ -29,9 +29,10 @@ export const tasksApi = {
 
   // Update task status
   updateTaskStatus: (projectId: number, taskId: number, status: string, templateType = 'scrum') => {
-    // Try different request body formats to match backend expectation
+    // Backend expects TaskStatusRequest with 'status' field
     const requestBody = { status: status };
-    console.log('Sending updateTaskStatus request:', requestBody);
+    console.log('Sending updateTaskStatus request to:', `/projects/${projectId}/tasks/${taskId}/status?templateType=${templateType}`);
+    console.log('Request body:', requestBody);
     
     return projectsApiClient.patch<Task>(
       `/projects/${projectId}/tasks/${taskId}/status?templateType=${templateType}`,

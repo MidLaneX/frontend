@@ -101,7 +101,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
 
   const fetchLatestSprint = async () => {
     try {
-      const response = await SprintService.getLatestSprint(projectId, templateType);
+      const response = await SprintService.getLatestSprint(projectId);
       setLatestSprint(response.data);
     } catch (error) {
       console.error('Failed to fetch latest sprint:', error);
@@ -116,14 +116,18 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
 
   // Filter tasks to only show those assigned to the latest sprint
   const sprintTasks = useMemo(() => {
-    if (!latestSprint) return [];
     const filtered = tasks.filter(task => 
+      task.sprintId && 
+      task.sprintId > 0 && 
+      latestSprint && 
       task.sprintId === latestSprint.id &&
-      task.status !== 'Backlog'
+      task.status !== 'Backlog' // Exclude backlog items from board
     );
+    
     console.log('All tasks:', tasks.length);
     console.log('Latest sprint:', latestSprint);
     console.log('Sprint tasks:', filtered.length, filtered.map(t => ({ id: t.id, title: t.title, status: t.status, sprintId: t.sprintId })));
+    
     return filtered;
   }, [tasks, latestSprint]);
 
@@ -206,26 +210,67 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
+    console.log('🔥 Drag end result:', result);
+    
+    if (!result.destination) {
+      console.log('❌ No destination - drag cancelled');
+      return;
+    }
+
     const { draggableId, destination, source } = result;
+    // Extract actual task ID from draggableId (remove 'task-' prefix)
     const taskId = Number(draggableId.replace('task-', ''));
     const newStatus = destination.droppableId as TaskStatus;
     const oldStatus = source.droppableId as TaskStatus;
-    if (oldStatus === newStatus) return;
+
+    // Check if status actually changed
+    if (oldStatus === newStatus) {
+      console.log('ℹ️ Same status - no update needed');
+      return;
+    }
+
+    console.log(`🔄 Moving task ${taskId} from "${oldStatus}" to "${newStatus}"`);
+
+    // Find the task to verify it exists
     const task = tasks.find(t => Number(t.id) === taskId);
     if (!task) {
+      console.error('❌ Task not found:', taskId);
       setError(`Task ${taskId} not found`);
       return;
     }
+
+    console.log('✅ Found task:', { id: task.id, title: task.title, currentStatus: task.status });
+
+    // Optimistic update - immediately update the UI
     const originalTasks = [...tasks];
-    setTasks(prevTasks => prevTasks.map(t => Number(t.id) === taskId ? { ...t, status: newStatus } : t));
+    setTasks(prevTasks => 
+      prevTasks.map(t => 
+        Number(t.id) === taskId 
+          ? { ...t, status: newStatus }
+          : t
+      )
+    );
+
     try {
+      console.log(`🚀 Calling TaskService.updateTaskStatus(${projectId}, ${taskId}, "${newStatus}", "${templateType}")`);
+      
       const updatedTask = await TaskService.updateTaskStatus(projectId, taskId, newStatus, templateType);
-      if (!updatedTask) throw new Error('No response from server');
+      
+      if (!updatedTask) {
+        throw new Error('No response from server');
+      }
+      
+      console.log('✅ Task status updated successfully:', updatedTask);
+      
+      // Clear any existing errors
       setError(null);
-      await fetchTasks();
+      
     } catch (error) {
-      setError('Failed to update task status');
+      console.error('❌ Failed to update task status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Failed to update task status: ${errorMessage}`);
+      
+      // Revert optimistic update on error
       setTasks(originalTasks);
     }
   };
