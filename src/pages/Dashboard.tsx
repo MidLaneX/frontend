@@ -32,13 +32,18 @@ import type { Project } from "../types";
 import { ProjectService } from '@/services/ProjectService';
 import { useAuth } from '@/context/AuthContext';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  orgId?: number;
+  userId?: number;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdProp }) => {
   const { user, isAuthenticated } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  
-  // Get user info from auth context or use defaults
-  const userId = user?.userId || parseInt(localStorage.getItem('userId') || '5');
-  const [orgId, setOrgId] = useState(1);
+
+  // Use props if provided, otherwise fallback
+  const userId = userIdProp || user?.userId || parseInt(localStorage.getItem('userId') || '5');
+  const [orgId, setOrgId] = useState(orgIdProp);
   const [role, setRole] = useState('ADMIN');
   const [templateType, setTemplateType] = useState('scrum');
   const [teamIds, setTeamIds] = useState<number[]>([]);
@@ -83,7 +88,7 @@ const Dashboard: React.FC = () => {
 
   // Create project handler
   const [newProject, setNewProject] = useState({
-    orgId: 1,
+    orgId: orgIdProp || orgId,
     name: '',
     type: 'Internal',
     templateType: 'scrum'
@@ -94,15 +99,19 @@ const Dashboard: React.FC = () => {
       setError('Project name is required');
       return;
     }
-    
     setLoading(true);
     setError(null);
     try {
-      console.log('Creating project:', newProject);
-      const result = await ProjectService.createProject(newProject, newProject.templateType);
+      // Always use the current orgId for project creation
+      const projectToCreate = {
+        ...newProject,
+        orgId: orgId || orgIdProp
+      };
+      console.log('Creating project:', projectToCreate);
+      const result = await ProjectService.createProject(projectToCreate, projectToCreate.templateType);
       console.log('Created project:', result);
       setProjects(prev => [...prev, result]);
-      setNewProject({ orgId: orgId, name: '', type: 'Internal', templateType: templateType });
+      setNewProject({ orgId: orgId || orgIdProp, name: '', type: 'Internal', templateType: templateType });
     } catch (err) {
       console.error('Error creating project:', err);
       setError('Failed to create project. Please try again.');
