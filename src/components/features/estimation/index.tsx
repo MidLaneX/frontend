@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Card,
   CardContent,
   CircularProgress,
@@ -15,6 +14,18 @@ import {
   ListItemText,
   Divider,
   Stack,
+  Avatar,
+  LinearProgress,
+  Button,
+  IconButton,
+  Tooltip as MuiTooltip,
+  CardHeader,
+  useTheme,
+  alpha,
+  Container,
+  Tab,
+  Tabs,
+  Badge,
 } from '@mui/material';
 import {
   PieChart,
@@ -35,6 +46,17 @@ import {
   AutoStories as StoryIcon,
   EmojiEvents as EpicIcon,
   TrendingUp as TrendingUpIcon,
+  FilterList as FilterIcon,
+  Download as ExportIcon,
+  Refresh as RefreshIcon,
+  Timeline as TimelineIcon,
+  Assessment as AnalyticsIcon,
+  Speed as VelocityIcon,
+  PlayCircle as InProgressIcon,
+  CheckCircle as DoneIcon,
+  Schedule as ScheduleIcon,
+  Warning as WarningIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import { TaskService } from '@/services/TaskService';
@@ -43,6 +65,32 @@ interface EstimationProps {
   projectId: number;
   projectName?: string;
   templateType: string;
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`estimation-tabpanel-${index}`}
+      aria-labelledby={`estimation-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ py: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
 }
 
 const COLORS = {
@@ -75,9 +123,15 @@ const TYPE_ICONS: Record<TaskType, React.ReactNode> = {
 };
 
 const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templateType }) => {
+  const theme = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tabValue, setTabValue] = useState(0);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -214,263 +268,770 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
+
         <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Project Analytics - {projectName}
-      </Typography>
+    <Container maxWidth="xl" sx={{ py: 3 }}>
+      {/* Modern Header with Actions */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 4,
+        p: 3,
+        backgroundColor: theme.palette.background.paper,
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: `1px solid ${theme.palette.divider}`,
+      }}>
+        <Box>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            sx={{ 
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+              mb: 1,
+            }}
+          >
+            <AnalyticsIcon sx={{ mr: 2, verticalAlign: 'middle' }} />
+            Project Analytics
+          </Typography>
+          <Typography 
+            variant="subtitle1" 
+            color="text.secondary"
+            sx={{ display: 'flex', alignItems: 'center' }}
+          >
+            {projectName} • {templateType}
+          </Typography>
+        </Box>
+        
+        <Stack direction="row" spacing={2}>
+          <MuiTooltip title="Refresh Data">
+            <IconButton 
+              onClick={fetchTasks}
+              disabled={loading}
+              sx={{ 
+                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.2) }
+              }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </MuiTooltip>
+          <MuiTooltip title="Export Data">
+            <IconButton 
+              sx={{ 
+                backgroundColor: alpha(theme.palette.success.main, 0.1),
+                '&:hover': { backgroundColor: alpha(theme.palette.success.main, 0.2) }
+              }}
+            >
+              <ExportIcon />
+            </IconButton>
+          </MuiTooltip>
+          <Button
+            variant="outlined"
+            startIcon={<FilterIcon />}
+            sx={{ borderRadius: 2 }}
+          >
+            Filters
+          </Button>
+        </Stack>
+      </Box>
 
-      {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Tasks
-              </Typography>
-              <Typography variant="h4">
-                {totalTasks}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Completed Tasks
-              </Typography>
-              <Typography variant="h4" color="success.main">
-                {completedTasks}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Story Points
-              </Typography>
-              <Typography variant="h4">
-                {completedStoryPoints}/{totalStoryPoints}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Completion Rate
-              </Typography>
-              <Typography variant="h4" color="primary.main">
-                {completionRate}%
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      {/* Navigation Tabs */}
+      <Paper 
+        sx={{ 
+          mb: 3, 
+          borderRadius: 2,
+          overflow: 'hidden',
+          border: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          sx={{ 
+            backgroundColor: alpha(theme.palette.primary.main, 0.02),
+            '& .MuiTab-root': {
+              fontWeight: 500,
+              minHeight: 64,
+            }
+          }}
+        >
+          <Tab 
+            icon={<AnalyticsIcon />} 
+            label="Overview" 
+            iconPosition="start"
+          />
+          <Tab 
+            icon={<VelocityIcon />} 
+            label="Velocity" 
+            iconPosition="start"
+          />
+          <Tab 
+            icon={<TimelineIcon />} 
+            label="Timeline" 
+            iconPosition="start"
+          />
+        </Tabs>
+      </Paper>
 
-      {/* Charts Section */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* Status Overview Circle Chart */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: 3, height: '400px' }}>
-            <Typography variant="h6" gutterBottom>
-              Status Overview
-            </Typography>
-            {statusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="80%">
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-                No data available
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
+      {loading && (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '400px',
+          backgroundColor: theme.palette.background.paper,
+          borderRadius: 2,
+        }}>
+          <CircularProgress size={60} thickness={4} />
+        </Box>
+      )}
 
-        {/* Priority Breakdown */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: 3, height: '400px' }}>
-            <Typography variant="h6" gutterBottom>
-              Priority Breakdown
-            </Typography>
-            {priorityData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="80%">
-                <PieChart>
-                  <Pie
-                    data={priorityData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {priorityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-                No data available
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3, 
+            borderRadius: 2,
+            border: `1px solid ${theme.palette.error.light}`,
+          }}
+        >
+          {error}
+        </Alert>
+      )}
 
-        {/* Work Types */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Paper sx={{ p: 3, height: '400px' }}>
-            <Typography variant="h6" gutterBottom>
-              Types of Work
-            </Typography>
-            {typeData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="80%">
-                <PieChart>
-                  <Pie
-                    data={typeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {typeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-                No data available
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
+      {!loading && !error && (
+        <>
+          <TabPanel value={tabValue} index={0}>
+            {/* Overview Tab Content */}
+            {/* Enhanced Summary Cards */}
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' },
+              gap: 3, 
+              mb: 4 
+            }}>
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  borderRadius: 2,
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8],
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ 
+                      backgroundColor: theme.palette.primary.main, 
+                      mr: 2,
+                      width: 48,
+                      height: 48,
+                    }}>
+                      <TaskIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h4" fontWeight="bold">
+                        {totalTasks}
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        Total Tasks
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={(totalTasks / Math.max(totalTasks, 1)) * 100} 
+                    sx={{ borderRadius: 1, height: 8 }}
+                  />
+                </CardContent>
+              </Card>
 
-      {/* Story Points by Status Bar Chart */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} lg={8}>
-          <Paper sx={{ p: 3, height: '400px' }}>
-            <Typography variant="h6" gutterBottom>
-              Story Points by Status
-            </Typography>
-            {storyPointsData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={storyPointsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="status" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="points" name="Story Points">
-                    {storyPointsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-                No data available
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.1)} 0%, ${alpha(theme.palette.success.main, 0.05)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                  borderRadius: 2,
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8],
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ 
+                      backgroundColor: theme.palette.success.main, 
+                      mr: 2,
+                      width: 48,
+                      height: 48,
+                    }}>
+                      <DoneIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h4" fontWeight="bold" color="success.main">
+                        {completedTasks}
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        Completed
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={completionRate} 
+                    color="success"
+                    sx={{ borderRadius: 1, height: 8 }}
+                  />
+                </CardContent>
+              </Card>
 
-        {/* Recent Activities */}
-        <Grid item xs={12} lg={4}>
-          <Paper sx={{ p: 3, height: '400px' }}>
-            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TrendingUpIcon />
-              Recent Activities
-            </Typography>
-            <List sx={{ maxHeight: '320px', overflow: 'auto' }}>
-              {recentActivities.length > 0 ? (
-                recentActivities.map((task, index) => (
-                  <React.Fragment key={task.id}>
-                    <ListItem alignItems="flex-start">
-                      <Box sx={{ mr: 2, mt: 0.5 }}>
-                        {TYPE_ICONS[task.type]}
-                      </Box>
-                      <ListItemText
-                        primary={
-                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-                            <Typography variant="subtitle2" noWrap>
-                              {task.title}
-                            </Typography>
-                            <Chip 
-                              label={task.status} 
-                              size="small" 
-                              sx={{ 
-                                backgroundColor: STATUS_COLORS[task.status],
-                                color: 'white',
-                              }}
-                            />
-                          </Stack>
-                        }
-                        secondary={
-                          <Box>
-                            <Typography variant="caption" display="block">
-                              Assignee: {task.assignee}
-                            </Typography>
-                            <Typography variant="caption" display="block">
-                              Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
-                            </Typography>
-                            <Typography variant="caption" display="block">
-                              Priority: {task.priority} | Points: {task.storyPoints || 0}
-                            </Typography>
-                          </Box>
-                        }
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.info.main, 0.1)} 0%, ${alpha(theme.palette.info.main, 0.05)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                  borderRadius: 2,
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8],
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ 
+                      backgroundColor: theme.palette.info.main, 
+                      mr: 2,
+                      width: 48,
+                      height: 48,
+                    }}>
+                      <EpicIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h4" fontWeight="bold">
+                        {completedStoryPoints}/{totalStoryPoints}
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        Story Points
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={totalStoryPoints > 0 ? (completedStoryPoints / totalStoryPoints) * 100 : 0}
+                    color="info"
+                    sx={{ borderRadius: 1, height: 8 }}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.1)} 0%, ${alpha(theme.palette.warning.main, 0.05)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                  borderRadius: 2,
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8],
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ 
+                      backgroundColor: theme.palette.warning.main, 
+                      mr: 2,
+                      width: 48,
+                      height: 48,
+                    }}>
+                      <TrendingUpIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h4" fontWeight="bold" color="warning.main">
+                        {completionRate}%
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        Progress
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={completionRate}
+                    color="warning"
+                    sx={{ borderRadius: 1, height: 8 }}
+                  />
+                </CardContent>
+              </Card>
+            </Box>
+
+            {/* Enhanced Charts Section */}
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: '1fr 1fr 1fr' },
+              gap: 3, 
+              mb: 4 
+            }}>
+              {/* Status Overview */}
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  height: '440px',
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  background: theme.palette.background.paper,
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <InProgressIcon color="primary" />
+                      <Typography variant="h6" fontWeight="600">
+                        Status Distribution
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ p: 0, mb: 2 }}
+                />
+                {statusData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="80%">
+                    <PieChart>
+                      <Pie
+                        data={statusData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value, percent }) => `${name}: ${value} (${((percent || 0) * 100).toFixed(0)}%)`}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {statusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: theme.palette.background.paper,
+                          border: `1px solid ${theme.palette.divider}`,
+                          borderRadius: 8,
+                          boxShadow: theme.shadows[4],
+                        }}
                       />
-                    </ListItem>
-                    {index < recentActivities.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))
-              ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-                  No recent activities
-                </Typography>
-              )}
-            </List>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '60%',
+                    backgroundColor: alpha(theme.palette.grey[100], 0.5),
+                    borderRadius: 2,
+                    border: `2px dashed ${theme.palette.grey[300]}`,
+                  }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No status data available
+                    </Typography>
+                  </Box>
+                )}
+              </Paper>
+
+              {/* Priority Breakdown */}
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  height: '440px',
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  background: theme.palette.background.paper,
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <WarningIcon color="warning" />
+                      <Typography variant="h6" fontWeight="600">
+                        Priority Breakdown
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ p: 0, mb: 2 }}
+                />
+                {priorityData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="80%">
+                    <PieChart>
+                      <Pie
+                        data={priorityData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: ${value}`}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {priorityData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: theme.palette.background.paper,
+                          border: `1px solid ${theme.palette.divider}`,
+                          borderRadius: 8,
+                          boxShadow: theme.shadows[4],
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '60%',
+                    backgroundColor: alpha(theme.palette.grey[100], 0.5),
+                    borderRadius: 2,
+                    border: `2px dashed ${theme.palette.grey[300]}`,
+                  }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No priority data available
+                    </Typography>
+                  </Box>
+                )}
+              </Paper>
+
+              {/* Work Types */}
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  height: '440px',
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  background: theme.palette.background.paper,
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TaskIcon color="info" />
+                      <Typography variant="h6" fontWeight="600">
+                        Work Types
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ p: 0, mb: 2 }}
+                />
+                {typeData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="80%">
+                    <PieChart>
+                      <Pie
+                        data={typeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: ${value}`}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {typeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: theme.palette.background.paper,
+                          border: `1px solid ${theme.palette.divider}`,
+                          borderRadius: 8,
+                          boxShadow: theme.shadows[4],
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '60%',
+                    backgroundColor: alpha(theme.palette.grey[100], 0.5),
+                    borderRadius: 2,
+                    border: `2px dashed ${theme.palette.grey[300]}`,
+                  }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No work type data available
+                    </Typography>
+                  </Box>
+                )}
+              </Paper>
+            </Box>
+
+            {/* Enhanced Bar Chart and Activities */}
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' },
+              gap: 3 
+            }}>
+              {/* Story Points by Status */}
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  height: '480px',
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  background: theme.palette.background.paper,
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <EpicIcon color="info" />
+                      <Typography variant="h6" fontWeight="600">
+                        Story Points by Status
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ p: 0, mb: 2 }}
+                />
+                {storyPointsData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="85%">
+                    <BarChart data={storyPointsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                      <XAxis 
+                        dataKey="status" 
+                        tick={{ fontSize: 12 }}
+                        axisLine={{ stroke: theme.palette.divider }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        axisLine={{ stroke: theme.palette.divider }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: theme.palette.background.paper,
+                          border: `1px solid ${theme.palette.divider}`,
+                          borderRadius: 8,
+                          boxShadow: theme.shadows[4],
+                        }}
+                      />
+                      <Legend />
+                      <Bar 
+                        dataKey="points" 
+                        name="Story Points"
+                        radius={[4, 4, 0, 0]}
+                      >
+                        {storyPointsData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '60%',
+                    backgroundColor: alpha(theme.palette.grey[100], 0.5),
+                    borderRadius: 2,
+                    border: `2px dashed ${theme.palette.grey[300]}`,
+                  }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No story points data available
+                    </Typography>
+                  </Box>
+                )}
+              </Paper>
+
+              {/* Enhanced Recent Activities */}
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  height: '480px',
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  background: theme.palette.background.paper,
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TrendingUpIcon color="success" />
+                      <Typography variant="h6" fontWeight="600">
+                        Recent Activities
+                      </Typography>
+                    </Box>
+                  }
+                  action={
+                    <Badge badgeContent={recentActivities.length} color="primary">
+                      <ScheduleIcon color="action" />
+                    </Badge>
+                  }
+                  sx={{ p: 0, mb: 2 }}
+                />
+                <List sx={{ maxHeight: '380px', overflow: 'auto' }}>
+                  {recentActivities.length > 0 ? (
+                    recentActivities.map((task, index) => (
+                      <React.Fragment key={task.id}>
+                        <ListItem 
+                          alignItems="flex-start"
+                          sx={{
+                            borderRadius: 2,
+                            mb: 1,
+                            backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                            '&:hover': {
+                              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                            }
+                          }}
+                        >
+                          <Avatar
+                            sx={{
+                              mr: 2,
+                              mt: 0.5,
+                              width: 40,
+                              height: 40,
+                              backgroundColor: STATUS_COLORS[task.status],
+                            }}
+                          >
+                            {TYPE_ICONS[task.type]}
+                          </Avatar>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ mb: 1 }}>
+                                <Typography 
+                                  variant="subtitle2" 
+                                  noWrap 
+                                  sx={{ fontWeight: 600, mb: 0.5 }}
+                                >
+                                  {task.title}
+                                </Typography>
+                                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                                  <Chip 
+                                    label={task.status} 
+                                    size="small" 
+                                    sx={{ 
+                                      backgroundColor: STATUS_COLORS[task.status],
+                                      color: 'white',
+                                      fontWeight: 500,
+                                      height: 20,
+                                      fontSize: '0.7rem',
+                                    }}
+                                  />
+                                  <Chip 
+                                    label={task.priority} 
+                                    size="small" 
+                                    variant="outlined"
+                                    sx={{ 
+                                      borderColor: PRIORITY_COLORS[task.priority],
+                                      color: PRIORITY_COLORS[task.priority],
+                                      height: 20,
+                                      fontSize: '0.7rem',
+                                    }}
+                                  />
+                                </Stack>
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 1 }}>
+                                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                                  <PersonIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                  <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                                    {task.assignee}
+                                  </Typography>
+                                </Stack>
+                                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                                  <ScheduleIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                  <Typography variant="caption">
+                                    {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                                  </Typography>
+                                </Stack>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                  <EpicIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                  <Typography variant="caption">
+                                    {task.storyPoints || 0} points
+                                  </Typography>
+                                </Stack>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                        {index < recentActivities.length - 1 && (
+                          <Divider sx={{ my: 1, backgroundColor: alpha(theme.palette.divider, 0.5) }} />
+                        )}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      height: '200px',
+                      backgroundColor: alpha(theme.palette.grey[100], 0.5),
+                      borderRadius: 2,
+                      border: `2px dashed ${theme.palette.grey[300]}`,
+                    }}>
+                      <ScheduleIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        No recent activities
+                      </Typography>
+                    </Box>
+                  )}
+                </List>
+              </Paper>
+            </Box>
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={1}>
+            {/* Velocity Tab Content */}
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <VelocityIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h5" gutterBottom>
+                Velocity Analytics
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Coming soon! Track your team's velocity and sprint performance.
+              </Typography>
+            </Box>
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={2}>
+            {/* Timeline Tab Content */}
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <TimelineIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h5" gutterBottom>
+                Project Timeline
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Coming soon! Visualize your project timeline and milestones.
+              </Typography>
+            </Box>
+          </TabPanel>
+        </>
+      )}
+    </Container>
   );
 };
 
