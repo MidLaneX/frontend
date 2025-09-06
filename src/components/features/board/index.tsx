@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import {
   Box,
   Card,
@@ -28,7 +28,6 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Assignment as TaskIcon,
   BugReport as BugIcon,
   AutoStories as StoryIcon,
@@ -37,7 +36,6 @@ import {
   Person as PersonIcon,
   Flag as FlagIcon,
   ViewWeek as BoardIcon,
-  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import { TaskService } from '@/services/TaskService';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
@@ -95,45 +93,68 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
   }, [projectId, templateType]);
 
   const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
+    console.log('Drag end result:', result);
+    
+    if (!result.destination) {
+      console.log('No destination - drag cancelled');
+      return;
+    }
 
     const { draggableId, destination, source } = result;
+    // Extract actual task ID from draggableId (remove 'task-' prefix)
     const taskId = Number(draggableId.replace('task-', ''));
-    const newStatus = destination.droppableId as TaskStatus;
-    const oldStatus = source.droppableId as TaskStatus;
+    const newStatus = destination.droppableId;
+    const oldStatus = source.droppableId;
 
-    if (oldStatus === newStatus) return;
+    // Check if status actually changed
+    if (oldStatus === newStatus) {
+      console.log('Same status - no update needed');
+      return;
+    }
 
     console.log(`Moving task ${taskId} from "${oldStatus}" to "${newStatus}"`);
 
-    // Optimistic update
+    // Find the task to verify it exists
+    const task = tasks.find(t => Number(t.id) === taskId);
+    if (!task) {
+      console.error('Task not found:', taskId);
+      setError(`Task ${taskId} not found`);
+      return;
+    }
+
+    console.log('Found task:', { id: task.id, title: task.title, currentStatus: task.status, type: task.type });
+
+    // Optimistic update - immediately update the UI
     const originalTasks = [...tasks];
     setTasks(prevTasks => 
       prevTasks.map(t => 
         Number(t.id) === taskId 
-          ? { ...t, status: newStatus }
+          ? { ...t, status: newStatus as TaskStatus }
           : t
       )
     );
 
     try {
-      await TaskService.updateTaskStatus(Number(projectId), taskId, newStatus, templateType);
+      console.log(`Calling TaskService.updateTaskStatus(${projectId}, ${taskId}, "${newStatus}", "${templateType}")`);
+      
+      const updatedTask = await TaskService.updateTaskStatus(Number(projectId), taskId, newStatus as TaskStatus, templateType);
+      
+      if (!updatedTask) {
+        throw new Error('No response from server');
+      }
+      
+      console.log('Task status updated successfully:', updatedTask);
+      
+      // Clear any existing errors
       setError(null);
+      
     } catch (error) {
       console.error('Failed to update task status:', error);
-      setError('Failed to update task status.');
-      // Revert optimistic update
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Failed to update task status: ${errorMessage}`);
+      
+      // Revert optimistic update on error
       setTasks(originalTasks);
-    }
-  };
-
-  const handleDelete = async (taskId: number) => {
-    try {
-      await TaskService.deleteTask(Number(projectId), taskId, templateType);
-      fetchTasks();
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-      setError('Failed to delete task.');
     }
   };
 
@@ -216,7 +237,7 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
   };
 
   const renderTaskCard = (task: Task, index: number) => (
-    <Draggable key={task.id} draggableId={`task-${task.id}`} index={index}>
+    <Draggable key={`task-${task.id}`} draggableId={`task-${task.id}`} index={index}>
       {(provided, snapshot) => (
         <Card
           ref={provided.innerRef}
