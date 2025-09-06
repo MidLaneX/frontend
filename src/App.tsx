@@ -8,6 +8,8 @@ import Project from "@/pages/Project";
 import OrganizationPage from "@/pages/Organization";
 import LandingPage from "@/pages/LandingPage";
 
+import OrganizationDetailPage from "@/pages/OrganizationDetailPage";
+
 import AccountSettings from "@/pages/AccountSettings";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -93,7 +95,14 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
-
+          <Route 
+            path="/organizationpage/:orgId" 
+            element={
+              <ProtectedRoute>
+                <OrganizationDetailPage />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/account/settings" 
             element={
@@ -102,7 +111,7 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
-
+          
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Box>

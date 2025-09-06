@@ -21,6 +21,19 @@ import StarBorderIcon from '@mui/icons-material/StarBorder'
 import StarIcon from '@mui/icons-material/Star'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import WorkspacesIcon from '@mui/icons-material/Workspaces'
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import PauseIcon from '@mui/icons-material/Pause'
+import FilterListIcon from '@mui/icons-material/FilterList'
+import SearchIcon from '@mui/icons-material/Search'
+import ViewModuleIcon from '@mui/icons-material/ViewModule'
+import ViewListIcon from '@mui/icons-material/ViewList'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import { Link } from 'react-router-dom'
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
@@ -28,18 +41,64 @@ import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import CircularProgress from '@mui/material/CircularProgress';
+import Pagination from '@mui/material/Pagination';
+import InputAdornment from '@mui/material/InputAdornment';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Fade from '@mui/material/Fade';
+import Grow from '@mui/material/Grow';
+import Skeleton from '@mui/material/Skeleton';
 import type { Project } from "../types";
 import { ProjectService } from '@/services/ProjectService';
 import { UserService, type UserProfile } from '@/services/UserService';
 import { useAuth } from '@/context/AuthContext';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  orgId?: number;
+  userId?: number;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdProp }) => {
   const { user, isAuthenticated } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createStep, setCreateStep] = useState<'type' | 'template' | 'details'>('type');
+  const [selectedProjectType, setSelectedProjectType] = useState<string>('');
+  const [selectedTemplateType, setSelectedTemplateType] = useState<string>('');
   
-  // Get user info from auth context or use defaults
-  const userId = user?.userId || parseInt(localStorage.getItem('userId') || '5');
-  const [orgId, setOrgId] = useState(1);
+  // Pagination and filtering states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'progress' | 'date'>('name');
+  const itemsPerPage = 6;
+  // Project type and template options
+  const projectTypeOptions = [
+    { type: 'Classic', img: 'https://img.icons8.com/color/96/briefcase.png' },
+    { type: 'Business', img: 'https://img.icons8.com/color/96/business.png' },
+    { type: 'Software', img: 'https://img.icons8.com/color/96/source-code.png' }
+  ];
+  const templateOptions: Record<string, { template: string; img: string }[]> = {
+    Software: [
+      { template: 'Scrum', img: 'https://img.icons8.com/color/96/agile.png' },
+      { template: 'Kanban', img: 'https://img.icons8.com/color/96/kanban.png' },
+      { template: 'Waterfall', img: 'https://img.icons8.com/color/96/waterfall.png' }
+    ],
+    Business: [
+      { template: 'Lean', img: 'https://img.icons8.com/color/96/strategy.png' },
+      { template: 'Six Sigma', img: 'https://img.icons8.com/color/96/sigma.png' },
+      { template: 'Startup', img: 'https://img.icons8.com/color/96/startup.png' }
+    ],
+    Classic: [
+      { template: 'Traditional', img: 'https://img.icons8.com/color/96/organization.png' },
+      { template: 'Matrix', img: 'https://img.icons8.com/color/96/matrix.png' },
+      { template: 'Functional', img: 'https://img.icons8.com/color/96/functional.png' }
+    ]
+  };
+
+  // Use props if provided, otherwise fallback
+  const userId = userIdProp || user?.userId || parseInt(localStorage.getItem('userId') || '5');
+  const [orgId, setOrgId] = useState(orgIdProp);
   const [role, setRole] = useState('ADMIN');
   const [templateType, setTemplateType] = useState('scrum');
   const [teamIds, setTeamIds] = useState<number[]>([]);
@@ -125,10 +184,13 @@ const Dashboard: React.FC = () => {
 
   // Create project handler
   const [newProject, setNewProject] = useState({
-    orgId: 1,
+    orgId: orgIdProp || orgId,
     name: '',
-    type: 'Internal',
-    templateType: 'scrum'
+    type: '',
+    templateType: '',
+    description: '',
+    teamId: '',
+    createdBy: user?.email || user?.username || 'Unknown User'
   });
 
   const handleCreateProject = async () => {
@@ -136,15 +198,29 @@ const Dashboard: React.FC = () => {
       setError('Project name is required');
       return;
     }
-    
     setLoading(true);
     setError(null);
     try {
-      console.log('Creating project:', newProject);
-      const result = await ProjectService.createProject(newProject, newProject.templateType);
+      // Always use the current orgId for project creation
+      const projectToCreate = {
+        ...newProject,
+        orgId: orgId || orgIdProp,
+        userId: userId,
+        role: role,
+        type: selectedProjectType,
+        templateType: selectedTemplateType,
+        teamId: newProject.teamId,
+        createdBy: newProject.createdBy || user?.email || user?.username || 'Unknown User'
+      };
+      console.log('Creating project:', projectToCreate);
+      const result = await ProjectService.createProject(projectToCreate, projectToCreate.templateType);
       console.log('Created project:', result);
       setProjects(prev => [...prev, result]);
-      setNewProject({ orgId: orgId, name: '', type: 'Internal', templateType: templateType });
+      setNewProject({ orgId: orgId || orgIdProp, name: '', type: '', templateType: '', description: '', teamId: '', createdBy: user?.email || user?.username || 'Unknown User' });
+      setSelectedProjectType('');
+      setSelectedTemplateType('');
+      setCreateStep('type');
+      setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Error creating project:', err);
       setError('Failed to create project. Please try again.');
@@ -189,968 +265,1277 @@ const Dashboard: React.FC = () => {
     return 'In Progress';
   };
 
-  // Update user profile function
-  const updateUserProfile = async (firstName: string, lastName: string, jobTitle: string, department: string) => {
-    if (!userId) return;
-    
-    try {
-      console.log('Updating user profile...');
-      const updatedProfile = await UserService.updateUserProfile(userId, {
-        firstName,
-        lastName,
-        jobTitle,
-        department
-      });
-      console.log('Profile updated successfully:', updatedProfile);
-      setUserProfile(updatedProfile);
-      // You can add a success message here if needed
-    } catch (err) {
-      console.error('Error updating user profile:', err);
-      setError('Failed to update profile. Please try again.');
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'In Progress': return '#00875A';
+      case 'Completed': return '#0052CC';
+      case 'Not Started': return '#5E6C84';
+      default: return '#5E6C84';
     }
   };
 
+  // Filter and sort projects
+  const filteredProjects = React.useMemo(() => {
+    let filtered = projects.filter(project => {
+      const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           project.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = filterType === 'all' || project.type.toLowerCase() === filterType.toLowerCase();
+      return matchesSearch && matchesType;
+    });
+
+    // Sort projects
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'progress':
+          return getProjectProgress(b) - getProjectProgress(a);
+        case 'date':
+          return new Date(b.timeline.start).getTime() - new Date(a.timeline.start).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [projects, searchQuery, filterType, sortBy]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const paginatedProjects = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredProjects.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredProjects, currentPage, itemsPerPage]);
+
+  // Reset pagination when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, sortBy]);
+
   return (
-    <Box sx={{ 
-      p: { xs: 2, sm: 3, md: 4 }, 
-      bgcolor: '#f8fafc', 
+    <Box sx={{
+      px: { xs: 2, sm: 4, md: 8 },
+      py: { xs: 3, sm: 4 },
+      bgcolor: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
       minHeight: '100vh',
-      maxWidth: '1400px',
-      mx: 'auto'
+      minWidth: { xs: '100vw', sm: '80vw' },
+      width: '100%',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
+      position: 'relative',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'linear-gradient(135deg, rgba(30,60,114,0.1) 0%, rgba(42,82,152,0.1) 100%)',
+        zIndex: 0,
+      }
     }}>
-      {/* Enhanced Loading State */}
+      {/* Loading State */}
       {loading && (
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          minHeight: '60vh',
-          bgcolor: 'white',
-          borderRadius: 3,
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
-        }}>
-          <CircularProgress size={48} sx={{ mb: 3, color: '#3b82f6' }} />
-          <Typography sx={{ color: '#64748b', fontSize: '16px', fontWeight: 500 }}>
-            Loading your workspace...
-          </Typography>
-          <Typography sx={{ color: '#94a3b8', fontSize: '14px', mt: 1 }}>
-            This might take a moment
-          </Typography>
-        </Box>
+        <Fade in={loading}>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            minHeight: '200px',
+            position: 'relative',
+            zIndex: 1,
+          }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <CircularProgress 
+                size={60} 
+                thickness={4}
+                sx={{ 
+                  color: 'white',
+                  mb: 2,
+                  '& .MuiCircularProgress-circle': {
+                    strokeLinecap: 'round',
+                  }
+                }} 
+              />
+              <Typography sx={{ 
+                color: 'white', 
+                fontSize: '18px',
+                fontWeight: 500,
+                letterSpacing: '0.5px'
+              }}>
+                ✨ Loading your amazing projects...
+              </Typography>
+            </Box>
+          </Box>
+        </Fade>
       )}
 
       {/* Enhanced Error State */}
       {error && (
-        <Box sx={{ 
-          mb: 4, 
-          p: 3, 
-          bgcolor: '#fef2f2', 
-          border: '1px solid #fecaca', 
-          borderRadius: 3,
-          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.1)'
-        }}>
-          <Typography sx={{ color: '#dc2626', fontWeight: 600, mb: 1 }}>
-            {error}
-          </Typography>
-          <Button 
-            size="small" 
-            onClick={() => setError(null)} 
-            sx={{ 
-              mt: 1, 
-              color: '#dc2626',
-              fontWeight: 600,
-              textTransform: 'none',
-              '&:hover': { bgcolor: '#fee2e2' }
-            }}
-          >
-            Dismiss
-          </Button>
-        </Box>
+        <Grow in={!!error}>
+          <Box sx={{ 
+            mb: 3, 
+            p: 3, 
+            bgcolor: 'rgba(255, 255, 255, 0.95)', 
+            border: '1px solid #FF5630', 
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(255, 86, 48, 0.2)',
+            backdropFilter: 'blur(10px)',
+            position: 'relative',
+            zIndex: 1,
+          }}>
+            <Typography color="error" sx={{ fontWeight: 500 }}>
+              🚨 {error}
+            </Typography>
+            <Button 
+              size="small" 
+              onClick={() => setError(null)} 
+              sx={{ 
+                mt: 1, 
+                color: '#FF5630',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 86, 48, 0.1)'
+                }
+              }}
+            >
+              Dismiss
+            </Button>
+          </Box>
+        </Grow>
       )}
 
-      {/* Enhanced Header Section */}
-      <Box sx={{ mb: 6 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography 
-            variant="h3" 
-            sx={{ 
-              fontWeight: 700,
-              color: '#1e293b',
-              mb: 2,
-              fontSize: { xs: '28px', sm: '32px', md: '36px' },
-              background: 'linear-gradient(135deg, #1e293b 0%, #3b82f6 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}
-          >
-            Welcome back, {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : user?.email?.split('@')[0] || 'User'}! 👋
-          </Typography>
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              color: '#64748b',
-              fontWeight: 400,
-              fontSize: '18px'
-            }}
-          >
-            {userProfile ? (
-              <>
-                {userProfile.job_title && userProfile.department 
-                  ? `${userProfile.job_title} at ${userProfile.department}` 
-                  : userProfile.job_title || userProfile.department || 'Here\'s what\'s happening with your projects today.'
-                }
-              </>
-            ) : (
-              'Here\'s what\'s happening with your projects today.'
-            )}
-          </Typography>
-          
-          {/* User Profile Debug Info - Remove this in production */}
-          {userProfile && (
-            <Box sx={{ 
-              mt: 2, 
-              p: 2, 
-              bgcolor: '#f8fafc', 
-              borderRadius: 2, 
-              border: '1px solid #e2e8f0' 
-            }}>
-              <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 1 }}>
-                Profile loaded: {userProfile.email} | {userProfile.department}
+      {/* Header Section & Create Project Form */}
+      <Box sx={{ mb: 6, width: '100%', maxWidth: '1400px', position: 'relative', zIndex: 1 }}>
+        <Fade in={true} timeout={800}>
+          <Box sx={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            mb: 4,
+            gap: { xs: 3, sm: 0 },
+          }}>
+            <Box>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 700,
+                  background: 'linear-gradient(45deg, #fff, #bbdefb)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontSize: { xs: '32px', sm: '48px' },
+                  mb: 1,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.1,
+                  textShadow: '0 2px 10px rgba(255,255,255,0.3)',
+                }}
+              >
+                🚀 Projects Universe
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: 'rgba(255,255,255,0.9)',
+                  fontWeight: 400,
+                  fontSize: { xs: '16px', sm: '20px' },
+                  lineHeight: 1.5,
+                  maxWidth: '600px',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }}
+              >
+                ✨ Craft extraordinary experiences across teams and workflows with cutting-edge tools.
               </Typography>
             </Box>
-          )}
-        </Box>
+            <Button
+              variant="contained"
+              startIcon={<RocketLaunchIcon sx={{ fontSize: '22px' }} />}
+              onClick={() => setIsCreateModalOpen(true)}
+              sx={{
+                background: 'linear-gradient(45deg, #2196F3, #1976D2)',
+                color: 'white',
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '16px',
+                px: 4,
+                py: 2,
+                fontSize: '16px',
+                height: '56px',
+                boxShadow: '0 8px 32px rgba(33, 150, 243, 0.4)',
+                border: 'none',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #1976D2, #1565C0)',
+                  boxShadow: '0 12px 40px rgba(33, 150, 243, 0.6)',
+                  transform: 'translateY(-2px) scale(1.05)',
+                },
+                '&:active': {
+                  transform: 'translateY(0) scale(1.02)',
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              Create Magic
+            </Button>
+          </Box>
+        </Fade>
 
-        {/* Enhanced Statistics Cards */}
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, 
-          gap: 3, 
-          mb: 4 
-        }}>
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              border: '1px solid #e2e8f0',
-              bgcolor: 'white',
-              position: 'relative',
-              overflow: 'hidden',
-              '&:hover': {
-                boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.3s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 4,
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
-              }
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+        {/* Statistics Cards */}
+        <Grow in={true} timeout={1000}>
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'repeat(2, 1fr)',
+              sm: 'repeat(2, 1fr)',
+              md: 'repeat(4, 1fr)'
+            },
+            gap: { xs: 2, sm: 3 },
+            mb: 6,
+            width: '100%',
+          }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: '20px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                '&:hover': {
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+                  transform: 'translateY(-8px) scale(1.02)',
+                },
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <Box sx={{ 
+                  background: 'linear-gradient(135deg, #42A5F5, #1E88E5)', 
+                  borderRadius: '16px', 
+                  width: 48, 
+                  height: 48, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  mb: 2,
+                  boxShadow: '0 4px 16px rgba(66, 165, 245, 0.4)',
+                }}>
+                  <WorkspacesIcon sx={{ color: 'white', fontSize: 24 }} />
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#2C3E50', mb: 0.5, fontSize: '28px' }}>
                   {totalProjects}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
-                  Total Projects
+                <Typography variant="body2" sx={{ color: '#7F8C8D', fontWeight: 500, fontSize: '14px' }}>
+                  🎯 Active Projects
                 </Typography>
               </Box>
-              <Box sx={{ 
-                bgcolor: '#eff6ff', 
-                borderRadius: '50%', 
-                width: 48, 
-                height: 48, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <TrendingUpIcon sx={{ color: '#3b82f6', fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Paper>
+            </Paper>
 
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              border: '1px solid #e2e8f0',
-              bgcolor: 'white',
-              position: 'relative',
-              overflow: 'hidden',
-              '&:hover': {
-                boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.3s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 4,
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-              }
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: '20px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                '&:hover': {
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+                  transform: 'translateY(-8px) scale(1.02)',
+                },
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <Box sx={{ 
+                  background: 'linear-gradient(135deg, #5C6BC0, #3F51B5)', 
+                  borderRadius: '16px', 
+                  width: 48, 
+                  height: 48, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  mb: 2,
+                  boxShadow: '0 4px 16px rgba(92, 107, 192, 0.4)',
+                }}>
+                  <AutoAwesomeIcon sx={{ color: 'white', fontSize: 24 }} />
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#2C3E50', mb: 0.5, fontSize: '28px' }}>
                   {totalTasks}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
-                  Total Issues
+                <Typography variant="body2" sx={{ color: '#7F8C8D', fontWeight: 500, fontSize: '14px' }}>
+                  ⚡ Total Tasks
                 </Typography>
               </Box>
-              <Box sx={{ 
-                bgcolor: '#ecfdf5', 
-                borderRadius: '50%', 
-                width: 48, 
-                height: 48, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <AssignmentIcon sx={{ color: '#10b981', fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Paper>
+            </Paper>
 
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              border: '1px solid #e2e8f0',
-              bgcolor: 'white',
-              position: 'relative',
-              overflow: 'hidden',
-              '&:hover': {
-                boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.3s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 4,
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-              }
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: '20px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                '&:hover': {
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+                  transform: 'translateY(-8px) scale(1.02)',
+                },
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <Box sx={{ 
+                  background: 'linear-gradient(135deg, #81C784, #66BB6A)', 
+                  borderRadius: '16px', 
+                  width: 48, 
+                  height: 48, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  mb: 2,
+                  boxShadow: '0 4px 16px rgba(129, 199, 132, 0.4)',
+                }}>
+                  <CheckCircleIcon sx={{ color: 'white', fontSize: 24 }} />
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#2C3E50', mb: 0.5, fontSize: '28px' }}>
                   {Math.round((completedTasks / Math.max(totalTasks, 1)) * 100)}%
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
-                  Completion Rate
+                <Typography variant="body2" sx={{ color: '#7F8C8D', fontWeight: 500, fontSize: '14px' }}>
+                  🎉 Completed
                 </Typography>
               </Box>
-              <Box sx={{ 
-                bgcolor: '#fef3c7', 
-                borderRadius: '50%', 
-                width: 48, 
-                height: 48, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <TrendingUpIcon sx={{ color: '#f59e0b', fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Paper>
+            </Paper>
 
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              border: '1px solid #e2e8f0',
-              bgcolor: 'white',
-              position: 'relative',
-              overflow: 'hidden',
-              '&:hover': {
-                boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.3s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 4,
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
-              }
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: '20px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                '&:hover': {
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+                  transform: 'translateY(-8px) scale(1.02)',
+                },
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <Box sx={{ 
+                  background: 'linear-gradient(135deg, #90CAF9, #64B5F6)', 
+                  borderRadius: '16px', 
+                  width: 48, 
+                  height: 48, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  mb: 2,
+                  boxShadow: '0 4px 16px rgba(144, 202, 249, 0.4)',
+                }}>
+                  <PeopleAltIcon sx={{ color: 'white', fontSize: 24 }} />
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#2C3E50', mb: 0.5, fontSize: '28px' }}>
                   {totalTeamMembers}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
-                  Team Members
+                <Typography variant="body2" sx={{ color: '#7F8C8D', fontWeight: 500, fontSize: '14px' }}>
+                  👥 Team Members
                 </Typography>
               </Box>
-              <Box sx={{ 
-                bgcolor: '#f3f4f6', 
-                borderRadius: '50%', 
-                width: 48, 
-                height: 48, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <GroupIcon sx={{ color: '#8b5cf6', fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Paper>
-        </Box>
+            </Paper>
+          </Box>
+        </Grow>
       </Box>
 
       {/* Enhanced Projects Section */}
       {!loading && !error && (
-        <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontWeight: 600,
-                color: '#1e293b',
-                fontSize: '24px'
-              }}
-            >
-              Your Projects ({projects.length})
-            </Typography>
-            
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setIsCreateModalOpen(true)}
-              sx={{
-                bgcolor: '#3b82f6',
-                color: 'white',
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                textTransform: 'none',
-                fontWeight: 600,
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                '&:hover': {
-                  bgcolor: '#2563eb',
-                  boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)',
-                  transform: 'translateY(-1px)'
-                },
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Quick Create
-            </Button>
-          </Box>
-          
-          {projects.length === 0 ? (
-            <Paper sx={{ 
-              textAlign: 'center', 
-              py: 8,
-              px: 4,
-              bgcolor: 'white',
-              borderRadius: 3,
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
-            }}>
+        <Box sx={{ width: '100%', maxWidth: '1400px', position: 'relative', zIndex: 1 }}>
+          <Fade in={true} timeout={1200}>
+            <Box>
+              {/* Controls Section */}
               <Box sx={{ 
-                width: 80, 
-                height: 80, 
-                borderRadius: '50%', 
-                bgcolor: '#f1f5f9', 
                 display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 3
+                flexDirection: { xs: 'column', md: 'row' },
+                justifyContent: 'space-between', 
+                alignItems: { xs: 'stretch', md: 'center' },
+                mb: 4,
+                gap: 2,
+                p: 3,
+                borderRadius: '20px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
               }}>
-                <TrendingUpIcon sx={{ fontSize: 40, color: '#64748b' }} />
-              </Box>
-              <Typography variant="h5" sx={{ color: '#1e293b', mb: 2, fontWeight: 600 }}>
-                No projects yet
-              </Typography>
-              <Typography variant="body1" sx={{ color: '#64748b', mb: 4, maxWidth: 400, mx: 'auto' }}>
-                Create your first project to start organizing your work and collaborating with your team.
-              </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<AddIcon />}
-                onClick={() => setIsCreateModalOpen(true)}
-                sx={{
-                  bgcolor: '#3b82f6',
-                  color: 'white',
-                  borderRadius: 2,
-                  px: 4,
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                  '&:hover': {
-                    bgcolor: '#2563eb',
-                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)',
-                    transform: 'translateY(-1px)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Create Your First Project
-              </Button>
-            </Paper>
-          ) : (
-            <Box sx={{ 
-              display: 'grid', 
-              gap: 3, 
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }
-            }}>
-              {Array.isArray(projects) && projects.map((project: Project) => {
-            const progress = getProjectProgress(project);
-            const status = getProjectStatus(project);
-            const isStarred = starredProjects.includes(project.id);
-            
-            return (
-              <Card 
-                key={project.id}
-                sx={{
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                  borderRadius: 3,
-                  border: '1px solid #e2e8f0',
-                  bgcolor: 'white',
-                  '&:hover': {
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-                    transform: 'translateY(-4px)',
-                    borderColor: '#3b82f6'
-                  },
-                  transition: 'all 0.3s ease',
-                  position: 'relative',
-                  overflow: 'visible'
-                }}
-              >
-                <CardActionArea component={Link} to={`/projects/${project.id}`}>
-                  <CardContent sx={{ p: 3 }}>
-                    {/* Enhanced Project Header */}
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                        <Avatar 
-                          sx={{ 
-                            width: 48, 
-                            height: 48, 
-                            bgcolor: project.type === 'Software' ? '#3b82f6' : 
-                                     project.type === 'Marketing' ? '#ef4444' : '#10b981',
-                            mr: 2,
-                            fontSize: 18,
-                            fontWeight: 'bold',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                          }}
-                        >
-                          {project.key}
-                        </Avatar>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" sx={{ 
-                            fontWeight: 600, 
-                            color: '#1e293b',
-                            fontSize: '18px',
-                            mb: 0.5,
-                            lineHeight: 1.2
-                          }}>
-                            {project.name}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: '#64748b', fontSize: '14px' }}>
-                            {project.type} project • {project.key}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip 
-                          label={status}
-                          size="small"
-                          sx={{
-                            bgcolor: status === 'In Progress' ? '#ecfdf5' : 
-                                    status === 'Completed' ? '#eff6ff' : '#f8fafc',
-                            color: status === 'In Progress' ? '#059669' : 
-                                   status === 'Completed' ? '#2563eb' : '#64748b',
-                            fontWeight: 600,
-                            fontSize: '12px',
-                            height: 24,
-                            borderRadius: 2
-                          }}
-                        />
-                        <Tooltip title={isStarred ? "Remove from favorites" : "Add to favorites"}>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => toggleStar(project.id, e)}
-                            sx={{ 
-                              color: isStarred ? '#f59e0b' : '#94a3b8',
-                              '&:hover': { 
-                                bgcolor: isStarred ? '#fef3c7' : '#f1f5f9',
-                                transform: 'scale(1.1)'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            {isStarred ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="More options">
-                          <IconButton size="small" sx={{ color: '#64748b' }}>
-                            <MoreVertIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </Box>
-                    
-                    {/* Enhanced Project Description */}
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#64748b',
-                        mb: 3,
-                        lineHeight: 1.5,
-                        fontSize: '14px',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      color: '#2C3E50',
+                      fontSize: '20px',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    🌟 Recent projects ({filteredProjects.length})
+                  </Typography>
+                </Box>
+                
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2, 
+                  alignItems: { xs: 'stretch', sm: 'center' } 
+                }}>
+                  {/* Search */}
+                  <TextField
+                    placeholder="🔍 Search projects..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    size="small"
+                    sx={{
+                      minWidth: 200,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        background: 'rgba(255,255,255,0.8)',
+                        '& fieldset': {
+                          borderColor: 'rgba(255,255,255,0.5)',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#2196F3',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#2196F3',
+                        },
+                      },
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon sx={{ color: '#7F8C8D' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  
+                  {/* Filter */}
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <Select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      displayEmpty
+                      sx={{
+                        borderRadius: '12px',
+                        background: 'rgba(255,255,255,0.8)',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255,255,255,0.5)',
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#2196F3',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#2196F3',
+                        },
                       }}
                     >
-                      {project.description || 'No description provided for this project.'}
-                    </Typography>
-                    
-                    {/* Enhanced Progress Section */}
-                    <Box sx={{ mb: 3 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                        <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600 }}>
-                          Progress
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#1e293b', fontWeight: 700 }}>
-                          {progress}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={progress}
+                      <MenuItem value="all">🎯 All Types</MenuItem>
+                      <MenuItem value="software">💻 Software</MenuItem>
+                      <MenuItem value="business">💼 Business</MenuItem>
+                      <MenuItem value="classic">📊 Classic</MenuItem>
+                    </Select>
+                  </FormControl>
+                  
+                  {/* Sort */}
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <Select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'name' | 'progress' | 'date')}
+                      sx={{
+                        borderRadius: '12px',
+                        background: 'rgba(255,255,255,0.8)',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255,255,255,0.5)',
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#2196F3',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#2196F3',
+                        },
+                      }}
+                    >
+                      <MenuItem value="name">📝 Name</MenuItem>
+                      <MenuItem value="progress">📈 Progress</MenuItem>
+                      <MenuItem value="date">📅 Date</MenuItem>
+                    </Select>
+                  </FormControl>
+                  
+                  {/* View Mode Toggle */}
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    onChange={(e, newMode) => newMode && setViewMode(newMode)}
+                    size="small"
+                    sx={{
+                      '& .MuiToggleButton-root': {
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255,255,255,0.5)',
+                        background: 'rgba(255,255,255,0.5)',
+                        '&.Mui-selected': {
+                          background: 'linear-gradient(45deg, #2196F3, #1976D2)',
+                          color: 'white',
+                          '&:hover': {
+                            background: 'linear-gradient(45deg, #1976D2, #1565C0)',
+                          },
+                        },
+                        '&:hover': {
+                          background: 'rgba(255,255,255,0.8)',
+                        },
+                      },
+                    }}
+                  >
+                    <ToggleButton value="grid" aria-label="grid view">
+                      <ViewModuleIcon />
+                    </ToggleButton>
+                    <ToggleButton value="list" aria-label="list view">
+                      <ViewListIcon />
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+              </Box>
+            </Box>
+          </Fade>
+          
+          {filteredProjects.length === 0 ? (
+            <Grow in={true} timeout={1000}>
+              <Box sx={{
+                textAlign: 'center',
+                py: { xs: 8, sm: 12 },
+                borderRadius: '24px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                width: '100%',
+                mx: 'auto',
+              }}>
+                <Typography variant="h4" sx={{ 
+                  color: '#2C3E50', 
+                  mb: 2, 
+                  fontWeight: 600, 
+                  fontSize: { xs: '20px', sm: '24px' }
+                }}>
+                  🎨 Ready to create something amazing?
+                </Typography>
+                <Typography variant="body1" sx={{ 
+                  color: '#7F8C8D', 
+                  mb: 4, 
+                  fontSize: { xs: '16px', sm: '18px' },
+                  maxWidth: '400px',
+                  mx: 'auto',
+                  lineHeight: 1.6
+                }}>
+                  ✨ Start your journey by creating your first project and watch the magic unfold!
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<RocketLaunchIcon />}
+                  onClick={() => setIsCreateModalOpen(true)}
+                  sx={{
+                    background: 'linear-gradient(45deg, #2196F3, #1976D2)',
+                    color: 'white',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderRadius: '16px',
+                    px: 4,
+                    py: 2,
+                    fontSize: '16px',
+                    boxShadow: '0 8px 32px rgba(33, 150, 243, 0.4)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #1976D2, #1565C0)',
+                      boxShadow: '0 12px 40px rgba(33, 150, 243, 0.6)',
+                      transform: 'translateY(-2px) scale(1.05)',
+                    },
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                >
+                  Launch Your First Project
+                </Button>
+              </Box>
+            </Grow>
+          ) : (
+            <Box>
+              {/* Projects Grid */}
+              <Box sx={{ 
+                display: 'grid',
+                gap: { xs: 3, sm: 4 },
+                gridTemplateColumns: viewMode === 'grid' ? {
+                  xs: '1fr',
+                  sm: 'repeat(auto-fill, minmax(380px, 1fr))',
+                  lg: 'repeat(auto-fill, minmax(420px, 1fr))'
+                } : '1fr',
+                width: '100%',
+                mb: 4,
+              }}>
+                {paginatedProjects.map((project: Project, index: number) => {
+                  const progress = getProjectProgress(project);
+                  const status = getProjectStatus(project);
+                  const isStarred = starredProjects.includes(project.id);
+                  
+                  return (
+                    <Grow 
+                      key={project.id} 
+                      in={true} 
+                      timeout={600 + (index * 100)}
+                      style={{ transformOrigin: '0 0 0' }}
+                    >
+                      <Card 
                         sx={{
-                          height: 8,
-                          borderRadius: 4,
-                          bgcolor: '#f1f5f9',
-                          '& .MuiLinearProgress-bar': {
-                            bgcolor: progress === 100 ? '#10b981' : 
-                                    progress >= 70 ? '#22d3ee' : 
-                                    progress >= 30 ? '#f59e0b' : '#ef4444',
-                            borderRadius: 4
-                          }
-                        }}
-                      />
-                    </Box>
-                    
-                    {/* Enhanced Timeline */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <CalendarTodayIcon sx={{ fontSize: 16, color: '#64748b', mr: 1.5 }} />
-                      <Typography variant="body2" sx={{ color: '#64748b', fontSize: '13px' }}>
-                        {new Date(project.timeline.start).toLocaleDateString()} - {new Date(project.timeline.end).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                    
-                    <Divider sx={{ mb: 3, borderColor: '#f1f5f9' }} />
-                    
-                    {/* Enhanced Footer */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <AvatarGroup 
-                        max={4} 
-                        sx={{ 
-                          '& .MuiAvatar-root': { 
-                            width: 32, 
-                            height: 32, 
-                            fontSize: 12,
-                            fontWeight: 600,
-                            border: '2px solid white',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                          } 
+                          borderRadius: '24px',
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                          backdropFilter: 'blur(20px)',
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                          '&:hover': {
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+                            transform: 'translateY(-8px) scale(1.02)',
+                          },
+                          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '4px',
+                            background: status === 'In Progress' ? 'linear-gradient(90deg, #2196F3, #1976D2)' :
+                              status === 'Completed' ? 'linear-gradient(90deg, #4CAF50, #388E3C)' : 
+                              'linear-gradient(90deg, #90CAF9, #64B5F6)',
+                          },
                         }}
                       >
-                        {(project.teamMembers || []).map((member: any, index: number) => (
-                          <Tooltip key={member.name} title={`${member.name} (${member.role})`}>
-                            <Avatar sx={{ bgcolor: `hsl(${index * 60 + 200}, 70%, 50%)` }}>
-                              {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                            </Avatar>
-                          </Tooltip>
-                        ))}
-                      </AvatarGroup>
-                      
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Chip 
-                          label={`${(project.tasks || []).length} issues`}
-                          size="small"
-                          icon={<AssignmentIcon sx={{ fontSize: 14 }} />}
-                          sx={{
-                            bgcolor: '#f8fafc',
-                            color: '#64748b',
-                            fontWeight: 600,
-                            fontSize: '12px',
-                            height: 28,
-                            borderRadius: 2,
-                            '& .MuiChip-icon': { color: '#64748b' }
-                          }}
-                        />
-                        <Chip 
-                          label={project.type}
-                          size="small"
-                          sx={{
-                            bgcolor: project.type === 'Software' ? '#eff6ff' : 
-                                     project.type === 'Marketing' ? '#fef2f2' : '#f0fdf4',
-                            color: project.type === 'Software' ? '#2563eb' : 
-                                   project.type === 'Marketing' ? '#dc2626' : '#16a34a',
-                            fontWeight: 600,
-                            fontSize: '12px',
-                            height: 28,
-                            borderRadius: 2
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            );
-          })}
-        </Box>
+                        <CardActionArea component={Link} to={`/projects/${project.id}`}>
+                          <CardContent sx={{ p: 4 }}>
+                            {/* Project Header */}
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                                <Avatar 
+                                  sx={{
+                                    width: 48,
+                                    height: 48,
+                                    background: project.type === 'Software' ? 'linear-gradient(135deg, #667eea, #764ba2)' :
+                                      project.type === 'Marketing' ? 'linear-gradient(135deg, #FF6B6B, #4ECDC4)' : 
+                                      'linear-gradient(135deg, #4ECDC4, #44A08D)',
+                                    mr: 2,
+                                    fontSize: 16,
+                                    fontWeight: 700,
+                                    borderRadius: '16px',
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                                  }}
+                                >
+                                  {project.key}
+                                </Avatar>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography variant="h6" sx={{ 
+                                    fontWeight: 600,
+                                    color: '#2C3E50',
+                                    fontSize: '18px',
+                                    mb: 0.5,
+                                    lineHeight: 1.2,
+                                  }}>
+                                    {project.name}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#7F8C8D', fontSize: '14px' }}>
+                                    {project.type} project • {project.key}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Tooltip title={isStarred ? "Remove from favorites" : "Add to favorites"}>
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => toggleStar(project.id, e)}
+                                    sx={{ 
+                                      color: isStarred ? '#FFD700' : '#BDC3C7',
+                                      '&:hover': { 
+                                        bgcolor: isStarred ? 'rgba(255, 215, 0, 0.1)' : 'rgba(189, 195, 199, 0.1)',
+                                        transform: 'scale(1.2)',
+                                      },
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                  >
+                                    {isStarred ? <StarIcon /> : <StarBorderIcon />}
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="More options">
+                                  <IconButton size="small" sx={{ color: '#BDC3C7' }}>
+                                    <MoreVertIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            </Box>
+                            
+                            {/* Project Description */}
+                            <Typography 
+                              variant="body2"
+                              sx={{
+                                color: '#7F8C8D',
+                                mb: 3,
+                                lineHeight: 1.5,
+                                fontSize: '14px',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {project.description}
+                            </Typography>
+                            
+                            {/* Progress Section */}
+                            <Box sx={{ mb: 3 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="body2" sx={{ color: '#7F8C8D', fontWeight: 600 }}>
+                                  📊 Progress
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#2C3E50', fontWeight: 700 }}>
+                                  {progress}%
+                                </Typography>
+                              </Box>
+                              <LinearProgress
+                                variant="determinate"
+                                value={progress}
+                                sx={{
+                                  height: 8,
+                                  borderRadius: 8,
+                                  bgcolor: 'rgba(189, 195, 199, 0.2)',
+                                  '& .MuiLinearProgress-bar': {
+                                    background: progress === 100 ? 'linear-gradient(90deg, #4CAF50, #388E3C)' :
+                                      progress >= 70 ? 'linear-gradient(90deg, #2196F3, #1976D2)' :
+                                      progress >= 30 ? 'linear-gradient(90deg, #42A5F5, #1E88E5)' : 
+                                      'linear-gradient(90deg, #90CAF9, #64B5F6)',
+                                    borderRadius: 8,
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                  },
+                                }}
+                              />
+                            </Box>
+                            
+                            {/* Timeline */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                              <CalendarTodayIcon sx={{ fontSize: 16, color: '#7F8C8D', mr: 1 }} />
+                              <Typography variant="body2" sx={{ color: '#7F8C8D', fontSize: '12px' }}>
+                                📅 {new Date(project.timeline.start).toLocaleDateString()} - {new Date(project.timeline.end).toLocaleDateString()}
+                              </Typography>
+                            </Box>
+                            
+                            <Divider sx={{ mb: 3, background: 'rgba(189, 195, 199, 0.3)' }} />
+                            
+                            {/* Footer */}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <AvatarGroup 
+                                max={4} 
+                                sx={{ 
+                                  '& .MuiAvatar-root': { 
+                                    width: 32, 
+                                    height: 32, 
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    border: '2px solid white',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                                  } 
+                                }}
+                              >
+                                {(project.teamMembers || []).map((member: any, memberIndex: number) => (
+                                  <Tooltip key={member.name} title={`${member.name} (${member.role})`}>
+                                    <Avatar sx={{ 
+                                      background: `linear-gradient(135deg, hsl(${memberIndex * 60}, 70%, 60%), hsl(${memberIndex * 60 + 30}, 70%, 70%))` 
+                                    }}>
+                                      {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                                    </Avatar>
+                                  </Tooltip>
+                                ))}
+                              </AvatarGroup>
+                              
+                              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                <Chip
+                                  label={`${(project.tasks || []).length} tasks`}
+                                  size="small"
+                                  icon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+                                  sx={{
+                                    background: 'linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(68, 160, 141, 0.2))',
+                                    color: '#2C3E50',
+                                    fontWeight: 600,
+                                    fontSize: '12px',
+                                    height: 28,
+                                    borderRadius: '14px',
+                                    '& .MuiChip-icon': { color: '#4ECDC4' }
+                                  }}
+                                />
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Box sx={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    background: status === 'In Progress' ? 'linear-gradient(135deg, #4ECDC4, #44A08D)' :
+                                      status === 'Completed' ? 'linear-gradient(135deg, #667eea, #764ba2)' : 
+                                      'linear-gradient(135deg, #ffecd2, #fcb69f)',
+                                  }} />
+                                  <Typography variant="caption" sx={{ 
+                                    color: '#2C3E50', 
+                                    fontSize: '12px',
+                                    fontWeight: 600
+                                  }}>
+                                    {status}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          </CardContent>
+                        </CardActionArea>
+                      </Card>
+                    </Grow>
+                  );
+                })}
+              </Box>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  mt: 4,
+                  p: 3,
+                  borderRadius: '20px',
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                }}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(e, page) => setCurrentPage(page)}
+                    color="primary"
+                    size="large"
+                    sx={{
+                      '& .MuiPaginationItem-root': {
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        '&.Mui-selected': {
+                          background: 'linear-gradient(45deg, #2196F3, #1976D2)',
+                          color: 'white',
+                          '&:hover': {
+                            background: 'linear-gradient(45deg, #1976D2, #1565C0)',
+                          },
+                        },
+                        '&:hover': {
+                          background: 'rgba(33, 150, 243, 0.1)',
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
           )}
         </Box>
       )}
 
-      {/* Enhanced Filter Controls - Moved to Bottom */}
-      <Paper sx={{ 
-        p: 3, 
-        mb: 4, 
-        borderRadius: 3, 
-        border: '1px solid #e2e8f0',
-        bgcolor: 'white',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
-      }}>
-        <Typography variant="h6" sx={{ mb: 3, color: '#1e293b', fontWeight: 600 }}>
-          Project Filters
-        </Typography>
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' },
-          gap: 2
-        }}>
-          <TextField
-            label="Organization ID"
-            type="number"
-            value={orgId}
-            onChange={e => setOrgId(Number(e.target.value))}
-            size="small"
-            sx={{ 
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6'
-                }
-              }
-            }}
-          />
-          <TextField
-            label="User ID"
-            type="number"
-            value={userId}
-            size="small"
-            disabled
-            sx={{ 
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2
-              }
-            }}
-          />
-          <TextField
-            label="Role"
-            value={role}
-            onChange={e => setRole(e.target.value)}
-            size="small"
-            sx={{ 
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6'
-                }
-              }
-            }}
-          />
-          <TextField
-            label="Template Type"
-            value={templateType}
-            onChange={e => setTemplateType(e.target.value)}
-            size="small"
-            sx={{ 
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6'
-                }
-              }
-            }}
-          />
-          <FormControl size="small">
-            <InputLabel>Team IDs</InputLabel>
-            <Select
-              multiple
-              value={teamIds}
-              onChange={e => setTeamIds(typeof e.target.value === 'string' ? e.target.value.split(',').map(Number) : e.target.value as number[])}
-              label="Team IDs"
-              renderValue={selected => (selected as number[]).join(', ')}
-              sx={{ 
-                borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6'
-                }
-              }}
-            >
-              {[1,2,3,4,5].map(id => (
-                <MenuItem key={id} value={id}>{id}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      </Paper>
-
-      {/* Enhanced Create Project Section - Moved to Bottom */}
-      <Paper sx={{ 
-        p: 3, 
-        mb: 4, 
-        borderRadius: 3, 
-        border: '1px solid #e2e8f0',
-        bgcolor: 'white',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
-      }}>
-        <Typography variant="h6" sx={{ mb: 3, color: '#1e293b', fontWeight: 600 }}>
-          Create New Project
-        </Typography>
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-          gap: 2,
-          mb: 3
-        }}>
-          <TextField
-            label="Project Name"
-            value={newProject.name}
-            onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
-            size="small"
-            placeholder="Enter project name..."
-            sx={{ 
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6'
-                }
-              }
-            }}
-          />
-          <TextField
-            label="Project Type"
-            value={newProject.type}
-            onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
-            size="small"
-            sx={{ 
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6'
-                }
-              }
-            }}
-          />
-          <TextField
-            label="Template Type"
-            value={newProject.templateType}
-            onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
-            size="small"
-            sx={{ 
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6'
-                }
-              }
-            }}
-          />
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateProject}
-          disabled={!newProject.name.trim()}
-          sx={{
-            bgcolor: '#3b82f6',
-            color: 'white',
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: 2,
-            px: 4,
-            py: 1.5,
-            fontSize: '14px',
-            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-            '&:hover': {
-              bgcolor: '#2563eb',
-              boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)',
-              transform: 'translateY(-1px)'
-            },
-            '&:disabled': {
-              bgcolor: '#e2e8f0',
-              color: '#94a3b8',
-              boxShadow: 'none'
-            },
-            transition: 'all 0.2s ease'
-          }}
-        >
-          Create Project
-        </Button>
-      </Paper>
-
-      {/* Enhanced Modal for creating a project */}
+      {/* Advanced Modal for creating a project */}
       {isCreateModalOpen && (
-        <Box sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          bgcolor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1300,
-          backdropFilter: 'blur(4px)'
-        }}>
-          <Paper sx={{ 
-            p: 4, 
-            minWidth: { xs: 320, sm: 480 }, 
-            maxWidth: 600,
-            borderRadius: 3,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            bgcolor: 'white',
-            mx: 2
+        <Fade in={isCreateModalOpen}>
+          <Box sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
           }}>
-            <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: '#1e293b' }}>
-              Create New Project
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                label="Project Name"
-                value={newProject.name}
-                onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
-                fullWidth
-                placeholder="Enter a descriptive project name..."
-                sx={{ 
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#3b82f6'
-                    }
-                  }
-                }}
-              />
-              <TextField
-                label="Project Type"
-                value={newProject.type}
-                onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
-                fullWidth
-                sx={{ 
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#3b82f6'
-                    }
-                  }
-                }}
-              />
-              <TextField
-                label="Template Type"
-                value={newProject.templateType}
-                onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
-                fullWidth
-                sx={{ 
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#3b82f6'
-                    }
-                  }
-                }}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'flex-end' }}>
-              <Button
-                variant="outlined"
-                onClick={() => setIsCreateModalOpen(false)}
-                sx={{
-                  borderColor: '#e2e8f0',
-                  color: '#64748b',
-                  borderRadius: 2,
-                  px: 3,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  '&:hover': {
-                    borderColor: '#94a3b8',
-                    bgcolor: '#f8fafc'
-                  }
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={async () => {
-                  await handleCreateProject();
-                  setIsCreateModalOpen(false);
-                }}
-                disabled={!newProject.name.trim()}
-                sx={{
-                  bgcolor: '#3b82f6',
-                  color: 'white',
-                  borderRadius: 2,
-                  px: 4,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                  '&:hover': {
-                    bgcolor: '#2563eb',
-                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)'
-                  },
-                  '&:disabled': {
-                    bgcolor: '#e2e8f0',
-                    color: '#94a3b8',
-                    boxShadow: 'none'
-                  }
-                }}
-              >
-                Create Project
-              </Button>
-            </Box>
-          </Paper>
-        </Box>
+            <Grow in={isCreateModalOpen} timeout={300}>
+              <Paper sx={{
+                p: { xs: 3, sm: 5 },
+                width: { xs: '90vw', sm: 500, md: 600 },
+                maxWidth: '95vw',
+                borderRadius: '24px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                position: 'relative',
+                zIndex: 2100,
+                mx: 'auto',
+                my: { xs: 2, sm: 0 },
+                overflowY: 'auto',
+                maxHeight: { xs: '90vh', sm: '85vh' }
+              }}>
+                {createStep === 'type' && (
+                  <>
+                    <Typography variant="h4" sx={{ 
+                      mb: 3, 
+                      fontWeight: 700,
+                      color: '#2C3E50',
+                      textAlign: 'center',
+                      fontSize: { xs: '24px', sm: '28px' }
+                    }}>
+                      🎨 Choose Your Project Type
+                    </Typography>
+                    <Typography variant="body1" sx={{ 
+                      mb: 4, 
+                      color: '#7F8C8D',
+                      textAlign: 'center',
+                      fontSize: '16px',
+                      lineHeight: 1.6
+                    }}>
+                      Select the perfect foundation for your amazing project
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', mb: 4, flexWrap: 'wrap' }}>
+                      {projectTypeOptions.map(opt => (
+                        <Button 
+                          key={opt.type} 
+                          onClick={() => { setSelectedProjectType(opt.type); setCreateStep('template'); }} 
+                          sx={{ 
+                            p: 3, 
+                            borderRadius: '20px', 
+                            background: selectedProjectType === opt.type ? 
+                              'linear-gradient(135deg, #2196F3, #1976D2)' : 
+                              'linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6))',
+                            border: selectedProjectType === opt.type ? 
+                              '2px solid #2196F3' : 
+                              '2px solid rgba(255,255,255,0.5)',
+                            boxShadow: selectedProjectType === opt.type ? 
+                              '0 8px 32px rgba(33, 150, 243, 0.4)' : 
+                              '0 4px 16px rgba(0,0,0,0.1)',
+                            minWidth: 140, 
+                            flexDirection: 'column', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 2,
+                            color: selectedProjectType === opt.type ? 'white' : '#2C3E50',
+                            '&:hover': {
+                              background: selectedProjectType === opt.type ? 
+                                'linear-gradient(135deg, #1976D2, #1565C0)' :
+                                'linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(25, 118, 210, 0.1))',
+                              transform: 'translateY(-4px) scale(1.05)',
+                              boxShadow: '0 12px 40px rgba(33, 150, 243, 0.3)',
+                            },
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                          }}
+                        >
+                          <img src={opt.img} alt={opt.type} style={{ width: 48, height: 48 }} />
+                          <Typography sx={{ fontWeight: 600, fontSize: '16px' }}>{opt.type}</Typography>
+                        </Button>
+                      ))}
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => { setIsCreateModalOpen(false); setCreateStep('type'); setSelectedProjectType(''); setSelectedTemplateType(''); }}
+                        sx={{
+                          borderRadius: '12px',
+                          px: 4,
+                          py: 1.5,
+                          borderColor: '#BDC3C7',
+                          color: '#7F8C8D',
+                          '&:hover': {
+                            borderColor: '#2196F3',
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                          }
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                  </>
+                )}
+                {createStep === 'template' && (
+                  <>
+                    <Typography variant="h4" sx={{ 
+                      mb: 3, 
+                      fontWeight: 700,
+                      color: '#2C3E50',
+                      textAlign: 'center',
+                      fontSize: { xs: '24px', sm: '28px' }
+                    }}>
+                      🛠️ Select Template
+                    </Typography>
+                    <Typography variant="body1" sx={{ 
+                      mb: 4, 
+                      color: '#7F8C8D',
+                      textAlign: 'center',
+                      fontSize: '16px',
+                      lineHeight: 1.6
+                    }}>
+                      Choose the methodology that fits your workflow
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', mb: 4, flexWrap: 'wrap' }}>
+                      {templateOptions[selectedProjectType]?.map(opt => (
+                        <Button 
+                          key={opt.template} 
+                          onClick={() => { setSelectedTemplateType(opt.template); setCreateStep('details'); }} 
+                          sx={{ 
+                            p: 3, 
+                            borderRadius: '20px', 
+                            background: selectedTemplateType === opt.template ? 
+                              'linear-gradient(135deg, #5C6BC0, #3F51B5)' : 
+                              'linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6))',
+                            border: selectedTemplateType === opt.template ? 
+                              '2px solid #5C6BC0' : 
+                              '2px solid rgba(255,255,255,0.5)',
+                            boxShadow: selectedTemplateType === opt.template ? 
+                              '0 8px 32px rgba(92, 107, 192, 0.4)' : 
+                              '0 4px 16px rgba(0,0,0,0.1)',
+                            minWidth: 140, 
+                            flexDirection: 'column', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 2,
+                            color: selectedTemplateType === opt.template ? 'white' : '#2C3E50',
+                            '&:hover': {
+                              background: selectedTemplateType === opt.template ? 
+                                'linear-gradient(135deg, #3F51B5, #303F9F)' :
+                                'linear-gradient(135deg, rgba(92, 107, 192, 0.1), rgba(63, 81, 181, 0.1))',
+                              transform: 'translateY(-4px) scale(1.05)',
+                              boxShadow: '0 12px 40px rgba(92, 107, 192, 0.3)',
+                            },
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                          }}
+                        >
+                          <img src={opt.img} alt={opt.template} style={{ width: 48, height: 48 }} />
+                          <Typography sx={{ fontWeight: 600, fontSize: '16px' }}>{opt.template}</Typography>
+                        </Button>
+                      ))}
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => setCreateStep('type')}
+                        sx={{
+                          borderRadius: '12px',
+                          px: 4,
+                          py: 1.5,
+                          borderColor: '#BDC3C7',
+                          color: '#7F8C8D',
+                          '&:hover': {
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                          }
+                        }}
+                      >
+                        Back
+                      </Button>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => { setIsCreateModalOpen(false); setCreateStep('type'); setSelectedProjectType(''); setSelectedTemplateType(''); }}
+                        sx={{
+                          borderRadius: '12px',
+                          px: 4,
+                          py: 1.5,
+                          borderColor: '#BDC3C7',
+                          color: '#7F8C8D',
+                          '&:hover': {
+                            borderColor: '#4ECDC4',
+                            backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                          }
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                  </>
+                )}
+                {createStep === 'details' && (
+                  <>
+                    <Typography variant="h4" sx={{ 
+                      mb: 3, 
+                      fontWeight: 700,
+                      color: '#2C3E50',
+                      textAlign: 'center',
+                      fontSize: { xs: '24px', sm: '28px' }
+                    }}>
+                      ✨ Project Details
+                    </Typography>
+                    <Typography variant="body1" sx={{ 
+                      mb: 4, 
+                      color: '#7F8C8D',
+                      textAlign: 'center',
+                      fontSize: '16px',
+                      lineHeight: 1.6
+                    }}>
+                      Fill in the details to bring your project to life
+                    </Typography>
+                    <TextField
+                      label="🎯 Project Name"
+                      value={newProject.name}
+                      onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
+                      fullWidth
+                      sx={{ 
+                        mb: 3,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '12px',
+                          '& fieldset': {
+                            borderColor: 'rgba(189, 195, 199, 0.5)',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#4ECDC4',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#4ECDC4',
+                          },
+                        },
+                      }}
+                    />
+                    <TextField
+                      label="📝 Description"
+                      value={newProject.description}
+                      onChange={e => setNewProject(p => ({ ...p, description: e.target.value }))}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      sx={{ 
+                        mb: 3,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '12px',
+                          '& fieldset': {
+                            borderColor: 'rgba(189, 195, 199, 0.5)',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#4ECDC4',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#4ECDC4',
+                          },
+                        },
+                      }}
+                    />
+                    <FormControl fullWidth sx={{ mb: 3 }}>
+                      <InputLabel>👥 Team ID</InputLabel>
+                      <Select
+                        label="👥 Team ID"
+                        value={newProject.teamId}
+                        onChange={e => setNewProject(p => ({ ...p, teamId: e.target.value }))}
+                        sx={{
+                          borderRadius: '12px',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'rgba(189, 195, 199, 0.5)',
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#4ECDC4',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#4ECDC4',
+                          },
+                        }}
+                      >
+                        {[1,2,3,4,5].map(id => (
+                          <MenuItem key={id} value={id}>Team {id}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <TextField
+                      label="👤 Created By"
+                      value={newProject.createdBy}
+                      onChange={e => setNewProject(p => ({ ...p, createdBy: e.target.value }))}
+                      fullWidth
+                      sx={{ 
+                        mb: 4,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '12px',
+                          '& fieldset': {
+                            borderColor: 'rgba(189, 195, 199, 0.5)',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#4ECDC4',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#4ECDC4',
+                          },
+                        },
+                      }}
+                    />
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <Button
+                        variant="contained"
+                        onClick={handleCreateProject}
+                        startIcon={<RocketLaunchIcon />}
+                        sx={{ 
+                          background: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)',
+                          color: 'white',
+                          borderRadius: '12px',
+                          px: 4,
+                          py: 1.5,
+                          fontSize: '16px',
+                          fontWeight: 600,
+                          boxShadow: '0 8px 32px rgba(255, 107, 107, 0.4)',
+                          '&:hover': {
+                            background: 'linear-gradient(45deg, #FF5252, #26A69A)',
+                            boxShadow: '0 12px 40px rgba(255, 107, 107, 0.6)',
+                            transform: 'translateY(-2px) scale(1.05)',
+                          },
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
+                      >
+                        Create Magic
+                      </Button>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => setCreateStep('template')}
+                        sx={{
+                          borderRadius: '12px',
+                          px: 4,
+                          py: 1.5,
+                          borderColor: '#BDC3C7',
+                          color: '#7F8C8D',
+                          '&:hover': {
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                          }
+                        }}
+                      >
+                        Back
+                      </Button>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => { setIsCreateModalOpen(false); setCreateStep('type'); setSelectedProjectType(''); setSelectedTemplateType(''); }}
+                        sx={{
+                          borderRadius: '12px',
+                          px: 4,
+                          py: 1.5,
+                          borderColor: '#BDC3C7',
+                          color: '#7F8C8D',
+                          '&:hover': {
+                            borderColor: '#4ECDC4',
+                            backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                          }
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                  </>
+                )}
+              </Paper>
+            </Grow>
+          </Box>
+        </Fade>
       )}
     </Box>
   )

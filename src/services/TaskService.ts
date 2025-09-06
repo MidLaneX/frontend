@@ -75,16 +75,38 @@ export class TaskService {
    */
   static async updateTaskStatus(projectId: number, taskId: number, newStatus: TaskStatus, templateType = 'scrum'): Promise<Task | null> {
     try {
-      console.log(`Updating task ${taskId} status to "${newStatus}" for project ${projectId}`);
+      console.log(`TaskService: Updating task ${taskId} status to "${newStatus}" for project ${projectId}`);
+      console.log(`API endpoint: /projects/${projectId}/tasks/${taskId}/status?templateType=${templateType}`);
+      console.log(`Request body:`, { status: newStatus });
+      
       const response = await tasksApi.updateTaskStatus(projectId, taskId, newStatus, templateType);
-      console.log('Task status update response:', response);
-      return response.data;
+      console.log('TaskService: Task status update response:', response);
+      
+      if (response && response.data) {
+        console.log('TaskService: Task status updated successfully:', response.data);
+        return response.data;
+      } else {
+        console.error('TaskService: No data in response');
+        return null;
+      }
     } catch (error: any) {
-      console.error('Failed to update task status:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      console.error('Error message:', error.message);
-      return null;
+      console.error('TaskService: Failed to update task status:', error);
+      
+      // Log more detailed error information
+      if (error.response) {
+        console.error('TaskService: Error response data:', error.response.data);
+        console.error('TaskService: Error response status:', error.response.status);
+        console.error('TaskService: Error response headers:', error.response.headers);
+        console.error('TaskService: Full error response:', error.response);
+      } else if (error.request) {
+        console.error('TaskService: Error request:', error.request);
+        console.error('TaskService: No response received from server');
+      } else {
+        console.error('TaskService: Error message:', error.message);
+      }
+      
+      // Re-throw the error so the component can handle it properly
+      throw error;
     }
   }
 

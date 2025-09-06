@@ -334,7 +334,19 @@ const OrganizationPage: React.FC = () => {
                         boxShadow: '0 2px 8px rgba(9,30,66,0.15)',
                       },
                     }}
-                    onClick={() => setSelectedOrg(org)}
+                    onClick={() => {
+                      let userId = '';
+                      try {
+                        const auth_tokens = localStorage.getItem('auth_tokens');
+                        if (auth_tokens) {
+                          const parsed = JSON.parse(auth_tokens);
+                          userId = parsed.userId || parsed.user_id || '';
+                        }
+                      } catch (e) {
+                        userId = '';
+                      }
+                      window.location.href = `/organizationpage/${org.id}?userId=${userId}`;
+                    }}
                   >
                     <CardContent sx={{ pb: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>

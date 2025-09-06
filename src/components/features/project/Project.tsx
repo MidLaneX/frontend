@@ -1,207 +1,127 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import CircularProgress from "@mui/material/CircularProgress";
+//projectpage 
 
-import TaskDetailModal from "../task/TaskDetailModal";
-import CreateIssueModal from "../CreateIssueModal";
-import ProjectNavigation from "./ProjectNavigation";
-import { ProjectService } from "@/services/ProjectService";
-import type { Task, Project } from "@/types";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  Alert, 
+  CircularProgress 
+} from '@mui/material';
+import type { Project } from '@/types';
+import { ProjectService } from '@/services/ProjectService';
+import DynamicProjectNavigation from './DynamicProjectNavigation';
 
-// Constants for consistent styling
-const STYLES = {
-  container: {
-    minHeight: "100vh",
-    backgroundColor: "#f5f5f5",
-  },
-  header: {
-    backgroundColor: "white",
-    borderBottom: "1px solid #e0e0e0",
-    p: 3,
-  },
-  headerContent: {
-    display: "flex",
-    alignItems: "center",
-    gap: 2,
-    mb: 2,
-  },
-  projectTitle: {
-    fontWeight: 600,
-    color: "#172b4d",
-  },
-  projectDescription: {
-    color: "#5e6c84",
-    lineHeight: 1.5,
-  },
-  notFoundContainer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100vh",
-  },
-} as const;
-
-/**
- * ProjectPage Component
- *
- * A comprehensive project management page that displays project details,
- * navigation tabs (Summary, Timeline, Backlog, Board), and handles task management.
- *
- * Features:
- * - Project header with title and description
- * - Horizontal navigation tabs similar to Jira
- * - Task creation and editing modals
- * - Drag and drop functionality
- * - Real-time task updates
- */
 const ProjectPage: React.FC = () => {
-  // Hooks
-  const { projectId } = useParams<{ projectId: string }>();
+  const { projectId: urlProjectId, templateType: urlTemplateType } = useParams<{
+    projectId?: string;
+    templateType?: string;
+  }>();
 
-  // State management
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Fetch project data
+  const projectId = Number(urlProjectId);
+  const templateType = urlTemplateType || 'scrum'; // Default template type fallback
+
   useEffect(() => {
-    const fetchProject = async () => {
-      if (!projectId) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        console.log('Fetching project:', projectId);
-        const projectData = await ProjectService.getProjectById(parseInt(projectId), 'scrum');
-        console.log('Fetched project data:', projectData);
-        
-        if (projectData) {
-          setProject(projectData);
-          setTasks(projectData.tasks || []);
+    if (!projectId || !templateType) {
+      setError('Project ID or Template Type is missing.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    ProjectService.getProjectById(projectId, templateType)
+      .then(res => {
+        if (res) {
+          setProject(res);
         } else {
-          setError('Project not found');
+          setError('Project not found.');
         }
-      } catch (err) {
-        console.error('Error fetching project:', err);
-        setError('Failed to load project data');
-      } finally {
-        setLoading(false);
-      }
-    };
+      })
+      .catch(err => {
+        console.error('Failed to load project:', err);
+        setError('Failed to load project. Please try again later.');
+      })
+      .finally(() => setLoading(false));
+  }, [projectId, templateType]);
 
-    fetchProject();
-  }, [projectId]);
-
-  // Event handlers
-  /**
-   * Handles task selection and opens the task detail modal
-   */
-  const handleTaskClick = useCallback((task: Task) => {
-    setSelectedTask(task);
-    setIsTaskModalOpen(true);
-  }, []);
-
-  /**
-   * Opens the create task modal
-   */
-  const handleCreateTask = useCallback(() => {
-    setIsCreateModalOpen(true);
-  }, []);
-
-  /**
-   * Updates a specific task with partial updates
-   */
-  const handleUpdateTask = useCallback(
-    (taskId: string, updates: Partial<Task>) => {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          String(task.id) === taskId ? { ...task, ...updates } : task
-        )
-      );
-    },
-    []
-  );
-
-  /**
-   * Creates a new task and adds it to the task list
-   */
-  const handleCreateIssue = useCallback(
-    (issue: Omit<Task, "id" | "comments">) => {
-      const newTask: Task = {
-        ...issue,
-        id: Date.now(), // Generate unique numeric ID
-        comments: [],
-      };
-      setTasks((prevTasks) => [...prevTasks, newTask]);
-      setIsCreateModalOpen(false);
-    },
-    []
-  );
-
-  /**
-   * Closes the task detail modal
-   */
-  const handleCloseTaskModal = useCallback(() => {
-    setIsTaskModalOpen(false);
-  }, []);
-
-  /**
-   * Closes the create task modal
-   */
-  const handleCloseCreateModal = useCallback(() => {
-    setIsCreateModalOpen(false);
-  }, []);
-
-  // Render guards
+  // Loading
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
         <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Loading project...</Typography>
       </Box>
     );
   }
 
-  if (error || !project) {
+  // Error
+  if (error) {
     return (
-      <Box sx={STYLES.notFoundContainer}>
-        <Typography variant="h6" color="error">
-          {error || 'Project not found'}
-        </Typography>
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
 
-  // Main render
+  // Project not found
+  if (!project) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning">Project not found. Please check the project ID and try again.</Alert>
+      </Box>
+    );
+  }
+
+  // Project has no features
+  if (!project.features || project.features.length === 0) {
+    return (
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+        <Paper elevation={0} sx={{ bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h4" gutterBottom>
+              {project.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Template: {project.templateType?.charAt(0).toUpperCase() + project.templateType?.slice(1)} | Project ID: {project.id}
+            </Typography>
+          </Box>
+        </Paper>
+        <Box sx={{ p: 3 }}>
+          <Alert severity="info">
+            <Typography variant="h6" gutterBottom>No Features Available</Typography>
+            <Typography>
+              This project doesn't have any features configured. The backend should provide features for this project.
+            </Typography>
+          </Alert>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Success - Show the project with DynamicProjectNavigation
   return (
-    <Box sx={STYLES.container}>
-      \{/* Project Navigation */}
-      <ProjectNavigation
-        project={project}
-        tasks={tasks}
-        onTaskClick={handleTaskClick}
-        onCreateTask={handleCreateTask}
-        onUpdateTask={handleUpdateTask}
-      />
-      {/* Modals */}
-      <TaskDetailModal
-        task={selectedTask}
-        open={isTaskModalOpen}
-        onClose={handleCloseTaskModal}
-        onUpdateTask={handleUpdateTask}
-      />
-      <CreateIssueModal
-        open={isCreateModalOpen}
-        onClose={handleCloseCreateModal}
-        onCreateIssue={handleCreateIssue}
-        project={project}
-      />
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <Paper elevation={0} sx={{ bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}>
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h4" gutterBottom>{project.name}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Template: {project.templateType?.charAt(0).toUpperCase() + project.templateType?.slice(1)} | Project ID: {project.id}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Backend Features: [{project.features?.join(', ')}]
+          </Typography>
+        </Box>
+      </Paper>
+
+      {/* Render dynamic feature-based UI */}
+      <DynamicProjectNavigation project={project} />
     </Box>
   );
 };
