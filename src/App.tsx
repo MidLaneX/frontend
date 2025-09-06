@@ -80,7 +80,15 @@ function AppContent() {
             } 
           />
           <Route 
-            path="/projects/:projectId" 
+            path="/projects/:projectId/:templateType" 
+            element={
+              <ProtectedRoute>
+                <Project />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/projects/:projectId/:templateType/:featureName" 
             element={
               <ProtectedRoute>
                 <Project />

@@ -123,13 +123,21 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         return;
       }
       
+      // Get orgId from multiple sources with fallback
+      const currentOrgId = orgId || orgIdProp || parseInt(localStorage.getItem('orgId') || '1');
+      
       setLoading(true);
       setError(null);
       try {
-        console.log('Fetching projects for user:', userId);
-        const data = await ProjectService.getAllProjects(userId, orgId, role, templateType, teamIds);
+        console.log('Fetching projects for user:', userId, 'orgId:', currentOrgId, 'templateType:', templateType);
+        const data = await ProjectService.getAllProjects(userId, currentOrgId, 'scrum');
         console.log('Fetched projects:', data);
         setProjects(data || []);
+        
+        // Set orgId if it wasn't set before
+        if (!orgId && currentOrgId) {
+          setOrgId(currentOrgId);
+        }
       } catch (err) {
         console.error('Error fetching projects:', err);
         setError('Failed to load projects. Please try again.');
@@ -138,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
       }
     };
     fetchProjects();
-  }, [userId, orgId, role, templateType, teamIds, isAuthenticated]);
+  }, [userId, orgId, orgIdProp, templateType, isAuthenticated]);
 
   // Create project handler
   const [newProject, setNewProject] = useState({
@@ -882,7 +890,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
                           },
                         }}
                       >
-                        <CardActionArea component={Link} to={`/projects/${project.id}`}>
+                        <CardActionArea component={Link} to={`/projects/${project.id}/${project.templateType }`}>
                           <CardContent sx={{ p: 4 }}>
                             {/* Project Header */}
                             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>
