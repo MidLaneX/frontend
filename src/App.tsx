@@ -11,6 +11,8 @@ import LandingPage from "@/pages/LandingPage";
 import OrganizationDetailPage from "@/pages/OrganizationDetailPage";
 
 import AccountSettings from "@/pages/AccountSettings";
+import About from "@/pages/About";
+import Help from "@/pages/Help";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -69,7 +71,7 @@ function AppContent() {
         }}
       >
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/organizations" replace />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route 
             path="/dashboard" 
@@ -119,8 +121,24 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
-          
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route 
+            path="/about" 
+            element={
+              <ProtectedRoute>
+                <About />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/help" 
+            element={
+              <ProtectedRoute>
+                <Help />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route path="*" element={<Navigate to="/organizations" replace />} />
         </Routes>
       </Box>
     </Box>
