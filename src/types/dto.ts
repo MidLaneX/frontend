@@ -21,7 +21,7 @@ export interface CreateProjectDTO {
 
 export interface UserProjectRequestDTO {
   userId: number;
-  role: string;
+
 }
 
 export interface UserProjectDTO {

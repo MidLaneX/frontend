@@ -128,23 +128,21 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         return;
       }
       
-      console.log('=== PROJECT FETCH DEBUG ===');
-      console.log('User authenticated:', isAuthenticated);
-      console.log('User ID:', userId);
-      console.log('API Base URL:', 'http://localhost:8080/api');
+      // Get orgId from multiple sources with fallback
+      const currentOrgId = orgId || orgIdProp || parseInt(localStorage.getItem('orgId') || '1');
       
       setLoading(true);
       setError(null);
       try {
-        console.log('Fetching projects for user:', userId);
-        console.log('API call parameters:', { userId, orgId, role, templateType, teamIds });
-        const data = await ProjectService.getAllProjects(userId, orgId, role, templateType, teamIds);
-        console.log('Fetched projects from API:', data);
-        console.log('Number of projects:', data?.length || 0);
-        if (data && data.length > 0) {
-          console.log('First project sample:', data[0]);
-        }
+        console.log('Fetching projects for user:', userId, 'orgId:', currentOrgId, 'templateType:', templateType);
+        const data = await ProjectService.getAllProjects(userId, currentOrgId, 'scrum');
+        console.log('Fetched projects:', data);
         setProjects(data || []);
+        
+        // Set orgId if it wasn't set before
+        if (!orgId && currentOrgId) {
+          setOrgId(currentOrgId);
+        }
       } catch (err) {
         console.error('Error fetching projects:', err);
         console.error('Error details:', {
@@ -160,27 +158,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
       }
     };
     fetchProjects();
-  }, [userId, orgId, role, templateType, teamIds, isAuthenticated]);
-
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!isAuthenticated || !userId) {
-        return;
-      }
-      
-      try {
-        console.log('Fetching user profile for user:', userId);
-        const profile = await UserService.getUserProfile(userId);
-        console.log('Fetched user profile:', profile);
-        setUserProfile(profile);
-      } catch (err) {
-        console.error('Error fetching user profile:', err);
-        // Don't set error for profile fetch failure, just log it
-      }
-    };
-    fetchUserProfile();
-  }, [userId, isAuthenticated]);
+  }, [userId, orgId, orgIdProp, templateType, isAuthenticated]);
 
   // Create project handler
   const [newProject, setNewProject] = useState({
@@ -924,7 +902,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
                           },
                         }}
                       >
-                        <CardActionArea component={Link} to={`/projects/${project.id}`}>
+                        <CardActionArea component={Link} to={`/projects/${project.id}/${project.templateType }`}>
                           <CardContent sx={{ p: 4 }}>
                             {/* Project Header */}
                             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>

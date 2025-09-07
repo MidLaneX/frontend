@@ -38,7 +38,9 @@ const ProjectPage: React.FC = () => {
 
     ProjectService.getProjectById(projectId, templateType)
       .then(res => {
+        console.log('📋 ProjectPage - Fetched project:', res);
         if (res) {
+          console.log('📋 ProjectPage - Project features:', res.features);
           setProject(res);
         } else {
           setError('Project not found.');

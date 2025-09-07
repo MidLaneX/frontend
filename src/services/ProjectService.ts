@@ -9,42 +9,29 @@ export class ProjectService {
   /**
    * Get all projects for a user
    */
-  static async getAllProjects(userId: number = 1, orgId: number = 1, role: string = 'ADMIN', templateType: string = 'scrum', teamIds: number[] = []): Promise<Project[]> {
-    // Build UserProjectRequestDTO
-    const userProjectRequestDTO: UserProjectRequestDTO = { userId, role };
-    // Build payload
-    const payload: GetProjectsPayload = {
-      projectDTO: {
-        id: 0,
-        orgId,
-        name: '',
-        type: '',
-        templateType,
-        features: [],
-        createdAt: '',
-        updatedAt: '',
-        createdBy: String(userId)
-      },
-      userProjectRequestDTO
-    };
-    // Call new API route
-    const response = await projectsApi.getProjects(userId, orgId, role, templateType, teamIds);
-    const data = Array.isArray(response.data) ? response.data : [];
-    return data.map((dto: ProjectDTO): Project => ({
-      id: dto.id,
-      name: dto.name,
-      templateType: dto.templateType,
-      features: dto.features || [],
-      key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
-      description: dto.name || '',
-      timeline: {
-        start: dto.createdAt || new Date().toISOString().split('T')[0],
-        end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      },
-      type: dto.type,
-      tasks: []
-    }));
-  }
+ static async getAllProjects(userId: number, orgId: number, templateType: string): Promise<Project[]> {
+  // Call backend API
+  const response = await projectsApi.getProjects(userId, orgId, templateType);
+
+  const data = Array.isArray(response.data) ? response.data : [];
+
+  // Map DTO -> Frontend Project model
+  return data.map((dto: ProjectDTO): Project => ({
+    id: dto.id,
+    name: dto.name,
+    templateType: dto.templateType,
+    features: dto.features || [],
+    key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
+    description: dto.name || '',
+    timeline: {
+      start: dto.createdAt || new Date().toISOString().split('T')[0],
+      end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    },
+    type: dto.type,
+    tasks: []
+  }));
+}
+
 
   static async createProject(createData: CreateProjectDTO, templateType: string): Promise<Project> {
     // Call new API route

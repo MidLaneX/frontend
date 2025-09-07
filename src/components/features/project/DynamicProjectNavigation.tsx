@@ -71,6 +71,15 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
   const navigate = useNavigate();
   const features = project.features || [];
 
+  console.log('🔍 DynamicProjectNavigation Debug:', {
+    project,
+    features,
+    projectFeaturesLength: project.features?.length,
+    paramFeatureName,
+    projectId,
+    templateType
+  });
+
   const normalizedFeatures = React.useMemo(
     () =>
       features.map((f) => ({
@@ -80,36 +89,58 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
     [features]
   );
 
+  // Initialize activeTab with empty string, will be set by useEffect
   const [activeTab, setActiveTab] = useState<string>('');
 
   // Sync activeTab with URL param and navigate if needed
   useEffect(() => {
     if (normalizedFeatures.length === 0) return;
 
-    const validFeature = paramFeatureName && normalizedFeatures.some(f => f.path === paramFeatureName);
+    console.log('🔄 useEffect triggered:', {
+      paramFeatureName,
+      normalizedFeatures: normalizedFeatures.map(f => f.path),
+      currentActiveTab: activeTab
+    });
 
-    if (validFeature) {
-      if (paramFeatureName !== activeTab) {
+    // If we have a feature in URL and it's valid, use it
+    if (paramFeatureName && normalizedFeatures.some(f => f.path === paramFeatureName)) {
+      if (activeTab !== paramFeatureName) {
+        console.log('✅ Setting activeTab to valid URL param:', paramFeatureName);
         setActiveTab(paramFeatureName);
       }
     } else {
-      // Redirect to first feature if paramFeatureName invalid or missing
-      if (projectId && templateType && activeTab !== normalizedFeatures[0].path) {
-        navigate(`/projects/${projectId}/${templateType}/${normalizedFeatures[0].path}`, { replace: true });
+      // If no valid feature in URL, use first feature and navigate to it
+      const firstFeaturePath = normalizedFeatures[0].path;
+      if (activeTab !== firstFeaturePath) {
+        console.log('🔄 Setting activeTab to first feature:', firstFeaturePath);
+        setActiveTab(firstFeaturePath);
+        
+        // Only navigate if we don't already have a feature in the URL
+        if (projectId && templateType && !paramFeatureName) {
+          console.log('🚀 Navigating to first feature:', firstFeaturePath);
+          navigate(`/projects/${projectId}/${templateType}/${firstFeaturePath}`, { replace: true });
+        }
       }
-      setActiveTab(normalizedFeatures[0].path);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramFeatureName, projectId, templateType, normalizedFeatures]);
+  }, [paramFeatureName, normalizedFeatures, projectId, templateType, navigate]);
 
   const handleTabChange = useCallback(
     (_: React.SyntheticEvent, newValue: string) => {
+      console.log('🖱️ Tab clicked:', {
+        newValue,
+        currentActiveTab: activeTab,
+        projectId,
+        templateType
+      });
+      
       setActiveTab(newValue);
       if (projectId && templateType) {
-        navigate(`/projects/${projectId}/${templateType}/${newValue}`);
+        const newPath = `/projects/${projectId}/${templateType}/${newValue}`;
+        console.log('🚀 Navigating to:', newPath);
+        navigate(newPath);
       }
     },
-    [navigate, projectId, templateType]
+    [navigate, projectId, templateType, activeTab]
   );
 
   const renderFeatureContent = () => {
@@ -119,7 +150,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
     console.log('🚀 Loading feature:', {
       activeFeature,
       importPath: `../${activeFeature.path}/index.tsx`,
-      projectId: parseInt(project.id),
+      projectId: typeof project.id === 'string' ? parseInt(project.id) : project.id,
       projectName: project.name,
       templateType: project.templateType,
     });
@@ -168,7 +199,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
   return (
     <Box>
       <Tabs
-        value={activeTab}
+        value={activeTab && normalizedFeatures.some(f => f.path === activeTab) ? activeTab : normalizedFeatures[0]?.path || false}
         onChange={handleTabChange}
         variant="scrollable"
         scrollButtons="auto"
