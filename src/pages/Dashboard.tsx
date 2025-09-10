@@ -1,47 +1,47 @@
 import React, { useState, useEffect } from 'react'
-import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
-import CardActionArea from '@mui/material/CardActionArea'
-import Chip from '@mui/material/Chip'
-import Avatar from '@mui/material/Avatar'
-import AvatarGroup from '@mui/material/AvatarGroup'
-import Button from '@mui/material/Button'
-import Paper from '@mui/material/Paper'
-import LinearProgress from '@mui/material/LinearProgress'
-import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
-import Divider from '@mui/material/Divider'
-import AddIcon from '@mui/icons-material/Add'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import AssignmentIcon from '@mui/icons-material/Assignment'
-import GroupIcon from '@mui/icons-material/Group'
-import StarBorderIcon from '@mui/icons-material/StarBorder'
-import StarIcon from '@mui/icons-material/Star'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
-import { Link } from 'react-router-dom'
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import CircularProgress from '@mui/material/CircularProgress';
-import type { Project } from "../types";
-import { ProjectService } from '@/services/ProjectService';
-import { useAuth } from '@/context/AuthContext';
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+  Pagination,
+  Paper,
+} from '@mui/material'
+import {
+  Add as AddIcon,
+} from '@mui/icons-material'
+import { useAuth } from '../context/AuthContext'
+import { ProjectService } from '../services/ProjectService'
+import type { Project } from "../types"
+import {
+  ProjectStats,
+  ProjectControls,
+  ProjectCard,
+  CreateProjectModal,
+  EmptyState,
+} from '../components/ui'
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  orgId?: number;
+  userId?: number;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdProp }) => {
   const { user, isAuthenticated } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
-  // Get user info from auth context or use defaults
-  const userId = user?.userId || parseInt(localStorage.getItem('userId') || '5');
-  const [orgId, setOrgId] = useState(1);
-  const [role, setRole] = useState('ADMIN');
-  const [templateType, setTemplateType] = useState('scrum');
-  const [teamIds, setTeamIds] = useState<number[]>([]);
+  // Pagination and filtering states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'progress' | 'date'>('name');
+  const itemsPerPage = 6;
+
+  // Use props if provided, otherwise fallback
+  const userId = userIdProp || user?.userId || parseInt(localStorage.getItem('userId') || '5');
+  const [orgId, setOrgId] = useState(orgIdProp);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,13 +64,21 @@ const Dashboard: React.FC = () => {
         return;
       }
       
+      // Get orgId from multiple sources with fallback
+      const currentOrgId = orgId || orgIdProp || parseInt(localStorage.getItem('orgId') || '1');
+      
       setLoading(true);
       setError(null);
       try {
-        console.log('Fetching projects for user:', userId);
-        const data = await ProjectService.getAllProjects(userId, orgId, role, templateType, teamIds);
+        console.log('Fetching projects for user:', userId, 'orgId:', currentOrgId);
+        const data = await ProjectService.getAllProjects(userId, currentOrgId, 'scrum');
         console.log('Fetched projects:', data);
         setProjects(data || []);
+        
+        // Set orgId if it wasn't set before
+        if (!orgId && currentOrgId) {
+          setOrgId(currentOrgId);
+        }
       } catch (err) {
         console.error('Error fetching projects:', err);
         setError('Failed to load projects. Please try again.');
@@ -79,30 +87,25 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchProjects();
-  }, [userId, orgId, role, templateType, teamIds, isAuthenticated]);
+  }, [userId, orgId, orgIdProp, isAuthenticated]);
 
   // Create project handler
-  const [newProject, setNewProject] = useState({
-    orgId: 1,
-    name: '',
-    type: 'Internal',
-    templateType: 'scrum'
-  });
-
-  const handleCreateProject = async () => {
-    if (!newProject.name.trim()) {
-      setError('Project name is required');
-      return;
-    }
-    
+  const handleCreateProject = async (projectData: any) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Creating project:', newProject);
-      const result = await ProjectService.createProject(newProject, newProject.templateType);
+      const projectToCreate = {
+        ...projectData,
+        orgId: orgId || orgIdProp,
+        userId: userId,
+        role: 'ADMIN',
+        createdBy: projectData.createdBy || user?.email || 'Unknown User'
+      };
+      console.log('Creating project:', projectToCreate);
+      const result = await ProjectService.createProject(projectToCreate, projectToCreate.templateType);
       console.log('Created project:', result);
       setProjects(prev => [...prev, result]);
-      setNewProject({ orgId: orgId, name: '', type: 'Internal', templateType: templateType });
+      setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Error creating project:', err);
       setError('Failed to create project. Please try again.');
@@ -131,630 +134,185 @@ const Dashboard: React.FC = () => {
     projects.flatMap(project => (project.teamMembers || []).map(member => member.name))
   ).size;
 
-  const getProjectProgress = (project: Project) => {
-    if (!project.tasks || project.tasks.length === 0) return 0;
-    const completed = project.tasks.filter(task => task.status === 'Done').length;
-    return Math.round((completed / project.tasks.length) * 100);
-  };
+  // Filter and sort projects
+  const filteredProjects = React.useMemo(() => {
+    let filtered = projects.filter(project => {
+      const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (project.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = filterType === 'all' || (project.type || '').toLowerCase() === filterType.toLowerCase();
+      return matchesSearch && matchesType;
+    });
 
-  const getProjectStatus = (project: Project) => {
-    const now = new Date();
-    const start = new Date(project.timeline.start);
-    const end = new Date(project.timeline.end);
-    
-    if (now < start) return 'Not Started';
-    if (now > end) return 'Completed';
-    return 'In Progress';
-  };
+    // Sort projects
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'progress':
+          // Simple progress calculation
+          const aProgress = a.tasks ? (a.tasks.filter(task => task.status === 'Done').length / a.tasks.length) * 100 : 0;
+          const bProgress = b.tasks ? (b.tasks.filter(task => task.status === 'Done').length / b.tasks.length) * 100 : 0;
+          return bProgress - aProgress;
+        case 'date':
+          const aDate = a.timeline?.start ? new Date(a.timeline.start).getTime() : 0;
+          const bDate = b.timeline?.start ? new Date(b.timeline.start).getTime() : 0;
+          return bDate - aDate;
+        default:
+          return 0;
+      }
+    });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'In Progress': return '#00875A';
-      case 'Completed': return '#0052CC';
-      case 'Not Started': return '#5E6C84';
-      default: return '#5E6C84';
-    }
+    return filtered;
+  }, [projects, searchQuery, filterType, sortBy]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const paginatedProjects = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredProjects.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredProjects, currentPage, itemsPerPage]);
+
+  // Reset pagination when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, sortBy]);
+
+  const handleSortChange = (sort: string) => {
+    setSortBy(sort as 'name' | 'progress' | 'date');
   };
 
   return (
-    <Box sx={{ p: 3, bgcolor: '#FAFBFC', minHeight: '100vh', minWidth: '80vh' }}>
-      {/* Loading State */}
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-          <CircularProgress size={40} />
-          <Typography sx={{ ml: 2 }}>Loading projects...</Typography>
-        </Box>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <Box sx={{ mb: 3, p: 2, bgcolor: '#FFEBE6', border: '1px solid #FF5630', borderRadius: 1 }}>
-          <Typography color="error">{error}</Typography>
-          <Button 
-            size="small" 
-            onClick={() => setError(null)} 
-            sx={{ mt: 1, color: '#FF5630' }}
-          >
-            Dismiss
-          </Button>
-        </Box>
-      )}
-
-      {/* Header Section & Create Project Form */}
-      <Box sx={{ mb: 4 }}>
-        <Typography 
-          variant="h4" 
-          sx={{ 
-            fontWeight: 600,
-            color: '#172B4D',
-            mb: 2,
-            fontSize: '28px'
-          }}
-        >
-          Projects Overview
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 3 }}>
-          <FormControl sx={{ minWidth: 120 }}>
-            <TextField
-              label="Org ID"
-              type="number"
-              value={orgId}
-              onChange={e => setOrgId(Number(e.target.value))}
-              size="small"
-            />
-          </FormControl>
-          <FormControl sx={{ minWidth: 120 }}>
-            <TextField
-              label="User ID"
-              type="number"
-              value={userId}
-              size="small"
-              disabled
-            />
-          </FormControl>
-          <FormControl sx={{ minWidth: 120 }}>
-            <TextField
-              label="Role"
-              value={role}
-              onChange={e => setRole(e.target.value)}
-              size="small"
-            />
-          </FormControl>
-          <FormControl sx={{ minWidth: 120 }}>
-            <TextField
-              label="Template Type"
-              value={templateType}
-              onChange={e => setTemplateType(e.target.value)}
-              size="small"
-            />
-          </FormControl>
-          <FormControl sx={{ minWidth: 180 }}>
-            <InputLabel>Team IDs</InputLabel>
-            <Select
-              multiple
-              value={teamIds}
-              onChange={e => setTeamIds(typeof e.target.value === 'string' ? e.target.value.split(',').map(Number) : e.target.value as number[])}
-              label="Team IDs"
-              size="small"
-              renderValue={selected => (selected as number[]).join(', ')}
-            >
-              {[1,2,3,4,5].map(id => (
-                <MenuItem key={id} value={id}>{id}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-        {/* Create Project Form */}
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
-          <TextField
-            label="Project Name"
-            value={newProject.name}
-            onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
-            size="small"
-          />
-          <TextField
-            label="Type"
-            value={newProject.type}
-            onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
-            size="small"
-          />
-          <TextField
-            label="Template Type"
-            value={newProject.templateType}
-            onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
-            size="small"
-          />
+    <Box sx={{ 
+      minHeight: '100vh', 
+      bgcolor: '#FAFBFC',
+      p: 3 
+    }}>
+      <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
+        {/* Header */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 4 
+        }}>
+          <Box>
+            <Typography variant="h4" fontWeight={700} color="text.primary" sx={{ mb: 1 }}>
+              Projects
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Manage and organize your projects
+            </Typography>
+          </Box>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={handleCreateProject}
-            sx={{
-              bgcolor: '#0052CC',
+            onClick={() => setIsCreateModalOpen(true)}
+            sx={{ 
               textTransform: 'none',
               fontWeight: 600,
-              borderRadius: 2,
               px: 3,
               py: 1.5,
-              fontSize: '14px',
-              boxShadow: '0 2px 8px rgba(0,82,204,0.3)',
-              '&:hover': {
-                bgcolor: '#0747A6',
-                boxShadow: '0 4px 12px rgba(0,82,204,0.4)',
-                transform: 'translateY(-1px)'
-              },
-              transition: 'all 0.2s ease'
             }}
           >
             Create Project
           </Button>
         </Box>
 
-        {/* Statistics Cards */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 3, mb: 4 }}>
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 2,
-              border: '1px solid #DFE1E6',
-              bgcolor: 'white',
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(9,30,66,0.15)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
-                  {totalProjects}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#5E6C84', fontWeight: 500 }}>
-                  Total Projects
-                </Typography>
-              </Box>
-              <Box sx={{ 
-                bgcolor: '#E3FCEF', 
-                borderRadius: '50%', 
-                width: 48, 
-                height: 48, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <TrendingUpIcon sx={{ color: '#00875A', fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Paper>
+        {/* Loading State */}
+        {loading && (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            minHeight: '200px' 
+          }}>
+            <CircularProgress />
+          </Box>
+        )}
 
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 2,
-              border: '1px solid #DFE1E6',
-              bgcolor: 'white',
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(9,30,66,0.15)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
-                  {totalTasks}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#5E6C84', fontWeight: 500 }}>
-                  Total Issues
-                </Typography>
-              </Box>
-              <Box sx={{ 
-                bgcolor: '#E7F3FF', 
-                borderRadius: '50%', 
-                width: 48, 
-                height: 48, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <AssignmentIcon sx={{ color: '#0052CC', fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Paper>
+        {/* Error State */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 2,
-              border: '1px solid #DFE1E6',
-              bgcolor: 'white',
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(9,30,66,0.15)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
-                  {Math.round((completedTasks / Math.max(totalTasks, 1)) * 100)}%
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#5E6C84', fontWeight: 500 }}>
-                  Completion Rate
-                </Typography>
-              </Box>
-              <Box sx={{ 
-                bgcolor: '#FFF7E6', 
-                borderRadius: '50%', 
-                width: 48, 
-                height: 48, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <TrendingUpIcon sx={{ color: '#FF8B00', fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Paper>
+        {/* Main Content */}
+        {!loading && (
+          <>
+            {/* Statistics */}
+            <ProjectStats
+              totalProjects={totalProjects}
+              totalTasks={totalTasks}
+              completedTasks={completedTasks}
+              totalTeamMembers={totalTeamMembers}
+            />
 
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              borderRadius: 2,
-              border: '1px solid #DFE1E6',
-              bgcolor: 'white',
-              '&:hover': {
-                boxShadow: '0 4px 12px rgba(9,30,66,0.15)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
-                  {totalTeamMembers}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#5E6C84', fontWeight: 500 }}>
-                  Team Members
-                </Typography>
-              </Box>
-              <Box sx={{ 
-                bgcolor: '#EAE6FF', 
-                borderRadius: '50%', 
-                width: 48, 
-                height: 48, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <GroupIcon sx={{ color: '#5243AA', fontSize: 24 }} />
-              </Box>
-            </Box>
-          </Paper>
-        </Box>
-      </Box>
+            {/* Project Controls */}
+            <ProjectControls
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              filterType={filterType}
+              onFilterChange={setFilterType}
+              sortBy={sortBy}
+              onSortChange={handleSortChange}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              projectCount={filteredProjects.length}
+            />
 
-      {/* Projects Section */}
-      {!loading && !error && (
-        <Box>
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              fontWeight: 600,
-              color: '#172B4D',
-              mb: 3,
-              fontSize: '20px'
-            }}
-          >
-            Projects ({projects.length})
-          </Typography>
-          
-          {projects.length === 0 ? (
-            <Box sx={{ 
-              textAlign: 'center', 
-              py: 8,
-              bgcolor: 'white',
-              borderRadius: 2,
-              border: '1px solid #DFE1E6'
-            }}>
-              <Typography variant="h6" sx={{ color: '#5E6C84', mb: 1 }}>
-                No projects found
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#5E6C84', mb: 3 }}>
-                Create your first project to get started
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setIsCreateModalOpen(true)}
-                sx={{
-                  bgcolor: '#0052CC',
-                  textTransform: 'none',
-                  fontWeight: 600
-                }}
-              >
-                Create Project
-              </Button>
-            </Box>
-          ) : (
-            <Box sx={{ 
-              display: 'grid', 
-              gap: 3, 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))' 
-            }}>
-              {Array.isArray(projects) && projects.map((project: Project) => {
-            const progress = getProjectProgress(project);
-            const status = getProjectStatus(project);
-            const isStarred = starredProjects.includes(project.id);
-            
-            return (
-              <Card 
-                key={project.id}
-                sx={{
-                  boxShadow: '0 1px 3px rgba(9,30,66,0.25)',
-                  borderRadius: 3,
-                  border: '1px solid #DFE1E6',
-                  bgcolor: 'white',
-                  '&:hover': {
-                    boxShadow: '0 8px 25px rgba(9,30,66,0.15)',
-                    transform: 'translateY(-4px)'
-                  },
-                  transition: 'all 0.3s ease',
-                  position: 'relative',
-                  overflow: 'visible'
-                }}
-              >
-                <CardActionArea component={Link} to={`/projects/${project.id}`}>
-                  <CardContent sx={{ p: 3 }}>
-                    {/* Project Header */}
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                        <Avatar 
-                          sx={{ 
-                            width: 48, 
-                            height: 48, 
-                            bgcolor: project.type === 'Software' ? '#0052CC' : 
-                                     project.type === 'Marketing' ? '#FF5630' : '#36B37E',
-                            mr: 2,
-                            fontSize: 18,
-                            fontWeight: 'bold',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                          }}
-                        >
-                          {project.key}
-                        </Avatar>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" sx={{ 
-                            fontWeight: 600, 
-                            color: '#172B4D',
-                            fontSize: '18px',
-                            mb: 0.5,
-                            lineHeight: 1.2
-                          }}>
-                            {project.name}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '14px' }}>
-                            {project.type} project • {project.key}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip 
-                          label={status}
-                          size="small"
-                          sx={{
-                            bgcolor: status === 'In Progress' ? '#E3FCEF' : 
-                                    status === 'Completed' ? '#E7F3FF' : '#F4F5F7',
-                            color: getStatusColor(status),
-                            fontWeight: 600,
-                            fontSize: '12px',
-                            height: 24
-                          }}
-                        />
-                        <Tooltip title={isStarred ? "Remove from favorites" : "Add to favorites"}>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => toggleStar(project.id, e)}
-                            sx={{ 
-                              color: isStarred ? '#FFAB00' : '#5E6C84',
-                              '&:hover': { 
-                                bgcolor: isStarred ? '#FFF7E6' : '#F4F5F7',
-                                transform: 'scale(1.1)'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            {isStarred ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="More options">
-                          <IconButton size="small" sx={{ color: '#5E6C84' }}>
-                            <MoreVertIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </Box>
-                    
-                    {/* Project Description */}
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#5E6C84',
-                        mb: 3,
-                        lineHeight: 1.5,
-                        fontSize: '14px'
+            {/* Projects Grid/List */}
+            {filteredProjects.length === 0 ? (
+              <EmptyState onCreateProject={() => setIsCreateModalOpen(true)} />
+            ) : (
+              <>
+                <Box sx={{ 
+                  display: 'grid',
+                  gap: 3,
+                  gridTemplateColumns: viewMode === 'grid' ? {
+                    xs: '1fr',
+                    sm: 'repeat(auto-fill, minmax(350px, 1fr))',
+                    lg: 'repeat(auto-fill, minmax(380px, 1fr))'
+                  } : '1fr',
+                  mb: 4,
+                }}>
+                  {paginatedProjects.map((project: Project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={{
+                        ...project,
+                        id: String(project.id) // Convert to string for consistency
                       }}
-                    >
-                      {project.description}
-                    </Typography>
-                    
-                    {/* Progress Section */}
-                    <Box sx={{ mb: 3 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="body2" sx={{ color: '#5E6C84', fontWeight: 600 }}>
-                          Progress
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#172B4D', fontWeight: 600 }}>
-                          {progress}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={progress}
-                        sx={{
-                          height: 6,
-                          borderRadius: 3,
-                          bgcolor: '#F4F5F7',
-                          '& .MuiLinearProgress-bar': {
-                            bgcolor: progress === 100 ? '#00875A' : 
-                                    progress >= 70 ? '#36B37E' : 
-                                    progress >= 30 ? '#FF8B00' : '#FF5630',
-                            borderRadius: 3
-                          }
-                        }}
-                      />
-                    </Box>
-                    
-                    {/* Timeline */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <CalendarTodayIcon sx={{ fontSize: 16, color: '#5E6C84', mr: 1 }} />
-                      <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '13px' }}>
-                        {new Date(project.timeline.start).toLocaleDateString()} - {new Date(project.timeline.end).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                    
-                    <Divider sx={{ mb: 2 }} />
-                    
-                    {/* Footer */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <AvatarGroup 
-                        max={5} 
-                        sx={{ 
-                          '& .MuiAvatar-root': { 
-                            width: 32, 
-                            height: 32, 
-                            fontSize: 12,
-                            fontWeight: 600,
-                            border: '2px solid white',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                          } 
-                        }}
-                      >
-                        {(project.teamMembers || []).map((member: any, index: number) => (
-                          <Tooltip key={member.name} title={`${member.name} (${member.role})`}>
-                            <Avatar sx={{ bgcolor: `hsl(${index * 60}, 70%, 50%)` }}>
-                              {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                            </Avatar>
-                          </Tooltip>
-                        ))}
-                      </AvatarGroup>
-                      
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Chip 
-                          label={`${(project.tasks || []).length} issues`}
-                          size="small"
-                          icon={<AssignmentIcon sx={{ fontSize: 14 }} />}
-                          sx={{
-                            bgcolor: '#F4F5F7',
-                            color: '#5E6C84',
-                            fontWeight: 600,
-                            fontSize: '12px',
-                            height: 28,
-                            '& .MuiChip-icon': { color: '#5E6C84' }
-                          }}
-                        />
-                        <Chip 
-                          label={project.type}
-                          size="small"
-                          sx={{
-                            bgcolor: project.type === 'Software' ? '#E7F3FF' : 
-                                     project.type === 'Marketing' ? '#FFEBE6' : '#EAE6FF',
-                            color: project.type === 'Software' ? '#0052CC' : 
-                                   project.type === 'Marketing' ? '#BF2600' : '#5243AA',
-                            fontWeight: 600,
-                            fontSize: '12px',
-                            height: 28
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            );
-          })}
-        </Box>
-          )}
-        </Box>
-      )}
+                      isStarred={starredProjects.includes(String(project.id))}
+                      onToggleStar={toggleStar}
+                    />
+                  ))}
+                </Box>
 
-      {/* Modal for creating a project */}
-      {/* You can replace this with your actual modal implementation */}
-      {isCreateModalOpen && (
-        <Box sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          bgcolor: 'rgba(0,0,0,0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1300
-        }}>
-          <Paper sx={{ p: 4, minWidth: 320, borderRadius: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Create Project</Typography>
-            <TextField
-              label="Project Name"
-              value={newProject.name}
-              onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              label="Type"
-              value={newProject.type}
-              onChange={e => setNewProject(p => ({ ...p, type: e.target.value }))}
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              label="Template Type"
-              value={newProject.templateType}
-              onChange={e => setNewProject(p => ({ ...p, templateType: e.target.value }))}
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-              <Button
-                variant="contained"
-                onClick={async () => {
-                  await handleCreateProject();
-                  setIsCreateModalOpen(false);
-                }}
-                sx={{ bgcolor: '#0052CC', color: 'white' }}
-              >
-                Create
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => setIsCreateModalOpen(false)}
-              >
-                Cancel
-              </Button>
-            </Box>
-          </Paper>
-        </Box>
-      )}
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Paper sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+                    <Pagination
+                      count={totalPages}
+                      page={currentPage}
+                      onChange={(_, page) => setCurrentPage(page)}
+                      color="primary"
+                    />
+                  </Paper>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Create Project Modal */}
+        <CreateProjectModal
+          open={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreateProject={handleCreateProject}
+          loading={loading}
+        />
+      </Box>
     </Box>
   )
 }

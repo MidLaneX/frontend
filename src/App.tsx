@@ -8,7 +8,11 @@ import Project from "@/pages/Project";
 import OrganizationPage from "@/pages/Organization";
 import LandingPage from "@/pages/LandingPage";
 
+import OrganizationDetailPage from "@/pages/OrganizationDetailPage";
+
 import AccountSettings from "@/pages/AccountSettings";
+import About from "@/pages/About";
+import Help from "@/pages/Help";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -67,7 +71,7 @@ function AppContent() {
         }}
       >
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/organizations" replace />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route 
             path="/dashboard" 
@@ -78,7 +82,15 @@ function AppContent() {
             } 
           />
           <Route 
-            path="/projects/:projectId" 
+            path="/projects/:projectId/:templateType" 
+            element={
+              <ProtectedRoute>
+                <Project />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/projects/:projectId/:templateType/:featureName" 
             element={
               <ProtectedRoute>
                 <Project />
@@ -93,7 +105,14 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
-
+          <Route 
+            path="/organizationpage/:orgId" 
+            element={
+              <ProtectedRoute>
+                <OrganizationDetailPage />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/account/settings" 
             element={
@@ -102,8 +121,24 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/about" 
+            element={
+              <ProtectedRoute>
+                <About />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/help" 
+            element={
+              <ProtectedRoute>
+                <Help />
+              </ProtectedRoute>
+            } 
+          />
 
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/organizations" replace />} />
         </Routes>
       </Box>
     </Box>

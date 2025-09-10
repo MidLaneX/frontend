@@ -15,32 +15,18 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Stack,
   Card,
   CardContent,
   Avatar,
-  Divider,
   LinearProgress,
   Badge,
-  Collapse,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Fade,
-  Slide,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  Assignment as EpicIcon,
-  DragIndicator as DragIcon,
-  Person as PersonIcon,
+  AccountTreeRounded as EpicIcon,
   Flag as FlagIcon,
-  Schedule as ScheduleIcon,
   Comment as CommentIcon,
   BugReport as BugIcon,
   Task as TaskIcon,
@@ -59,7 +45,7 @@ interface ScrumBoardProps {
   templateType: string;
 }
 
-const statusColumns: TaskStatus[] = ['Todo', 'In Progress', 'Review', 'Done'];
+const statusColumns: TaskStatus[] = ['Backlog', 'Todo', 'In Progress', 'Review', 'Done'];
 const priorityOptions: TaskPriority[] = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
 const typeOptions: TaskType[] = ['Story', 'Bug', 'Task', 'Epic'];
 
@@ -68,7 +54,6 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
   const [latestSprint, setLatestSprint] = useState<SprintDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedEpics, setExpandedEpics] = useState<Set<string>>(new Set());
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
@@ -77,7 +62,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     title: '',
     description: '',
     priority: 'Medium',
-    status: 'Backlog',
+    status: 'Backlog', // Changed default status to Backlog
     type: 'Task',
     assignee: '',
     reporter: '',
@@ -101,7 +86,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
 
   const fetchLatestSprint = async () => {
     try {
-      const response = await SprintService.getLatestSprint(projectId, templateType);
+      const response = await SprintService.getLatestSprint(projectId);
       setLatestSprint(response.data);
     } catch (error) {
       console.error('Failed to fetch latest sprint:', error);
@@ -114,76 +99,22 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     fetchLatestSprint();
   }, [projectId, templateType]);
 
-  // Filter tasks to only show those assigned to the latest sprint
+  // Show only tasks from the latest sprint
   const sprintTasks = useMemo(() => {
-    if (!latestSprint) return [];
-    const filtered = tasks.filter(task => 
-      task.sprintId === latestSprint.id &&
-      task.status !== 'Backlog'
-    );
-    console.log('All tasks:', tasks.length);
-    console.log('Latest sprint:', latestSprint);
-    console.log('Sprint tasks:', filtered.length, filtered.map(t => ({ id: t.id, title: t.title, status: t.status, sprintId: t.sprintId })));
-    return filtered;
+    if (!latestSprint) return tasks; // If no sprint, show all tasks
+    return tasks.filter(task => task.sprintId === latestSprint.id);
   }, [tasks, latestSprint]);
 
-  // Group tasks by epic (simplified - just group all non-epic tasks together)
-  const tasksByEpic = useMemo(() => {
-    const epics = sprintTasks.filter(task => task.type === 'Epic');
-    const nonEpicTasks = sprintTasks.filter(task => task.type !== 'Epic');
+  // Separate epics from other tasks
+  const { epics, nonEpicTasks } = useMemo(() => {
+    const epicTasks = sprintTasks.filter(task => task.type === 'Epic');
+    const otherTasks = sprintTasks.filter(task => task.type !== 'Epic');
     
-    const grouped: { [key: string]: Task[] } = {};
-    
-    // Add all epics as separate groups
-    epics.forEach(epic => {
-      grouped[epic.id] = [epic]; // Just show the epic itself for now
-    });
-    
-    // Add all non-epic tasks under "Stories & Tasks"
-    if (nonEpicTasks.length > 0) {
-      grouped['stories-tasks'] = nonEpicTasks;
-    }
-    
-    return grouped;
+    return {
+      epics: epicTasks,
+      nonEpicTasks: otherTasks
+    };
   }, [sprintTasks]);
-
-  // Get epic groups for sidebar
-  const epicGroups = useMemo(() => {
-    const epics = sprintTasks.filter(task => task.type === 'Epic');
-    const result = [...epics];
-    
-    // Add virtual group for stories and tasks
-    const nonEpicTasks = sprintTasks.filter(task => task.type !== 'Epic');
-    if (nonEpicTasks.length > 0) {
-      result.push({
-        id: -1, // Use a negative number as a virtual group id
-        title: 'Stories & Tasks',
-        type: 'Story',
-        status: 'Todo',
-        priority: 'Medium',
-        sprintId: latestSprint?.id || 0,
-        assignee: '',
-        reporter: '',
-        dueDate: '',
-        description: '',
-        storyPoints: 0,
-        labels: [],
-        comments: [],
-      } as Task);
-    }
-    
-    return result;
-  }, [sprintTasks, latestSprint]);
-
-  const toggleEpicExpansion = (epicId: string) => {
-    const newExpanded = new Set(expandedEpics);
-    if (newExpanded.has(epicId)) {
-      newExpanded.delete(epicId);
-    } else {
-      newExpanded.add(epicId);
-    }
-    setExpandedEpics(newExpanded);
-  };
 
   const handleDelete = async (taskId: number) => {
     await TaskService.deleteTask(projectId, taskId, templateType);
@@ -206,26 +137,87 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
+    console.log(' Drag end result:', result);
+    
+    if (!result.destination) {
+      console.log(' No destination - drag cancelled');
+      return;
+    }
+
     const { draggableId, destination, source } = result;
+    // Extract actual task ID from draggableId (remove 'task-' prefix)
     const taskId = Number(draggableId.replace('task-', ''));
-    const newStatus = destination.droppableId as TaskStatus;
-    const oldStatus = source.droppableId as TaskStatus;
-    if (oldStatus === newStatus) return;
+    const newStatus = destination.droppableId;
+    const oldStatus = source.droppableId;
+
+    // Check if status actually changed
+    if (oldStatus === newStatus) {
+      console.log('ℹ Same status - no update needed');
+      return;
+    }
+
+    console.log(`Moving task ${taskId} from "${oldStatus}" to "${newStatus}"`);
+
+    // Find the task to verify it exists
     const task = tasks.find(t => Number(t.id) === taskId);
     if (!task) {
+      console.error('❌ Task not found:', taskId);
       setError(`Task ${taskId} not found`);
       return;
     }
+
+    console.log('Found task:', { id: task.id, title: task.title, currentStatus: task.status, type: task.type });
+
+    // Prevent moving epics to status columns and prevent moving non-epics to epic section
+    if (task.type === 'Epic' && newStatus !== 'Epic') {
+      console.log('❌ Cannot move Epic to status column');
+      setError('Epics cannot be moved to status columns');
+      return;
+    }
+
+    if (task.type !== 'Epic' && newStatus === 'Epic') {
+      console.log('❌ Cannot move non-Epic to Epic section');
+      setError('Only Epics can be placed in the Epic section');
+      return;
+    }
+
+    // If moving within Epic section or from Epic section, don't change status
+    if (oldStatus === 'Epic' && newStatus === 'Epic') {
+      console.log(' Moving within Epic section - no status change needed');
+      return;
+    }
+
+    // Regular status moves (between status columns)
+    // Optimistic update - immediately update the UI
     const originalTasks = [...tasks];
-    setTasks(prevTasks => prevTasks.map(t => Number(t.id) === taskId ? { ...t, status: newStatus } : t));
+    setTasks(prevTasks => 
+      prevTasks.map(t => 
+        Number(t.id) === taskId 
+          ? { ...t, status: newStatus as TaskStatus }
+          : t
+      )
+    );
+
     try {
-      const updatedTask = await TaskService.updateTaskStatus(projectId, taskId, newStatus, templateType);
-      if (!updatedTask) throw new Error('No response from server');
+      console.log(`Calling TaskService.updateTaskStatus(${projectId}, ${taskId}, "${newStatus}", "${templateType}")`);
+      
+      const updatedTask = await TaskService.updateTaskStatus(projectId, taskId, newStatus as TaskStatus, templateType);
+      
+      if (!updatedTask) {
+        throw new Error('No response from server');
+      }
+      
+      console.log(' Task status updated successfully:', updatedTask);
+      
+      // Clear any existing errors
       setError(null);
-      await fetchTasks();
+      
     } catch (error) {
-      setError('Failed to update task status');
+      console.error(' Failed to update task status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Failed to update task status: ${errorMessage}`);
+      
+      // Revert optimistic update on error
       setTasks(originalTasks);
     }
   };
@@ -235,7 +227,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
       title: '',
       description: '',
       priority: 'Medium',
-      status: 'Todo',
+      status: 'Backlog', // Reset to Backlog as default
       type: 'Task',
       assignee: '',
       reporter: '',
@@ -256,23 +248,27 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     }
   };
 
-  const getStatusColor = (status: TaskStatus) => {
+  const getStatusColor = (status: TaskStatus | string) => {
     switch (status) {
+      case 'Backlog': return { bg: 'rgba(158, 158, 158, 0.1)', border: '#9e9e9e', text: '#424242' };
       case 'Todo': return { bg: 'rgba(102, 102, 102, 0.1)', border: '#666666', text: '#333333' };
       case 'In Progress': return { bg: 'rgba(255, 152, 0, 0.1)', border: '#ff9800', text: '#e65100' };
       case 'Review': return { bg: 'rgba(156, 39, 176, 0.1)', border: '#9c27b0', text: '#7b1fa2' };
       case 'Done': return { bg: 'rgba(76, 175, 80, 0.1)', border: '#4caf50', text: '#2e7d32' };
+      case 'Epic': return { bg: 'rgba(103, 58, 183, 0.1)', border: '#673ab7', text: '#512da8' };
       default: return { bg: 'rgba(102, 102, 102, 0.1)', border: '#666666', text: '#333333' };
     }
   };
 
-  const getStatusIcon = (status: TaskStatus) => {
+  const getStatusIcon = (status: TaskStatus | string) => {
     switch (status) {
-      case 'Todo': return '📋';
-      case 'In Progress': return '🔄';
-      case 'Review': return '👀';
-      case 'Done': return '✅';
-      default: return '📋';
+      case 'Backlog': return '';
+      case 'Todo': return '';
+      case 'In Progress': return '';
+      case 'Review': return '';
+      case 'Done': return '';
+      case 'Epic': return '';
+      default: return '';
     }
   };
 
@@ -371,13 +367,12 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
             <Chip
               label={task.priority}
               size="small"
-              icon={<FlagIcon />}
               sx={{
                 height: 20,
                 fontSize: '0.7rem',
                 backgroundColor: `${getPriorityColor(task.priority)}20`,
                 color: getPriorityColor(task.priority),
-                '& .MuiChip-icon': { fontSize: '0.8rem' },
+                border: `1px solid ${getPriorityColor(task.priority)}40`,
               }}
             />
             {task.storyPoints && task.storyPoints > 0 && (
@@ -450,31 +445,43 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
           </Avatar>
           <Box>
             <Typography variant="h4" fontWeight={700} color="text.primary">
-              {latestSprint?.name || 'Active Sprint'}
+              {projectName || 'Project'} - Scrum Board
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Chip
-                label={`${sprintTasks.length} issues`}
+                label={`${sprintTasks.length} sprint issues`}
                 size="small"
                 variant="outlined"
                 sx={{ fontSize: '0.75rem', height: 20 }}
               />
+              <Chip
+                label={`${epics.length} epics`}
+                size="small"
+                variant="outlined"
+                color="secondary"
+                sx={{ fontSize: '0.75rem', height: 20 }}
+              />
+              <Chip
+                label={`${nonEpicTasks.filter(t => t.status === 'Backlog').length} in backlog`}
+                size="small"
+                variant="filled"
+                color="default"
+                sx={{ fontSize: '0.75rem', height: 20 }}
+              />
+              <Chip
+                label={`${nonEpicTasks.filter(t => t.status === 'Done').length} completed`}
+                size="small"
+                variant="filled"
+                color="success"
+                sx={{ fontSize: '0.75rem', height: 20 }}
+              />
               {latestSprint && (
                 <Chip
-                  label={`${new Date(latestSprint.startDate).toLocaleDateString() } - ${new Date(latestSprint.endDate).toLocaleDateString()}`}
+                  label={`${latestSprint.name} (${new Date(latestSprint.startDate).toLocaleDateString()} - ${new Date(latestSprint.endDate).toLocaleDateString()})`}
                   size="small"
                   variant="outlined"
-                  color="secondary"
-                  sx={{ fontSize: '0.75rem', height: 20 }}
-                />
-              )}
-              {latestSprint?.goal && (
-                <Chip
-                  label={latestSprint.goal}
-                  size="small"
-                  variant="filled"
                   color="primary"
-                  sx={{ fontSize: '0.75rem', height: 20, maxWidth: 200 }}
+                  sx={{ fontSize: '0.75rem', height: 20 }}
                 />
               )}
             </Typography>
@@ -498,119 +505,6 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
 
       {/* Main Content */}
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Epics Sidebar */}
-        <Paper
-          elevation={0}
-          sx={{
-            width: 320,
-            borderRight: 1,
-            borderColor: 'divider',
-            bgcolor: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
-        >
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" fontWeight={600} color="text.primary">
-              Epics & Issues
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {epicGroups.length} groups
-            </Typography>
-          </Box>
-
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : (
-              <List sx={{ p: 0 }}>
-                {epicGroups.map((epic) => (
-                  <Box key={epic.id}>
-                    <ListItem
-                      component="button"
-                      onClick={() => toggleEpicExpansion(String(epic.id))}
-                      sx={{
-                        py: 1.5,
-                        px: 2,
-                        borderBottom: 1,
-                        borderColor: 'divider',
-                        background: 'none',
-                        border: 'none',
-                        width: '100%',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          bgcolor: 'rgba(0,0,0,0.04)',
-                        },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 36 }}>
-                        {getTaskIcon(epic.type)}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            {epic.title}
-                          </Typography>
-                        }
-                        secondary={
-                          <Typography variant="caption" color="text.secondary">
-                            {tasksByEpic[String(epic.id)]?.length || 0} issues
-                          </Typography>
-                        }
-                      />
-                      {expandedEpics.has(String(epic.id)) ? (
-                        <ExpandLessIcon fontSize="small" />
-                      ) : (
-                        <ExpandMoreIcon fontSize="small" />
-                      )}
-                    </ListItem>
-
-                    <Collapse in={expandedEpics.has(String(epic.id))}>
-                      <Box sx={{ bgcolor: 'rgba(0,0,0,0.02)', px: 2, py: 1 }}>
-                        {tasksByEpic[String(epic.id)]?.map((task) => (
-                          <Box
-                            key={task.id}
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                              py: 0.5,
-                              pl: 2,
-                            }}
-                          >
-                            {getTaskIcon(task.type)}
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                flex: 1,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {task.title}
-                            </Typography>
-                            <Chip
-                              label={task.status}
-                              size="small"
-                              variant="outlined"
-                              sx={{ fontSize: '0.7rem', height: 18 }}
-                            />
-                          </Box>
-                        ))}
-                      </Box>
-                    </Collapse>
-                  </Box>
-                ))}
-              </List>
-            )}
-          </Box>
-        </Paper>
-
         {/* Board Area */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {loading ? (
@@ -633,135 +527,253 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
                   minHeight: 0,
                 }}
               >
-                {statusColumns.map((status) => (
-                  <Droppable droppableId={status} key={status}>
-                    {(provided: any, snapshot: any) => (
-                      <Paper
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        elevation={0}
+                {/* Epic Column */}
+                <Droppable droppableId="Epic" key="Epic">
+                  {(provided: any, snapshot: any) => (
+                    <Paper
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      elevation={0}
+                      sx={{
+                        minWidth: 280,
+                        maxWidth: 320,
+                        flex: '1 1 0',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        borderRadius: 3,
+                        border: '1px solid',
+                        borderColor: snapshot.isDraggingOver ? '#2196f3' : 'divider',
+                        bgcolor: snapshot.isDraggingOver ? 'rgba(33, 150, 243, 0.04)' : 'white',
+                        transition: 'all 0.2s ease',
+                        maxHeight: '100%',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {/* Column Header */}
+                      <Box
                         sx={{
-                          minWidth: 280,
-                          maxWidth: 320,
-                          flex: '0 0 auto',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          borderRadius: 3,
-                          border: '1px solid',
+                          p: 2,
+                          borderBottom: 1,
                           borderColor: 'divider',
-                          bgcolor: snapshot.isDraggingOver ? 'rgba(25, 118, 210, 0.04)' : 'white',
-                          transition: 'background-color 0.2s ease',
-                          maxHeight: '100%',
-                          overflow: 'hidden',
+                          bgcolor: snapshot.isDraggingOver ? 'rgba(33, 150, 243, 0.04)' : 'grey.50',
                         }}
                       >
-                        {/* Column Header */}
-                        <Box
-                          sx={{
-                            p: 2,
-                            borderBottom: 1,
-                            borderColor: 'divider',
-                            bgcolor: snapshot.isDraggingOver ? 'rgba(25, 118, 210, 0.08)' : 'grey.50',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography variant="subtitle1" fontWeight={600} color="text.primary">
-                              {status.toUpperCase()}
+                              EPICS
                             </Typography>
-                            <Chip
-                              label={sprintTasks.filter((task) => task.status === status).length}
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                minWidth: 24,
-                                height: 20,
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                              }}
-                            />
                           </Box>
-                          {status === 'Done' && (
-                            <LinearProgress
-                              variant="determinate"
-                              value={
-                                sprintTasks.length > 0
-                                  ? (sprintTasks.filter((task) => task.status === 'Done').length / sprintTasks.length) * 100
-                                  : 0
-                              }
-                              sx={{
-                                mt: 1,
-                                height: 4,
-                                borderRadius: 2,
-                                '& .MuiLinearProgress-bar': {
-                                  background: 'linear-gradient(90deg, #4caf50 0%, #81c784 100%)',
-                                },
-                              }}
-                            />
-                          )}
+                          <Chip
+                            label={epics.length}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              minWidth: 24,
+                              height: 20,
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              borderColor: '#2196f3',
+                              color: '#1976d2',
+                            }}
+                          />
                         </Box>
+                      </Box>
 
-                        {/* Tasks */}
-                        <Box
+                      {/* Epic Tasks */}
+                      <Box
+                        sx={{
+                          flex: 1,
+                          p: 1.5,
+                          overflow: 'auto',
+                          minHeight: 200,
+                        }}
+                      >
+                        {epics.map((epic, index) => (
+                          <Draggable key={`task-${epic.id}`} draggableId={`task-${epic.id}`} index={index}>
+                            {(dragProvided: any, dragSnapshot: any) => (
+                              <Box
+                                ref={dragProvided.innerRef}
+                                {...dragProvided.draggableProps}
+                                {...dragProvided.dragHandleProps}
+                                sx={{
+                                  transform: dragSnapshot.isDragging
+                                    ? `${dragProvided.draggableProps.style?.transform} rotate(5deg)`
+                                    : dragProvided.draggableProps.style?.transform,
+                                  opacity: dragSnapshot.isDragging ? 0.8 : 1,
+                                  transition: dragSnapshot.isDragging ? 'none' : 'transform 0.2s ease',
+                                  cursor: dragSnapshot.isDragging ? 'grabbing' : 'grab',
+                                }}
+                              >
+                                {renderTaskCard(epic)}
+                              </Box>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+
+                        {/* Empty State */}
+                        {epics.length === 0 && (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              height: 120,
+                              color: 'text.secondary',
+                              textAlign: 'center',
+                              border: '2px dashed',
+                              borderColor: 'divider',
+                              borderRadius: 2,
+                              bgcolor: 'rgba(33, 150, 243, 0.04)',
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                              {snapshot.isDraggingOver
+                                ? 'Drop epics here'
+                                : 'No epics in this sprint'}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    </Paper>
+                  )}
+                </Droppable>
+
+                {/* Status Columns */}
+                {statusColumns.map((status) => (
+                    <Droppable droppableId={status} key={status}>
+                      {(provided: any, snapshot: any) => (
+                        <Paper
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          elevation={0}
                           sx={{
-                            flex: 1,
-                            p: 1.5,
-                            overflow: 'auto',
-                            minHeight: 200,
+                            minWidth: 280,
+                            maxWidth: 320,
+                            flex: '1 1 0',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            borderRadius: 3,
+                            border: '1px solid',
+                            borderColor: snapshot.isDraggingOver ? getStatusColor(status).border : 'divider',
+                            bgcolor: snapshot.isDraggingOver ? getStatusColor(status).bg : 'white',
+                            transition: 'all 0.2s ease',
+                            maxHeight: '100%',
+                            overflow: 'hidden',
                           }}
                         >
-                          {sprintTasks
-                            .filter((task) => task.status === status)
-                            .map((task, index) => (
-                              <Draggable key={`task-${task.id}`} draggableId={`task-${task.id}`} index={index}>
-                                {(dragProvided: any, dragSnapshot: any) => (
-                                  <Box
-                                    ref={dragProvided.innerRef}
-                                    {...dragProvided.draggableProps}
-                                    {...dragProvided.dragHandleProps}
-                                    sx={{
-                                      transform: dragSnapshot.isDragging
-                                        ? `${dragProvided.draggableProps.style?.transform} rotate(5deg)`
-                                        : dragProvided.draggableProps.style?.transform,
-                                      opacity: dragSnapshot.isDragging ? 0.8 : 1,
-                                      transition: dragSnapshot.isDragging ? 'none' : 'transform 0.2s ease',
-                                      cursor: dragSnapshot.isDragging ? 'grabbing' : 'grab',
-                                    }}
-                                  >
-                                    {renderTaskCard(task)}
-                                  </Box>
-                                )}
-                              </Draggable>
-                            ))}
-                          {provided.placeholder}
-
-                          {/* Empty State */}
-                          {sprintTasks.filter((task) => task.status === status).length === 0 && (
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: 120,
-                                color: 'text.secondary',
-                                textAlign: 'center',
-                                border: '2px dashed',
-                                borderColor: 'divider',
-                                borderRadius: 2,
-                                bgcolor: 'grey.25',
-                              }}
-                            >
-                              <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                                {snapshot.isDraggingOver
-                                  ? 'Drop issues here'
-                                  : `No ${status.toLowerCase()} issues`}
-                              </Typography>
+                          {/* Column Header */}
+                          <Box
+                            sx={{
+                              p: 2,
+                              borderBottom: 1,
+                              borderColor: 'divider',
+                              bgcolor: snapshot.isDraggingOver ? getStatusColor(status).bg : 'grey.50',
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+                                  {status.toUpperCase()}
+                                </Typography>
+                              </Box>
+                              <Chip
+                                label={nonEpicTasks.filter((task) => task.status === status).length}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  minWidth: 24,
+                                  height: 20,
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  borderColor: getStatusColor(status).border,
+                                  color: getStatusColor(status).text,
+                                }}
+                              />
                             </Box>
-                          )}
-                        </Box>
-                      </Paper>
-                    )}
-                  </Droppable>
-                ))}
+                            {status === 'Done' && (
+                              <LinearProgress
+                                variant="determinate"
+                                value={
+                                  nonEpicTasks.length > 0
+                                    ? (nonEpicTasks.filter((task) => task.status === 'Done').length / nonEpicTasks.length) * 100
+                                    : 0
+                                }
+                                sx={{
+                                  mt: 1,
+                                  height: 4,
+                                  borderRadius: 2,
+                                  '& .MuiLinearProgress-bar': {
+                                    background: 'linear-gradient(90deg, #4caf50 0%, #81c784 100%)',
+                                  },
+                                }}
+                              />
+                            )}
+                          </Box>
+
+                          {/* Tasks */}
+                          <Box
+                            sx={{
+                              flex: 1,
+                              p: 1.5,
+                              overflow: 'auto',
+                              minHeight: 200,
+                            }}
+                          >
+                            {nonEpicTasks
+                              .filter((task) => task.status === status)
+                              .map((task, index) => (
+                                <Draggable key={`task-${task.id}`} draggableId={`task-${task.id}`} index={index}>
+                                  {(dragProvided: any, dragSnapshot: any) => (
+                                    <Box
+                                      ref={dragProvided.innerRef}
+                                      {...dragProvided.draggableProps}
+                                      {...dragProvided.dragHandleProps}
+                                      sx={{
+                                        transform: dragSnapshot.isDragging
+                                          ? `${dragProvided.draggableProps.style?.transform} rotate(5deg)`
+                                          : dragProvided.draggableProps.style?.transform,
+                                        opacity: dragSnapshot.isDragging ? 0.8 : 1,
+                                        transition: dragSnapshot.isDragging ? 'none' : 'transform 0.2s ease',
+                                        cursor: dragSnapshot.isDragging ? 'grabbing' : 'grab',
+                                      }}
+                                    >
+                                      {renderTaskCard(task)}
+                                    </Box>
+                                  )}
+                                </Draggable>
+                              ))}
+                            {provided.placeholder}
+
+                            {/* Empty State */}
+                            {nonEpicTasks.filter((task) => task.status === status).length === 0 && (
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  height: 120,
+                                  color: 'text.secondary',
+                                  textAlign: 'center',
+                                  border: '2px dashed',
+                                  borderColor: 'divider',
+                                  borderRadius: 2,
+                                  bgcolor: getStatusColor(status).bg,
+                                }}
+                              >
+                                <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                                  {snapshot.isDraggingOver
+                                    ? `Drop items here`
+                                    : `No ${status.toLowerCase()} items`}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        </Paper>
+                      )}
+                    </Droppable>
+                  ))}
               </Box>
             </DragDropContext>
           )}
@@ -835,7 +847,14 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
               {priorityOptions.map((p) => (
                 <MenuItem key={p} value={p}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <FlagIcon sx={{ color: getPriorityColor(p), fontSize: 16 }} />
+                    <Box 
+                      sx={{ 
+                        width: 8, 
+                        height: 8, 
+                        borderRadius: '50%', 
+                        backgroundColor: getPriorityColor(p) 
+                      }} 
+                    />
                     {p}
                   </Box>
                 </MenuItem>
@@ -864,9 +883,17 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
               onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value as TaskStatus })}
               sx={{ flex: 1 }}
             >
+              {/* Include all status options */}
+              <MenuItem value="Backlog">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  Backlog
+                </Box>
+              </MenuItem>
               {statusColumns.map((s) => (
                 <MenuItem key={s} value={s}>
-                  {s}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {s}
+                  </Box>
                 </MenuItem>
               ))}
             </TextField>

@@ -53,6 +53,7 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [latestSprint, setLatestSprint] = useState<SprintDTO | null>(null);
+  const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<number>>(new Set());
 
   const [searchQuery, setSearchQuery] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
@@ -132,8 +133,63 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
   };
 
   const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
-    await TaskService.updateTaskStatus(projectId, taskId, newStatus, templateType);
-    fetchTasks();
+    // Prevent multiple simultaneous updates for the same task
+    if (updatingTaskIds.has(taskId)) {
+      console.log(`Task ${taskId} is already being updated`);
+      return;
+    }
+
+    try {
+      console.log(`Updating task ${taskId} status to "${newStatus}"`);
+      
+      // Add task to updating set
+      setUpdatingTaskIds(prev => new Set(prev.add(taskId)));
+      
+      const updatedTask = await TaskService.updateTaskStatus(projectId, taskId, newStatus, templateType);
+      
+      if (updatedTask) {
+        console.log('Task status updated successfully:', updatedTask);
+        // Update the local state with the response from the server
+        setTasks(currentTasks => 
+          currentTasks.map(task => 
+            task.id === taskId 
+              ? { ...task, ...updatedTask }
+              : task
+          )
+        );
+        // Clear any existing errors
+        setError(null);
+      } else {
+        console.error('Failed to update task status - no response from server');
+        setError('Failed to update task status. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Error updating task status:', error);
+      
+      // Provide more specific error messages based on the error type
+      let errorMessage = 'Failed to update task status. Please try again.';
+      
+      if (error?.code === 'ERR_NETWORK' || error?.message?.includes('ERR_FAILED')) {
+        errorMessage = 'Cannot connect to the server. Please check if the backend server is running at http://localhost:8080 and try again.';
+      } else if (error?.response?.status === 401) {
+        errorMessage = 'You are not authorized to update this task. Please log in again.';
+      } else if (error?.response?.status === 404) {
+        errorMessage = 'Task not found. It may have been deleted by another user.';
+      } else if (error?.response?.status === 500) {
+        errorMessage = 'Server error occurred while updating the task. Please try again later.';
+      } else if (error?.response?.data?.message) {
+        errorMessage = `Failed to update task: ${error.response.data.message}`;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      // Remove task from updating set
+      setUpdatingTaskIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+    }
   };
 
   const handleDragEnd = async (result: DropResult) => {
@@ -406,12 +462,23 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
             size="small"
             fullWidth
             value={task.status}
-            onChange={(e) => handleStatusChange(Number(task.id), e.target.value as TaskStatus)}
+            onChange={(e) => {
+              const newStatus = e.target.value as TaskStatus;
+              console.log(`Status changed for task ${task.id}: ${task.status} -> ${newStatus}`);
+              handleStatusChange(Number(task.id), newStatus);
+            }}
+            disabled={loading || updatingTaskIds.has(Number(task.id))}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
                 backgroundColor: statusColor.bg,
                 '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: statusColor.color,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: statusColor.color,
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                   borderColor: statusColor.color,
                 },
               },
@@ -420,14 +487,37 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
                 fontWeight: 600,
                 fontSize: '0.8rem',
               },
+              '& .MuiSelect-icon': {
+                color: statusColor.color,
+              },
             }}
           >
             {statusOptions.map((status) => (
               <MenuItem key={status} value={status}>
-                {status}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: statusColors[status as keyof typeof statusColors]?.color || '#757575',
+                    }}
+                  />
+                  {status}
+                </Box>
               </MenuItem>
             ))}
           </TextField>
+
+          {/* Show updating indicator */}
+          {updatingTaskIds.has(Number(task.id)) && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+              <CircularProgress size={16} />
+              <Typography variant="caption" color="text.secondary">
+                Updating status...
+              </Typography>
+            </Box>
+          )}
 
           {/* Labels */}
           {task.labels?.length > 0 && (
@@ -512,6 +602,7 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
                 fontSize: '1rem'
               }
             }}
+            onClose={() => setError(null)}
           >
             {error}
           </Alert>
