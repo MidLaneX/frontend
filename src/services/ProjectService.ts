@@ -9,29 +9,42 @@ export class ProjectService {
   /**
    * Get all projects for a user
    */
- static async getAllProjects(userId: number, orgId: number, templateType: string): Promise<Project[]> {
-  // Call backend API
-  const response = await projectsApi.getProjects(userId, orgId, templateType);
-
-  const data = Array.isArray(response.data) ? response.data : [];
-
-  // Map DTO -> Frontend Project model
-  return data.map((dto: ProjectDTO): Project => ({
-    id: dto.id,
-    name: dto.name,
-    templateType: dto.templateType,
-    features: dto.features || [],
-    key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
-    description: dto.name || '',
-    timeline: {
-      start: dto.createdAt || new Date().toISOString().split('T')[0],
-      end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    },
-    type: dto.type,
-    tasks: []
-  }));
-}
-
+  static async getAllProjects(userId: number = 1, orgId: number = 1, role: string = 'ADMIN', templateType: string = 'scrum', teamIds: number[] = []): Promise<Project[]> {
+    // Build UserProjectRequestDTO
+    const userProjectRequestDTO: UserProjectRequestDTO = { userId, role };
+    // Build payload
+    const payload: GetProjectsPayload = {
+      projectDTO: {
+        id: 0,
+        orgId,
+        name: '',
+        type: '',
+        templateType,
+        features: [],
+        createdAt: '',
+        updatedAt: '',
+        createdBy: String(userId)
+      },
+      userProjectRequestDTO
+    };
+    // Call new API route
+    const response = await projectsApi.getProjects(userId, orgId, role, templateType, teamIds);
+    const data = Array.isArray(response.data) ? response.data : [];
+    return data.map((dto: ProjectDTO): Project => ({
+      id: dto.id,
+      name: dto.name,
+      templateType: dto.templateType,
+      features: dto.features || [],
+      key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
+      description: dto.name || '',
+      timeline: {
+        start: dto.createdAt || new Date().toISOString().split('T')[0],
+        end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      },
+      type: dto.type,
+      tasks: []
+    }));
+  }
 
   static async createProject(createData: CreateProjectDTO, templateType: string): Promise<Project> {
     // Call new API route
@@ -70,12 +83,25 @@ export class ProjectService {
       
       // If response.data is already a Project object, return it
       if (response.data && typeof response.data === 'object' && 'teamMembers' in response.data) {
+        console.log('Project already has teamMembers:', response.data.teamMembers);
         return response.data as Project;
       }
       
       // If response.data is a ProjectDTO, transform it to Project
       const dto = response.data as ProjectDTO;
       if (dto) {
+        // TODO: Fetch actual team members from backend API
+        // For now, adding sample team members for testing
+        const sampleTeamMembers = [
+          { name: 'John Doe', role: 'Developer', avatar: 'JD' },
+          { name: 'Jane Smith', role: 'Designer', avatar: 'JS' },
+          { name: 'Mike Johnson', role: 'Product Manager', avatar: 'MJ' },
+          { name: 'Sarah Wilson', role: 'QA Engineer', avatar: 'SW' },
+          { name: 'Alex Brown', role: 'DevOps', avatar: 'AB' }
+        ];
+        
+        console.log('Creating project with sample team members:', sampleTeamMembers);
+        
         return {
           id: String(dto.id),
           name: dto.name,
@@ -86,7 +112,7 @@ export class ProjectService {
             end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
           },
           type: dto.type as any,
-          teamMembers: [], // Initialize empty team members array
+          teamMembers: sampleTeamMembers, // Use sample data for now
           tasks: [] // Initialize empty tasks array
         };
       }
