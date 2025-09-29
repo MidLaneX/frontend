@@ -7,10 +7,19 @@ export interface User {
   userId: number;
   email: string;
   role: string;
+  name?: string; // Optional name from profile
+}
+
+export interface UserProfile {
+  first_name: string;
+  last_name: string;
+  email: string;
+  profile_picture_url: string;
 }
 
 export interface AuthContextType {
   user: User | null;
+  userProfile: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -18,6 +27,7 @@ export interface AuthContextType {
   socialLogin: (data: SocialLoginRequest) => Promise<void>;
   logout: () => void;
   refreshToken: () => Promise<boolean>;
+  fetchUserProfile: () => Promise<void>;
 }
 
 export interface SignupData {
@@ -42,9 +52,29 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user;
+
+  const fetchUserProfile = async (): Promise<void> => {
+    try {
+      const userId = tokenManager.getUserId();
+      if (!userId) {
+        console.error('No userId found in localStorage');
+        return;
+      }
+      
+      const profile = await authApi.getUserProfile(userId);
+      setUserProfile(profile);
+      
+      // Also update the user state to include the full name
+      const fullName = `${profile.first_name} ${profile.last_name}`;
+      setUser(prevUser => prevUser ? { ...prevUser, name: fullName } : null);
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  };
 
   // Check for existing token on app startup
   useEffect(() => {
@@ -70,6 +100,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 role: storedRole,
               };
               setUser(userData);
+              
+              // Fetch user profile data
+              try {
+                const profile = await authApi.getUserProfile(storedUserId);
+                setUserProfile(profile);
+                const fullName = `${profile.first_name} ${profile.last_name}`;
+                setUser(prev => prev ? { ...prev, name: fullName } : null);
+              } catch (profileError) {
+                console.error('Failed to fetch user profile on startup:', profileError);
+              }
             } else {
               // No stored user data available, clear tokens
               tokenManager.clearTokens();
@@ -194,6 +234,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value: AuthContextType = {
     user,
+    userProfile,
     isAuthenticated,
     isLoading,
     login,
@@ -201,6 +242,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     socialLogin,
     logout,
     refreshToken,
+    fetchUserProfile,
   };
 
   return (
