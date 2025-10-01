@@ -26,18 +26,18 @@ export const projectsApi = {
     return projectsApiClient.get(`/projects/${projectId}/features?templateType=${templateType}`);
   },
 
-  // ✅ Create new project (backend expects ?template= param)
+  //  Create new project (backend expects ?template= param)
   createProject: (data: ProjectDTO, template: string ) => {
     console.log('API: Creating project with data:', data);
     return projectsApiClient.post<ProjectDTO>(`/projects?template=${template}`, data);
   },
 
-  // ✅ Update project
+  //  Update project
   updateProject: (id: string, data: Partial<ProjectDTO>) => {
     return projectsApiClient.put<Project>(`/projects/${id}`, data);
   },
 
-  // ✅ Delete project
+  // Delete project
   deleteProject: (id: string) => {
     return apiClient.delete(`/projects/${id}`);
   },
