@@ -24,12 +24,24 @@ export const projectsApiClient = axios.create({
 
 // Request interceptor for projects API
 projectsApiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // Add auth token if available
-    const token = localStorage.getItem('authToken');
+  async (config: InternalAxiosRequestConfig) => {
+    // Get valid access token using tokenManager (same as main apiClient)
+    const token = await tokenManager.getValidAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Also add userId and orgId to headers if available
+    const userId = localStorage.getItem('currentUserId') || localStorage.getItem('userId');
+    const orgId = localStorage.getItem('currentOrgId') || localStorage.getItem('orgId');
+    
+    if (userId && config.headers) {
+      config.headers['X-User-Id'] = userId;
+    }
+    if (orgId && config.headers) {
+      config.headers['X-Org-Id'] = orgId;
+    }
+    
     return config;
   },
   (error: AxiosError) => {
@@ -42,13 +54,32 @@ projectsApiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  (error: AxiosError) => {
-    // Handle common errors
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
+  async (error: AxiosError) => {
+    const originalRequest = error.config;
+    
+    // Handle 401 errors with token refresh (same as main apiClient)
+    if (error.response?.status === 401 && originalRequest && !(originalRequest as any)._retry) {
+      (originalRequest as any)._retry = true;
+      
+      // Try to refresh token
+      const refreshed = await tokenManager.refreshAccessToken();
+      
+      if (refreshed) {
+        // Retry the original request with new token
+        const newToken = tokenManager.getAccessToken();
+        if (newToken && originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
+        return projectsApiClient(originalRequest);
+      }
+      
+      // If refresh failed, clear tokens and redirect
+      tokenManager.clearTokens();
+      if (window.location.pathname !== '/landing') {
+        window.location.href = '/landing';
+      }
     }
+    
     return Promise.reject(error);
   }
 );

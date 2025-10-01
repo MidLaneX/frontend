@@ -1,11 +1,12 @@
 import type { Project } from '../types';
-import type { ProjectDTO, CreateProjectDTO, GetProjectsPayload, UserProjectRequestDTO } from '../types/dto';
+import type { ProjectDTO, CreateProjectDTO } from '../types/dto';
 import { projectsApi } from '../api/endpoints/projects';
 
 /**
  * Service class for managing projects
  */
 export class ProjectService {
+  private static projects: Project[] = [];
   /**
    * Get all projects for a user
    */
@@ -22,13 +23,16 @@ export class ProjectService {
     templateType: dto.templateType,
     features: dto.features || [],
     key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
-    description: dto.name || '',
     timeline: {
       start: dto.createdAt || new Date().toISOString().split('T')[0],
       end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     },
     type: dto.type,
-    tasks: []
+    tasks: [],
+    orgId: dto.orgId,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+    createdBy: dto.createdBy
   }));
 }
 
@@ -43,13 +47,16 @@ export class ProjectService {
       templateType: dto.templateType,
       features: dto.features || [],
       key: dto.name.toUpperCase().replace(/\s+/g, '_'),
-      description: dto.name,
       timeline: {
         start: dto.createdAt || new Date().toISOString().split('T')[0],
         end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       },
       type: dto.type,
-      tasks: []
+      tasks: [],
+      orgId: dto.orgId,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      createdBy: dto.createdBy
     };
   }
 
@@ -111,8 +118,7 @@ export class ProjectService {
     const lowercaseQuery = query.toLowerCase();
     return this.projects.filter(project => 
       project.name.toLowerCase().includes(lowercaseQuery) ||
-      project.key.toLowerCase().includes(lowercaseQuery) ||
-      project.description.toLowerCase().includes(lowercaseQuery)
+      (project.key && project.key.toLowerCase().includes(lowercaseQuery))
     );
   }
 }

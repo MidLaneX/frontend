@@ -23,12 +23,11 @@ import { Link } from 'react-router-dom';
 interface Project {
   id: string;
   name: string;
-  description: string;
-  type: string;
+  type?: string;
   templateType: string;
   tasks?: Array<{ status: string }>;
   teamMembers?: Array<{ name: string; avatar?: string }>;
-  timeline: {
+  timeline?: {
     start: string;
     end: string;
   };
@@ -52,6 +51,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   };
 
   const getProjectStatus = (project: Project) => {
+    if (!project.timeline) return 'No Timeline';
     const now = new Date();
     const start = new Date(project.timeline.start);
     const end = new Date(project.timeline.end);
@@ -123,21 +123,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </Box>
           </Box>
 
-          {/* Description */}
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              mb: 3,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              lineHeight: 1.4,
-            }}
-          >
-            {project.description}
-          </Typography>
+          
 
           {/* Progress */}
           <Box sx={{ mb: 3 }}>
@@ -168,7 +154,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <CalendarIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 1 }} />
             <Typography variant="body2" color="text.secondary">
-              {new Date(project.timeline.start).toLocaleDateString()} - {new Date(project.timeline.end).toLocaleDateString()}
+              {project.timeline
+                ? `${new Date(project.timeline.start).toLocaleDateString()} - ${new Date(project.timeline.end).toLocaleDateString()}`
+                : 'No timeline available'}
             </Typography>
           </Box>
 
