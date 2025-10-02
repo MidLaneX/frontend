@@ -46,7 +46,7 @@ export interface OrganizationMember {
 }
 
 export interface AddMemberRequest {
-  userId: number;
+  userEmail: string;
   role?: MemberRole;
 }
 

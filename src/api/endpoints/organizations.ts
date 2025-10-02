@@ -100,7 +100,7 @@ export const organizationsApi = {
     }
     
     const response = await organizationsApiClient.post(
-      `/users/organizations/${orgId}/members/${data.userId}?requesterId=${requesterId}`,
+      `/users/organizations/${orgId}/members/add?requesterId=${requesterId}&userEmail=${encodeURIComponent(data.userEmail)}`,
       { role: data.role } // Send role in the request body if provided
     );
     return response.data;

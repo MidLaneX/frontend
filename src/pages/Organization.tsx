@@ -176,8 +176,9 @@ const OrganizationPage: React.FC = () => {
   const handleAddMember = async (data: AddMemberRequest) => {
     if (!selectedOrg) return;
     try {
-      const newMember = await OrganizationService.addMember(selectedOrg.id, data);
-      setMembers(prev => [...prev, newMember]);
+      await OrganizationService.addMember(selectedOrg.id, data);
+      // Reload the complete members list to ensure all fields are properly populated
+      await loadOrganizationData(selectedOrg.id);
     } catch (err: any) {
       throw err;
     }
@@ -430,7 +431,7 @@ const OrganizationPage: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar sx={{ width: 48, height: 48 }}>
-                            {member.firstName?.[0] || 'U'}{member.lastName?.[0] || 'N'}
+                            {member.first_name?.[0] || 'U'}{member.last_name?.[0] || 'N'}
                           </Avatar>
                           <Box>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
