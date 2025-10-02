@@ -1,4 +1,5 @@
 import { organizationsApi } from '../api/endpoints/organizations';
+import { teamsApi } from '../api/endpoints/teams';
 import type {
   Organization,
   CreateOrganizationRequest,
@@ -96,7 +97,7 @@ export class OrganizationService {
   // Team management
   static async getTeams(orgId: string): Promise<Team[]> {
     try {
-      return await organizationsApi.getTeams(orgId);
+      return await teamsApi.getTeams(orgId);
     } catch (error) {
       console.error('Failed to fetch teams:', error);
       throw error;
@@ -105,7 +106,7 @@ export class OrganizationService {
 
   static async createTeam(teamData: CreateTeamRequest): Promise<Team> {
     try {
-      return await organizationsApi.createTeam(teamData);
+      return await teamsApi.createTeam(teamData);
     } catch (error) {
       console.error('Failed to create team:', error);
       throw error;
@@ -114,7 +115,7 @@ export class OrganizationService {
 
   static async updateTeam(orgId: string, teamId: string, data: Partial<CreateTeamRequest>): Promise<Team> {
     try {
-      return await organizationsApi.updateTeam(orgId, teamId, data);
+      return await teamsApi.updateTeam(orgId, teamId, data);
     } catch (error) {
       console.error('Failed to update team:', error);
       throw error;
@@ -123,7 +124,7 @@ export class OrganizationService {
 
   static async deleteTeam(orgId: string, teamId: string): Promise<void> {
     try {
-      await organizationsApi.deleteTeam(orgId, teamId);
+      await teamsApi.deleteTeam(orgId, teamId);
     } catch (error) {
       console.error('Failed to delete team:', error);
       throw error;
@@ -132,7 +133,7 @@ export class OrganizationService {
 
   static async addTeamMember(orgId: string, teamId: string, memberId: string): Promise<Team> {
     try {
-      return await organizationsApi.addTeamMember(orgId, teamId, { memberId });
+      return await teamsApi.addTeamMember(orgId, teamId, { memberId });
     } catch (error) {
       console.error('Failed to add team member:', error);
       throw error;
@@ -141,7 +142,7 @@ export class OrganizationService {
 
   static async removeTeamMember(orgId: string, teamId: string, memberId: string): Promise<Team> {
     try {
-      return await organizationsApi.removeTeamMember(orgId, teamId, memberId);
+      return await teamsApi.removeTeamMember(orgId, teamId, memberId);
     } catch (error) {
       console.error('Failed to remove team member:', error);
       throw error;
@@ -150,7 +151,7 @@ export class OrganizationService {
 
   static async promoteToTeamLead(orgId: string, teamId: string, memberId: string): Promise<Team> {
     try {
-      return await organizationsApi.promoteToTeamLead(orgId, teamId, memberId);
+      return await teamsApi.promoteToTeamLead(orgId, teamId, memberId);
     } catch (error) {
       console.error('Failed to promote to team lead:', error);
       throw error;
@@ -159,7 +160,7 @@ export class OrganizationService {
 
   static async demoteTeamLead(orgId: string, teamId: string, memberId: string): Promise<Team> {
     try {
-      return await organizationsApi.demoteTeamLead(orgId, teamId, memberId);
+      return await teamsApi.demoteTeamLead(orgId, teamId, memberId);
     } catch (error) {
       console.error('Failed to demote team lead:', error);
       throw error;

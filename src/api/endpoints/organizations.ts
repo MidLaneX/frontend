@@ -4,10 +4,7 @@ import type {
   Organization,
   CreateOrganizationRequest,
   OrganizationMember,
-  AddMemberRequest,
-  Team,
-  CreateTeamRequest,
-  UpdateTeamMemberRequest
+  AddMemberRequest
 } from '../../types/api/organizations';
 
 // Create a dedicated API client for organizations service
@@ -112,52 +109,6 @@ export const organizationsApi = {
 
   updateMemberRole: async (orgId: string, memberId: string, role: string): Promise<OrganizationMember> => {
     const response = await organizationsApiClient.patch(`/organizations/${orgId}/members/${memberId}`, { role });
-    return response.data;
-  },
-
-  // Team management
-  getTeams: async (orgId: string): Promise<Team[]> => {
-    const response = await organizationsApiClient.get(`/users/organizations/${orgId}/teams`);
-    return response.data;
-  },
-
-  createTeam: async (data: CreateTeamRequest): Promise<Team> => {
-    // Get the current user's ID as the creator
-    const creatorId = tokenManager.getUserId();
-    if (!creatorId) {
-      throw new Error('User not authenticated');
-    }
-    
-    const response = await organizationsApiClient.post(`/users/teams?creatorId=${creatorId}`, data);
-    return response.data;
-  },
-
-  updateTeam: async (orgId: string, teamId: string, data: Partial<CreateTeamRequest>): Promise<Team> => {
-    const response = await organizationsApiClient.put(`/organizations/${orgId}/teams/${teamId}`, data);
-    return response.data;
-  },
-
-  deleteTeam: async (orgId: string, teamId: string): Promise<void> => {
-    await organizationsApiClient.delete(`/organizations/${orgId}/teams/${teamId}`);
-  },
-
-  addTeamMember: async (orgId: string, teamId: string, data: UpdateTeamMemberRequest): Promise<Team> => {
-    const response = await organizationsApiClient.post(`/organizations/${orgId}/teams/${teamId}/members`, data);
-    return response.data;
-  },
-
-  removeTeamMember: async (orgId: string, teamId: string, memberId: string): Promise<Team> => {
-    const response = await organizationsApiClient.delete(`/organizations/${orgId}/teams/${teamId}/members/${memberId}`);
-    return response.data;
-  },
-
-  promoteToTeamLead: async (orgId: string, teamId: string, memberId: string): Promise<Team> => {
-    const response = await organizationsApiClient.patch(`/organizations/${orgId}/teams/${teamId}/members/${memberId}/promote`);
-    return response.data;
-  },
-
-  demoteTeamLead: async (orgId: string, teamId: string, memberId: string): Promise<Team> => {
-    const response = await organizationsApiClient.patch(`/organizations/${orgId}/teams/${teamId}/members/${memberId}/demote`);
     return response.data;
   }
 };
