@@ -82,6 +82,11 @@ export const teamsApi = {
     return response.data;
   },
 
+  addTeamMemberById: async (teamId: string, userId: string): Promise<Team> => {
+    const response = await teamsApiClient.post(`/users/teams/${teamId}/members/${userId}`);
+    return response.data;
+  },
+
   removeTeamMember: async (orgId: string, teamId: string, memberId: string): Promise<Team> => {
     const response = await teamsApiClient.delete(`/organizations/${orgId}/teams/${teamId}/members/${memberId}`);
     return response.data;

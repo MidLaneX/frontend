@@ -13,4 +13,5 @@ export { default as CreateIssueModal } from './CreateIssueModal';
 export { default as CreateProjectModal } from './CreateProjectModal';
 export { default as CreateOrganizationModal } from './CreateOrganizationModal';
 export { default as AddMemberModal } from './AddMemberModal';
+export { default as AddTeamMemberModal } from './AddTeamMemberModal';
 export { default as CreateTeamModal } from './CreateTeamModal';

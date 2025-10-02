@@ -30,8 +30,37 @@ organizationsApiClient.interceptors.request.use(
   }
 );
 
+// Helper function to transform backend response to frontend interface
+const transformOrganization = (org: any): Organization => {
+  return {
+    ...org,
+    ownerId: org.owner_id || org.ownerId,
+    ownerName: org.owner_name || org.ownerName || '',
+    ownerEmail: org.owner_email || org.ownerEmail || '',
+    createdAt: org.created_at || org.createdAt,
+    updatedAt: org.updated_at || org.updatedAt,
+  };
+};
+
+// Helper function to transform array of organizations
+const transformOrganizations = (orgs: any[]): Organization[] => {
+  return orgs.map(transformOrganization);
+};
+
 organizationsApiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Transform organization data in responses
+    if (response.data) {
+      if (Array.isArray(response.data)) {
+        // Handle array responses (list of organizations)
+        response.data = transformOrganizations(response.data);
+      } else if (response.data.id && response.data.name) {
+        // Handle single organization responses
+        response.data = transformOrganization(response.data);
+      }
+    }
+    return response;
+  },
   async (error) => {
     if (error.response?.status === 401) {
       const refreshed = await tokenManager.refreshAccessToken();
@@ -52,16 +81,42 @@ organizationsApiClient.interceptors.response.use(
 );
 
 export const organizationsApi = {
-  // Organization management
-  getOrganizations: async (): Promise<Organization[]> => {
-    // Get the current user's ID as the owner
-    const ownerId = tokenManager.getUserId();
-    if (!ownerId) {
+  // Organization management - get organizations owned by user
+  getOwnedOrganizations: async (): Promise<Organization[]> => {
+    const userId = tokenManager.getUserId();
+    if (!userId) {
       throw new Error('User not authenticated');
     }
     
-    const response = await organizationsApiClient.get(`/users/organizations/owner/${ownerId}`);
+    const response = await organizationsApiClient.get(`/users/organizations/users/${userId}/owned`);
     return response.data;
+  },
+
+  // Get organizations where user is a member (but not owner)
+  getMemberOrganizations: async (): Promise<Organization[]> => {
+    const userId = tokenManager.getUserId();
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    const response = await organizationsApiClient.get(`/users/organizations/users/${userId}/member`);
+    return response.data;
+  },
+
+  // Get all organizations for user (owned + member)
+  getAllUserOrganizations: async (): Promise<Organization[]> => {
+    const userId = tokenManager.getUserId();
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    const response = await organizationsApiClient.get(`/users/organizations/users/${userId}/all`);
+    return response.data;
+  },
+
+  // Legacy method - now calls getAllUserOrganizations for backward compatibility
+  getOrganizations: async (): Promise<Organization[]> => {
+    return organizationsApi.getAllUserOrganizations();
   },
 
   createOrganization: async (data: CreateOrganizationRequest, ownerId: number): Promise<Organization> => {
@@ -70,17 +125,27 @@ export const organizationsApi = {
   },
 
   getOrganization: async (orgId: string): Promise<Organization> => {
-    const response = await organizationsApiClient.get(`/organizations/${orgId}`);
+    const response = await organizationsApiClient.get(`/users/organizations/${orgId}`);
     return response.data;
   },
 
   updateOrganization: async (orgId: string, data: Partial<CreateOrganizationRequest>): Promise<Organization> => {
-    const response = await organizationsApiClient.put(`/organizations/${orgId}`, data);
+    const requesterId = tokenManager.getUserId();
+    if (!requesterId) {
+      throw new Error('User not authenticated');
+    }
+    
+    const response = await organizationsApiClient.put(`/users/organizations/${orgId}?requesterId=${requesterId}`, data);
     return response.data;
   },
 
   deleteOrganization: async (orgId: string): Promise<void> => {
-    await organizationsApiClient.delete(`/organizations/${orgId}`);
+    const requesterId = tokenManager.getUserId();
+    if (!requesterId) {
+      throw new Error('User not authenticated');
+    }
+    
+    await organizationsApiClient.delete(`/users/organizations/${orgId}?requesterId=${requesterId}`);
   },
 
   // Member management
@@ -104,11 +169,25 @@ export const organizationsApi = {
   },
 
   removeMember: async (orgId: string, memberId: string): Promise<void> => {
-    await organizationsApiClient.delete(`/organizations/${orgId}/members/${memberId}`);
+    const requesterId = tokenManager.getUserId();
+    if (!requesterId) {
+      throw new Error('User not authenticated');
+    }
+    
+    await organizationsApiClient.delete(`/users/organizations/${orgId}/members/${memberId}?requesterId=${requesterId}`);
   },
 
-  updateMemberRole: async (orgId: string, memberId: string, role: string): Promise<OrganizationMember> => {
-    const response = await organizationsApiClient.patch(`/organizations/${orgId}/members/${memberId}`, { role });
-    return response.data;
+  updateMemberRole: async (_orgId: string, _memberId: string, _role: string): Promise<OrganizationMember> => {
+    // Note: This endpoint is not yet implemented in the backend
+    // For now, throw an error to indicate this feature is not available
+    throw new Error('Member role updates are not currently supported by the backend');
+    
+    // Future implementation:
+    // const requesterId = tokenManager.getUserId();
+    // if (!requesterId) {
+    //   throw new Error('User not authenticated');
+    // }
+    // const response = await organizationsApiClient.patch(`/users/organizations/${orgId}/members/${memberId}?requesterId=${requesterId}`, { role });
+    // return response.data;
   }
 };
