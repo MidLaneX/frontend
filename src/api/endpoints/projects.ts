@@ -1,6 +1,6 @@
 import { apiClient, projectsApiClient } from '../client';
 import type { Project } from '../../types';
-import type { ProjectDTO } from '../../types/dto';
+import type { ProjectDTO, CreateProjectDTO } from '../../types/dto';
 
 export const projectsApi = {
   // Get all projects for a user with query parameters
@@ -26,18 +26,19 @@ export const projectsApi = {
     return projectsApiClient.get(`/projects/${projectId}/features?templateType=${templateType}`);
   },
 
-  // ✅ Create new project (backend expects ?template= param)
-  createProject: (data: ProjectDTO, template: string ) => {
+  //  Create new project (backend expects ?template= param)
+  createProject: (data: CreateProjectDTO, template: string ) => {
     console.log('API: Creating project with data:', data);
+    console.log('API: Template parameter:', template);
     return projectsApiClient.post<ProjectDTO>(`/projects?template=${template}`, data);
   },
 
-  // ✅ Update project
+  //  Update project
   updateProject: (id: string, data: Partial<ProjectDTO>) => {
     return projectsApiClient.put<Project>(`/projects/${id}`, data);
   },
 
-  // ✅ Delete project
+  // Delete project
   deleteProject: (id: string) => {
     return apiClient.delete(`/projects/${id}`);
   },

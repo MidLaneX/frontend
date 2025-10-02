@@ -15,8 +15,15 @@ export interface ProjectDTO {
 
 // Create project request DTO - matches your backend requirement
 export interface CreateProjectDTO {
+  id?: number | null;
+  orgId: number;
   name: string;
+  type: string;
   templateType: string;
+  features: string[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
 }
 
 export interface UserProjectRequestDTO {

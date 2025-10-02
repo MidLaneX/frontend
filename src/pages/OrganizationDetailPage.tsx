@@ -1,36 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { Box, Typography, Paper, Alert } from '@mui/material';
+import { Box, Alert } from '@mui/material';
 import Dashboard from './Dashboard';
 
 const OrganizationDetailPage: React.FC = () => {
   const { orgId } = useParams<{ orgId: string }>();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  let userId = queryParams.get('userId');
-  if (!userId || userId === 'null' || userId === 'undefined') {
-    // Try to get userId from auth_tokens in localStorage
-    const tokens = localStorage.getItem('auth_tokens');
-    if (tokens) {
-      try {
-        const parsed = JSON.parse(tokens);
-        userId = parsed.userId ?? parsed.user_id ?? '';
-        // If userId is a number, convert to string
-        if (typeof userId === 'number') userId = String(userId);
-      } catch {
-        userId = '';
-      }
+  
+  const getUserId = (): string | null => {
+    // First try URL params
+    let userId = queryParams.get('userId');
+    if (userId && userId !== 'null' && userId !== 'undefined' && userId !== '') {
+      return userId;
     }
-  }
+    
+    // Try to get userId from auth_tokens in localStorage
+    try {
+      const tokens = localStorage.getItem('auth_tokens');
+      if (tokens) {
+        const parsed = JSON.parse(tokens);
+        const id = parsed.userId ?? parsed.user_id;
+        if (id) {
+          return typeof id === 'number' ? String(id) : String(id);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse auth_tokens:', e);
+    }
+    
+    // Try legacy userId from localStorage
+    try {
+      const legacyUserId = localStorage.getItem('userId');
+      if (legacyUserId && legacyUserId !== 'null') {
+        return legacyUserId;
+      }
+    } catch (e) {
+      console.warn('Failed to get legacy userId:', e);
+    }
+    
+    return null;
+  };
+
+  const userId = getUserId();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!orgId || !userId || userId === 'null' || userId === 'undefined' || userId === '') {
-      setError('Organization ID or User ID missing.');
+    console.log('OrganizationDetailPage - orgId:', orgId, 'userId:', userId);
+    if (!orgId || !userId) {
+      setError('Organization ID or User ID missing. Please ensure you are properly logged in.');
     } else {
       setError(null);
+      // Store in localStorage for future use
+      localStorage.setItem('orgId', orgId);
+      if (userId !== 'null' && userId !== 'undefined') {
+        localStorage.setItem('userId', userId);
+      }
     }
-    // You can fetch organization details here using orgId and userId
   }, [orgId, userId]);
 
   if (error) {
