@@ -47,16 +47,46 @@ const transformOrganizations = (orgs: any[]): Organization[] => {
   return orgs.map(transformOrganization);
 };
 
+// Helper function to transform member data from backend to frontend interface
+const transformMember = (member: any): OrganizationMember => {
+  return {
+    ...member,
+    id: member.user_id || member.id,
+    userId: member.user_id || member.userId || member.id,
+    username: member.username || member.email || '',
+    first_name: member.first_name || member.firstName || '',
+    last_name: member.last_name || member.lastName || '',
+    email: member.email || '',
+    role: member.role || 'member',
+    joinedAt: member.joined_at || member.joinedAt || new Date().toISOString(),
+    teams: member.teams || [],
+  };
+};
+
+// Helper function to transform array of members
+const transformMembers = (members: any[]): OrganizationMember[] => {
+  return members.map(transformMember);
+};
+
 organizationsApiClient.interceptors.response.use(
   (response) => {
     // Transform organization data in responses
     if (response.data) {
       if (Array.isArray(response.data)) {
-        // Handle array responses (list of organizations)
-        response.data = transformOrganizations(response.data);
+        // Check if it's an array of organizations or members
+        if (response.data.length > 0 && response.data[0].name && (response.data[0].ownerId || response.data[0].owner_id)) {
+          // Handle array responses (list of organizations)
+          response.data = transformOrganizations(response.data);
+        } else if (response.data.length > 0 && (response.data[0].user_id || response.data[0].email)) {
+          // Handle array of members
+          response.data = transformMembers(response.data);
+        }
       } else if (response.data.id && response.data.name) {
         // Handle single organization responses
         response.data = transformOrganization(response.data);
+      } else if (response.data.user_id || (response.data.id && response.data.email)) {
+        // Handle single member responses
+        response.data = transformMember(response.data);
       }
     }
     return response;

@@ -191,6 +191,8 @@ const OrganizationPage: React.FC = () => {
       console.log('Members loaded:', membersData);
       console.log('First member data:', membersData[0]);
       console.log('Teams loaded:', teamsData);
+      console.log('First team data:', teamsData[0]);
+      console.log('First team ID:', teamsData[0]?.id, 'Type:', typeof teamsData[0]?.id);
       setMembers(membersData);
       setTeams(teamsData);
     } catch (err: any) {
@@ -271,6 +273,10 @@ const OrganizationPage: React.FC = () => {
   const handleAddTeamMembers = async (memberIds: string[]) => {
     if (!selectedOrg || !selectedTeam) return;
     
+    console.log('handleAddTeamMembers - selectedTeam:', selectedTeam);
+    console.log('handleAddTeamMembers - selectedTeam.id:', selectedTeam.id);
+    console.log('handleAddTeamMembers - memberIds:', memberIds);
+    
     const currentUserId = tokenManager.getUserId();
     if (!currentUserId) {
       throw new Error('User not authenticated');
@@ -281,10 +287,16 @@ const OrganizationPage: React.FC = () => {
       throw new Error('Only organization owners can manage team members');
     }
     
+    if (!selectedTeam.id) {
+      console.error('Selected team has no ID:', selectedTeam);
+      throw new Error('Invalid team selected - missing team ID');
+    }
+    
     try {
       // Add members one by one and return the final team state
       let updatedTeam: Team | null = null;
       for (const userId of memberIds) {
+        console.log('Adding user to team:', userId, 'to team:', selectedTeam.id);
         updatedTeam = await teamsApi.addTeamMemberById(selectedTeam.id, userId);
       }
       if (updatedTeam) {
@@ -979,6 +991,8 @@ const OrganizationPage: React.FC = () => {
                           <IconButton
                             size="small"
                             onClick={(e) => {
+                              console.log('Selected team for menu:', team);
+                              console.log('Team ID:', team.id, 'Type:', typeof team.id);
                               setSelectedTeam(team);
                               setTeamMenuAnchor(e.currentTarget);
                             }}

@@ -87,12 +87,30 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
       setLoadingMembers(true);
       setError('');
       
+      console.log('Loading organization members for org:', organizationId);
+      console.log('Team data:', team);
+      console.log('Team members:', team.members);
+      
       const orgMembers = await OrganizationService.getOrganizationMembers(organizationId);
       
-      // Filter out members who are already in the team
-      const existingTeamMemberIds = new Set(team.members.map(m => m.userId));
-      const availableMembers = orgMembers.filter(member => !existingTeamMemberIds.has(member.userId));
+      console.log('Loaded organization members:', orgMembers);
+      console.log('orgMembers type:', typeof orgMembers, 'isArray:', Array.isArray(orgMembers));
       
+      // Ensure orgMembers is an array
+      if (!Array.isArray(orgMembers)) {
+        console.error('Organization members response is not an array:', orgMembers);
+        setError('Invalid response format from server');
+        return;
+      }
+      
+      // Filter out members who are already in the team
+      const existingTeamMemberIds = new Set((team.members || []).map(m => m.userId || m.id));
+      const availableMembers = orgMembers.filter(member => {
+        const memberId = getMemberId(member);
+        return memberId && !existingTeamMemberIds.has(memberId);
+      });
+      
+      console.log('Available members after filtering:', availableMembers);
       setMembers(availableMembers);
     } catch (err: any) {
       console.error('Failed to load organization members:', err);
@@ -103,6 +121,10 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
   };
 
   const handleMemberToggle = (memberId: string) => {
+    if (!memberId) {
+      console.warn('Attempted to toggle member with undefined/empty ID');
+      return;
+    }
     const newSelected = new Set(selectedMemberIds);
     if (newSelected.has(memberId)) {
       newSelected.delete(memberId);
@@ -118,6 +140,10 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
       return;
     }
 
+    console.log('AddTeamMemberModal handleSubmit - team:', team);
+    console.log('AddTeamMemberModal handleSubmit - team.id:', team.id);
+    console.log('AddTeamMemberModal handleSubmit - selectedMemberIds:', Array.from(selectedMemberIds));
+
     try {
       await onSubmit(Array.from(selectedMemberIds));
       handleClose();
@@ -131,6 +157,10 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
     setSearchQuery('');
     setError('');
     onClose();
+  };
+
+  const getMemberId = (member: OrganizationMember): string => {
+    return member.id || member.userId || member.user_id || '';
   };
 
   const getMemberInitials = (member: OrganizationMember): string => {
@@ -199,7 +229,7 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {Array.from(selectedMemberIds).map(memberId => {
-                const member = members.find(m => m.id === memberId);
+                const member = members.find(m => getMemberId(m) === memberId);
                 return member ? (
                   <Chip
                     key={memberId}
@@ -236,16 +266,16 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
         ) : (
           <List sx={{ maxHeight: 400, overflow: 'auto' }}>
             {filteredMembers.map((member, index) => (
-              <React.Fragment key={member.id}>
+              <React.Fragment key={getMemberId(member)}>
                 <ListItem
-                  onClick={() => handleMemberToggle(member.id)}
+                  onClick={() => handleMemberToggle(getMemberId(member))}
                   component="div"
                   sx={{
                     borderRadius: 1,
                     mb: 1,
-                    bgcolor: selectedMemberIds.has(member.id) ? 'action.selected' : 'transparent',
+                    bgcolor: selectedMemberIds.has(getMemberId(member)) ? 'action.selected' : 'transparent',
                     '&:hover': {
-                      bgcolor: selectedMemberIds.has(member.id) ? 'action.selected' : 'action.hover',
+                      bgcolor: selectedMemberIds.has(getMemberId(member)) ? 'action.selected' : 'action.hover',
                     },
                   }}
                 >
@@ -276,8 +306,8 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
                   />
                   <ListItemSecondaryAction>
                     <Checkbox
-                      checked={selectedMemberIds.has(member.id)}
-                      onChange={() => handleMemberToggle(member.id)}
+                      checked={selectedMemberIds.has(getMemberId(member))}
+                      onChange={() => handleMemberToggle(getMemberId(member))}
                       color="primary"
                     />
                   </ListItemSecondaryAction>

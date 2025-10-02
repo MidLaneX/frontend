@@ -59,6 +59,12 @@ export interface OrganizationMember {
   joinedAt: string;
   avatar?: string;
   teams: string[]; // Team IDs the member belongs to
+  
+  // Backend compatibility - these should be mapped to the above properties
+  user_id?: string;
+  firstName?: string;
+  lastName?: string;
+  joined_at?: string;
 }
 
 export interface AddMemberRequest {
@@ -73,10 +79,21 @@ export interface Team {
   organizationId: string;
   leadId?: string;
   leadName?: string;
-  members: TeamMember[];
+  members?: TeamMember[]; // Made optional since backend might not always include members
   createdAt: string;
   updatedAt: string;
   projectCount?: number;
+  
+  // Backend compatibility - these should be mapped to the above properties
+  team_id?: string;
+  teamName?: string;
+  name?: string;
+  organization_id?: string;
+  lead_id?: string;
+  lead_name?: string;
+  created_at?: string;
+  updated_at?: string;
+  project_count?: number;
 }
 
 export interface TeamMember {
