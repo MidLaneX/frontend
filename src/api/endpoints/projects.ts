@@ -1,6 +1,6 @@
 import { apiClient, projectsApiClient } from '../client';
 import type { Project } from '../../types';
-import type { ProjectDTO, CreateProjectDTO } from '../../types/dto';
+import type { ProjectDTO, CreateProjectDTO, UserProjectDTO } from '../../types/dto';
 
 export const projectsApi = {
   // Get all projects for a user with query parameters
@@ -41,5 +41,19 @@ export const projectsApi = {
   // Delete project
   deleteProject: (id: string) => {
     return apiClient.delete(`/projects/${id}`);
+  },
+
+  // Assign team to project
+  assignTeamToProject: (projectId: number, templateType: string, teamId: number) => {
+    console.log('API: Assigning team to project:', { projectId, templateType, teamId });
+    return projectsApiClient.post<UserProjectDTO[]>(
+      `/projects/${projectId}/assignTeamToProject?templateType=${templateType}&teamId=${teamId}`
+    );
+  },
+
+  // Get assigned team of project
+  getAssignedTeam: (projectId: number, templateType: string) => {
+    console.log('API: Getting assigned team for project:', { projectId, templateType });
+    return projectsApiClient.get<number | null>(`/projects/${projectId}/assigned-team?templateType=${templateType}`);
   },
 };

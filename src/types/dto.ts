@@ -32,7 +32,7 @@ export interface UserProjectRequestDTO {
 }
 
 export interface UserProjectDTO {
-  id: number;
+  id?: number | null;
   projectId: number;
   userId: number;
   role: string; // ADMIN, MEMBER, etc.

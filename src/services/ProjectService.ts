@@ -1,5 +1,5 @@
 import type { Project } from '../types';
-import type { ProjectDTO, CreateProjectDTO } from '../types/dto';
+import type { ProjectDTO, CreateProjectDTO, UserProjectDTO } from '../types/dto';
 import { projectsApi } from '../api/endpoints/projects';
 
 /**
@@ -120,5 +120,68 @@ export class ProjectService {
       project.name.toLowerCase().includes(lowercaseQuery) ||
       (project.key && project.key.toLowerCase().includes(lowercaseQuery))
     );
+  }
+
+  /**
+   * Assign team to project
+   */
+  static async assignTeamToProject(
+    projectId: number, 
+    templateType: string, 
+    teamId: number
+  ): Promise<UserProjectDTO[]> {
+    try {
+      console.log('ProjectService: Assigning team to project:', { 
+        projectId, 
+        templateType, 
+        teamId: teamId,
+        teamIdType: typeof teamId 
+      });
+
+      // Ensure teamId is a number
+      const numericTeamId = Number(teamId);
+      if (isNaN(numericTeamId)) {
+        throw new Error(`Invalid team ID: ${teamId}. Must be a number.`);
+      }
+
+      const response = await projectsApi.assignTeamToProject(projectId, templateType, numericTeamId);
+      console.log('ProjectService: Team assignment successful!', {
+        assignedTeamId: numericTeamId,
+        projectId: projectId,
+        responseData: response.data
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Failed to assign team to project:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get assigned team of project
+   */
+  static async getAssignedTeam(
+    projectId: number, 
+    templateType: string
+  ): Promise<number | null> {
+    try {
+      console.log('ProjectService: Getting assigned team for project:', { 
+        projectId, 
+        templateType 
+      });
+
+      const response = await projectsApi.getAssignedTeam(projectId, templateType);
+      console.log('ProjectService: Got assigned team:', {
+        projectId: projectId,
+        assignedTeamId: response.data
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get assigned team for project:', error);
+      // Return null if no team is assigned or on error
+      return null;
+    }
   }
 }

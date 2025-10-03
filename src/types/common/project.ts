@@ -15,6 +15,8 @@ export interface Project {
   createdAt?: string | null;
   updatedAt?: string | null;
   createdBy?: string | number | null;
+  assignedTeamId?: number | null; // Add field for assigned team ID
+  assignedTeams?: Array<{ id: number; name: string; memberCount?: number }>; // Keep existing field for compatibility
 }
 
 export interface ProjectTimeline {
