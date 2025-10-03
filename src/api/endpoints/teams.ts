@@ -176,5 +176,38 @@ export const teamsApi = {
     
     const response = await teamsApiClient.patch(`/organizations/${orgId}/teams/${teamId}/members/${memberId}/demote?requesterId=${requesterId}`);
     return response.data;
+  },
+
+  // New API methods for team settings functionality
+  removeTeamMemberById: async (teamId: string, userId: string): Promise<void> => {
+    // Get the current user's ID as the requester
+    const requesterId = tokenManager.getUserId();
+    if (!requesterId) {
+      throw new Error('User not authenticated');
+    }
+    
+    await teamsApiClient.delete(`/users/teams/${teamId}/members/${userId}?requesterId=${requesterId}`);
+  },
+
+  updateTeamById: async (teamId: string, data: Partial<CreateTeamRequest>): Promise<Team> => {
+    // Get the current user's ID as the requester
+    const requesterId = tokenManager.getUserId();
+    if (!requesterId) {
+      throw new Error('User not authenticated');
+    }
+    
+    const response = await teamsApiClient.put(`/users/teams/${teamId}?requesterId=${requesterId}`, data);
+    return response.data;
+  },
+
+  updateTeamLead: async (teamId: string, userId: string): Promise<Team> => {
+    // Get the current user's ID as the requester
+    const requesterId = tokenManager.getUserId();
+    if (!requesterId) {
+      throw new Error('User not authenticated');
+    }
+    
+    const response = await teamsApiClient.patch(`/users/teams/${teamId}/lead/${userId}?requesterId=${requesterId}`);
+    return response.data;
   }
 };

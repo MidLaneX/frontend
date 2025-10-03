@@ -34,6 +34,7 @@ import {
   AdminPanelSettings as AdminIcon,
   Visibility as ViewIcon,
   SupervisorAccount as OwnerIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { tokenManager } from '../utils/tokenManager';
@@ -49,6 +50,7 @@ import CreateOrganizationModal from '../components/features/CreateOrganizationMo
 import AddMemberModal from '../components/features/AddMemberModal';
 import AddTeamMemberModal from '../components/features/AddTeamMemberModal';
 import CreateTeamModal from '../components/features/CreateTeamModal';
+import TeamSettingsDrawer from '../components/features/TeamSettingsDrawer';
 import type {
   OrganizationWithRole,
   OrganizationMember,
@@ -106,6 +108,7 @@ const OrganizationPage: React.FC = () => {
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [addTeamMemberModalOpen, setAddTeamMemberModalOpen] = useState(false);
   const [createTeamModalOpen, setCreateTeamModalOpen] = useState(false);
+  const [teamSettingsDrawerOpen, setTeamSettingsDrawerOpen] = useState(false);
 
   // Menu states
   const [memberMenuAnchor, setMemberMenuAnchor] = useState<null | HTMLElement>(null);
@@ -377,6 +380,61 @@ const OrganizationPage: React.FC = () => {
     } catch (err: any) {
       setError('Failed to delete team');
     }
+  };
+
+  // Team Settings Handlers
+  const handleOpenTeamSettings = (team: Team) => {
+    setSelectedTeam(team);
+    setTeamSettingsDrawerOpen(true);
+  };
+
+  const handleCloseTeamSettings = () => {
+    setTeamSettingsDrawerOpen(false);
+    setSelectedTeam(null);
+  };
+
+  const handleTeamSettingsAddMember = async (memberIds: string[]) => {
+    if (!selectedTeam) return;
+    
+    // Add members one by one and return the final team state
+    let updatedTeam: Team | null = null;
+    for (const userId of memberIds) {
+      updatedTeam = await teamsApi.addTeamMemberById(selectedTeam.id, userId);
+    }
+    if (updatedTeam) {
+      setTeams(prev => prev.map(t => t.id === selectedTeam.id ? updatedTeam : t));
+      setSelectedTeam(updatedTeam); // Update the selected team with new data
+    }
+  };
+
+  const handleTeamSettingsRemoveMember = async (userId: string) => {
+    if (!selectedTeam) return;
+    
+    await teamsApi.removeTeamMemberById(selectedTeam.id, userId);
+    // Reload organization data to get updated team information
+    await loadOrganizationData(selectedOrg!.id);
+    // Update selected team with fresh data
+    const updatedTeams = await teamsApi.getTeams(selectedOrg!.id);
+    const updatedTeam = updatedTeams.find(t => t.id === selectedTeam.id);
+    if (updatedTeam) {
+      setSelectedTeam(updatedTeam);
+    }
+  };
+
+  const handleTeamSettingsUpdateTeam = async (data: { team_name: string; description: string }) => {
+    if (!selectedTeam) return;
+    
+    const updatedTeam = await teamsApi.updateTeamById(selectedTeam.id, data);
+    setTeams(prev => prev.map(t => t.id === selectedTeam.id ? updatedTeam : t));
+    setSelectedTeam(updatedTeam);
+  };
+
+  const handleTeamSettingsUpdateLead = async (userId: string) => {
+    if (!selectedTeam) return;
+    
+    const updatedTeam = await teamsApi.updateTeamLead(selectedTeam.id, userId);
+    setTeams(prev => prev.map(t => t.id === selectedTeam.id ? updatedTeam : t));
+    setSelectedTeam(updatedTeam);
   };
 
 // getCurrentUserRole function removed - using direct permission checking instead
@@ -805,50 +863,9 @@ const OrganizationPage: React.FC = () => {
         )}
       </Box>
 
-      {/* Organization Details */}
+      {/* Organization Management Tabs */}
       {selectedOrg && (
         <Box>
-          {/* Organization Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                {selectedOrg.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {selectedOrg.description || 'No description'}
-              </Typography>
-              <Chip
-                label={`You are: ${getRoleDisplayName(selectedOrg.userRole || 'member')}`}
-                size="small"
-                variant="outlined"
-                icon={getRoleIcon(selectedOrg.userRole || 'member')}
-                sx={{
-                  bgcolor: selectedOrg.userRole === 'owner' ? '#E3F2FD' : '#FFF3E0',
-                  borderColor: selectedOrg.userRole === 'owner' ? '#2196F3' : '#FF9800',
-                }}
-              />
-            </Box>
-            <Button
-              variant="contained"
-              onClick={() => {
-                let userId = '';
-                try {
-                  const auth_tokens = localStorage.getItem('auth_tokens');
-                  if (auth_tokens) {
-                    const parsed = JSON.parse(auth_tokens);
-                    userId = parsed.userId || parsed.user_id || '';
-                  }
-                } catch (e) {
-                  userId = '';
-                }
-                window.location.href = `/organizationpage/${selectedOrg.id}?userId=${userId}`;
-              }}
-              sx={{ textTransform: 'none' }}
-            >
-              Go to Projects
-            </Button>
-          </Box>
-
           <Tabs
             value={detailTabValue}
             onChange={(_, newValue) => setDetailTabValue(newValue)}
@@ -987,7 +1004,16 @@ const OrganizationPage: React.FC = () => {
                             )}
                           </Box>
                         </Box>
-                        {canManageTeams && (
+                        {canManageTeams && selectedOrg?.userRole === 'owner' && (
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenTeamSettings(team)}
+                            title="Team Settings"
+                          >
+                            <SettingsIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                        {canManageTeams && selectedOrg?.userRole !== 'owner' && (
                           <IconButton
                             size="small"
                             onClick={(e) => {
@@ -1157,6 +1183,18 @@ const OrganizationPage: React.FC = () => {
               organizationId={selectedOrg.id}
             />
           )}
+
+          <TeamSettingsDrawer
+            open={teamSettingsDrawerOpen}
+            onClose={handleCloseTeamSettings}
+            team={selectedTeam}
+            members={members}
+            onAddMember={handleTeamSettingsAddMember}
+            onRemoveMember={handleTeamSettingsRemoveMember}
+            onUpdateTeam={handleTeamSettingsUpdateTeam}
+            onUpdateTeamLead={handleTeamSettingsUpdateLead}
+            canManageTeams={canManageTeams && selectedOrg?.userRole === 'owner'}
+          />
         </>
       )}
     </Box>
