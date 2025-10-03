@@ -176,7 +176,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         id: null,
         orgId: currentOrgId,
         name: projectData.name,
-        type: projectData.type || 'SOFTWARE',
+        type: projectData.type || 'Software', // Use consistent casing with frontend
         templateType: projectData.templateType || 'scrum',
         features: projectData.features || ['Login', 'Dashboard', 'Analytics'],
         createdAt: now,
@@ -184,8 +184,16 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         createdBy: projectData.createdBy || user?.email || 'Unknown User'
       };
       
-      console.log('Complete API payload:', createProjectPayload);
-      console.log('Template type:', createProjectPayload.templateType);
+      // Debug logging to ensure type is properly set
+      console.log('Project creation payload being sent to backend:', {
+        ...createProjectPayload,
+        typeVerification: `Type field: "${createProjectPayload.type}" (${typeof createProjectPayload.type})`
+      });
+      
+      // Validate that type is not empty
+      if (!createProjectPayload.type || createProjectPayload.type.trim() === '') {
+        throw new Error('Project type is required but is empty or undefined');
+      }
       
       const result = await ProjectService.createProject(createProjectPayload, createProjectPayload.templateType);
       console.log('Successfully created project:', result);
@@ -279,6 +287,21 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
     } catch (err) {
       console.error('Error refreshing projects:', err);
     }
+  };
+
+  // Handle project update
+  const handleProjectUpdated = (updatedProject: Project) => {
+    setProjects(prev => 
+      prev.map(project => 
+        project.id === updatedProject.id ? updatedProject : project
+      )
+    );
+  };
+
+  // Handle project deletion
+  const handleProjectDeleted = () => {
+    // Refresh the entire project list after deletion
+    refreshProjects();
   };
 
   // Calculate statistics
@@ -443,6 +466,8 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
                       isStarred={starredProjects.includes(String(project.id))}
                       onToggleStar={toggleStar}
                       onTeamAssigned={refreshProjects}
+                      onProjectUpdated={handleProjectUpdated}
+                      onProjectDeleted={handleProjectDeleted}
                     />
                   ))}
                 </Box>

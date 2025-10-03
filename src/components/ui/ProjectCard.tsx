@@ -27,15 +27,21 @@ import {
   Settings as SettingsIcon,
   Group as GroupIcon,
   PersonAdd as PersonAddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import AssignTeamModal from '../features/AssignTeamModal';
+import UpdateProjectModal from '../features/UpdateProjectModal';
+import DeleteProjectDialog from '../features/DeleteProjectDialog';
 
 interface ProjectCardProps {
   project: Project;
   isStarred: boolean;
   onToggleStar: (projectId: string, event: React.MouseEvent) => void;
   onTeamAssigned?: () => void; // Callback to refresh project data
+  onProjectUpdated?: (updatedProject: Project) => void; // Callback when project is updated
+  onProjectDeleted?: () => void; // Callback when project is deleted
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -43,9 +49,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   isStarred,
   onToggleStar,
   onTeamAssigned,
+  onProjectUpdated,
+  onProjectDeleted,
 }) => {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [assignTeamModalOpen, setAssignTeamModalOpen] = useState(false);
+  const [updateProjectModalOpen, setUpdateProjectModalOpen] = useState(false);
+  const [deleteProjectDialogOpen, setDeleteProjectDialogOpen] = useState(false);
   const getProjectProgress = (project: Project) => {
     if (!project.tasks || project.tasks.length === 0) return 0;
     const completed = project.tasks.filter(task => task.status === 'Done').length;
@@ -140,6 +150,26 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     onTeamAssigned?.(); // Refresh project data
   };
 
+  const handleUpdateProjectClick = () => {
+    setMenuAnchor(null);
+    setUpdateProjectModalOpen(true);
+  };
+
+  const handleUpdateProjectSuccess = (updatedProject: Project) => {
+    setUpdateProjectModalOpen(false);
+    onProjectUpdated?.(updatedProject);
+  };
+
+  const handleDeleteProjectClick = () => {
+    setMenuAnchor(null);
+    setDeleteProjectDialogOpen(true);
+  };
+
+  const handleDeleteProjectSuccess = () => {
+    setDeleteProjectDialogOpen(false);
+    onProjectDeleted?.();
+  };
+
   return (
     <Card
       sx={{
@@ -201,7 +231,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Chip
-                  label={project.type}
+                  label={project.type || 'Software'}
                   size="small"
                   sx={{
                     fontSize: '0.7rem',
@@ -429,6 +459,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           />
         </MenuItem>
         <Divider />
+        <MenuItem onClick={handleUpdateProjectClick} sx={{ py: 1.5 }}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" sx={{ color: '#0052CC' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Update Project"
+            secondary="Edit project name, type, and details"
+            secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+          />
+        </MenuItem>
+        <MenuItem onClick={handleDeleteProjectClick} sx={{ py: 1.5 }}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" sx={{ color: '#DE350B' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Delete Project"
+            secondary="Permanently remove this project"
+            secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+          />
+        </MenuItem>
+        <Divider />
         <MenuItem onClick={handleMenuClose} sx={{ py: 1.5 }}>
           <ListItemIcon>
             <SettingsIcon fontSize="small" sx={{ color: '#5E6C84' }} />
@@ -449,6 +500,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         projectName={project.name}
         templateType={project.templateType}
         onSuccess={handleTeamAssignmentSuccess}
+      />
+
+      {/* Update Project Modal */}
+      <UpdateProjectModal
+        open={updateProjectModalOpen}
+        onClose={() => setUpdateProjectModalOpen(false)}
+        project={project}
+        onSuccess={handleUpdateProjectSuccess}
+      />
+
+      {/* Delete Project Dialog */}
+      <DeleteProjectDialog
+        open={deleteProjectDialogOpen}
+        onClose={() => setDeleteProjectDialogOpen(false)}
+        project={project}
+        onSuccess={handleDeleteProjectSuccess}
       />
     </Card>
   );

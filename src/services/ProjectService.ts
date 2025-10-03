@@ -87,21 +87,74 @@ export class ProjectService {
   /**
    * Update an existing project
    */
-  static updateProject(id: string, updates: Partial<Project>): Project | null {
-    const projectIndex = this.projects.findIndex(p => p.id === id);
-    if (projectIndex === -1) return null;
-
-    this.projects[projectIndex] = { ...this.projects[projectIndex], ...updates };
-    return this.projects[projectIndex];
+  static async updateProject(
+    id: number, 
+    templateType: string, 
+    userId: number, 
+    updates: Partial<ProjectDTO>
+  ): Promise<Project> {
+    try {
+      console.log('ProjectService: Updating project:', { id, templateType, userId, updates });
+      
+      const response = await projectsApi.updateProject(id, templateType, userId, updates);
+      const dto = response.data;
+      
+      console.log('ProjectService: Project updated successfully:', dto);
+      
+      // Map DTO to frontend Project model
+      return {
+        id: dto.id,
+        name: dto.name,
+        templateType: dto.templateType,
+        features: dto.features || [],
+        key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
+        timeline: {
+          start: dto.createdAt || new Date().toISOString().split('T')[0],
+          end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        },
+        type: dto.type,
+        tasks: [],
+        orgId: dto.orgId,
+        createdAt: dto.createdAt,
+        updatedAt: dto.updatedAt,
+        createdBy: dto.createdBy
+      };
+    } catch (error: any) {
+      console.error('Failed to update project:', error);
+      
+      // Check if it's an admin permission error
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        throw new Error('Only administrators can update projects. Please contact your admin.');
+      }
+      
+      throw new Error(error.response?.data?.message || 'Failed to update project');
+    }
   }
 
   /**
    * Delete a project
    */
-  static deleteProject(id: string): boolean {
-    const initialLength = this.projects.length;
-    this.projects = this.projects.filter(p => p.id !== id);
-    return this.projects.length < initialLength;
+  static async deleteProject(
+    id: number, 
+    templateType: string, 
+    userId: number
+  ): Promise<void> {
+    try {
+      console.log('ProjectService: Deleting project:', { id, templateType, userId });
+      
+      await projectsApi.deleteProject(id, templateType, userId);
+      
+      console.log('ProjectService: Project deleted successfully');
+    } catch (error: any) {
+      console.error('Failed to delete project:', error);
+      
+      // Check if it's an admin permission error
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        throw new Error('Only administrators can delete projects. Please contact your admin.');
+      }
+      
+      throw new Error(error.response?.data?.message || 'Failed to delete project');
+    }
   }
 
   /**

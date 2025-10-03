@@ -1,4 +1,4 @@
-import { apiClient, projectsApiClient } from '../client';
+import { projectsApiClient } from '../client';
 import type { Project } from '../../types';
 import type { ProjectDTO, CreateProjectDTO, UserProjectDTO } from '../../types/dto';
 
@@ -33,14 +33,16 @@ export const projectsApi = {
     return projectsApiClient.post<ProjectDTO>(`/projects?template=${template}`, data);
   },
 
-  //  Update project
-  updateProject: (id: string, data: Partial<ProjectDTO>) => {
-    return projectsApiClient.put<Project>(`/projects/${id}`, data);
+  //  Update project with template and userId parameters
+  updateProject: (id: number, templateType: string, userId: number, data: Partial<ProjectDTO>) => {
+    console.log('API: Updating project:', { id, templateType, userId, data });
+    return projectsApiClient.put<ProjectDTO>(`/projects/${id}/${templateType}?userId=${userId}`, data);
   },
 
-  // Delete project
-  deleteProject: (id: string) => {
-    return apiClient.delete(`/projects/${id}`);
+  // Delete project with admin permission check
+  deleteProject: (id: number, templateType: string, userId: number) => {
+    console.log('API: Deleting project:', { id, templateType, userId });
+    return projectsApiClient.delete(`/projects/${id}/${templateType}?userId=${userId}`);
   },
 
   // Assign team to project

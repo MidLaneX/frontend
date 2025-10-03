@@ -51,6 +51,12 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ open, onClose, 
       teamMembers: formData.teamMembers.map(name => ({ name, role: 'Team Member' }))
     };
 
+    // Debug logging to verify type is captured
+    console.log('CreateProjectModal - Project data being sent:', {
+      ...project,
+      typeDebug: `Type: "${project.type}" (${typeof project.type})`
+    });
+
     onCreateProject(project);
     handleClose();
   };
