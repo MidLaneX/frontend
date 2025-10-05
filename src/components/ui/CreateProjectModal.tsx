@@ -11,10 +11,6 @@ import {
   CardActionArea,
   CardContent,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Stepper,
   Step,
   StepLabel,
@@ -238,18 +234,17 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               multiline
               rows={3}
             />
-            <FormControl fullWidth>
-              <InputLabel>Team</InputLabel>
-              <Select
-                value={projectData.teamId}
-                label="Team"
-                onChange={(e) => setProjectData(prev => ({ ...prev, teamId: e.target.value }))}
-              >
-                {[1, 2, 3, 4, 5].map(id => (
-                  <MenuItem key={id} value={id}>Team {id}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              label="Team ID (Optional)"
+              type="number"
+              value={projectData.teamId}
+              onChange={(e) => setProjectData(prev => ({ ...prev, teamId: e.target.value }))}
+              fullWidth
+              helperText="Enter the ID of the team to assign to this project (leave empty to assign later)"
+              InputProps={{
+                inputProps: { min: 1 }
+              }}
+            />
             <TextField
               label="Created By"
               value={projectData.createdBy}

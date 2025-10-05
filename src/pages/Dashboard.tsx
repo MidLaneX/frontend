@@ -113,7 +113,27 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         console.log('Fetching projects for user:', userId, 'orgId:', currentOrgId);
         const data = await ProjectService.getAllProjects(userId, currentOrgId, 'scrum');
         console.log('Fetched projects:', data);
-        setProjects(data || []);
+        
+        // Fetch assigned team information for each project
+        const projectsWithTeams = await Promise.all(
+          (data || []).map(async (project) => {
+            try {
+              const assignedTeamId = await ProjectService.getAssignedTeam(
+                Number(project.id), 
+                project.templateType
+              );
+              return {
+                ...project,
+                assignedTeamId
+              };
+            } catch (error) {
+              console.warn(`Failed to fetch assigned team for project ${project.id}:`, error);
+              return project;
+            }
+          })
+        );
+        
+        setProjects(projectsWithTeams);
         
         // Set orgId if it wasn't set before
         if (!orgId && currentOrgId) {
@@ -167,7 +187,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         id: null,
         orgId: currentOrgId,
         name: projectData.name,
-        type: projectData.type || 'SOFTWARE',
+        type: projectData.type || 'Software', // Use consistent casing with frontend
         templateType: projectData.templateType || 'scrum',
         features: projectData.features || ['Login', 'Dashboard', 'Analytics'],
         createdAt: now,
@@ -175,11 +195,49 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         createdBy: projectData.createdBy || user?.email || 'Unknown User'
       };
       
-      console.log('Complete API payload:', createProjectPayload);
-      console.log('Template type:', createProjectPayload.templateType);
+      // Debug logging to ensure type is properly set
+      console.log('Project creation payload being sent to backend:', {
+        ...createProjectPayload,
+        typeVerification: `Type field: "${createProjectPayload.type}" (${typeof createProjectPayload.type})`
+      });
+      
+      // Validate that type is not empty
+      if (!createProjectPayload.type || createProjectPayload.type.trim() === '') {
+        throw new Error('Project type is required but is empty or undefined');
+      }
       
       const result = await ProjectService.createProject(createProjectPayload, createProjectPayload.templateType);
       console.log('Successfully created project:', result);
+      
+      // If a team was selected during project creation, assign it to the project
+      if (projectData.teamId && projectData.teamId !== '') {
+        try {
+          const teamIdNumber = parseInt(projectData.teamId);
+          const projectIdNumber = Number(result.id);
+          
+          console.log('Assigning team to newly created project:', {
+            projectId: projectIdNumber,
+            projectIdType: typeof projectIdNumber,
+            templateType: result.templateType,
+            teamId: teamIdNumber,
+            teamIdType: typeof teamIdNumber,
+            originalTeamId: projectData.teamId
+          });
+          
+          const assignments = await ProjectService.assignTeamToProject(
+            projectIdNumber,
+            result.templateType,
+            teamIdNumber
+          );
+          console.log('Team assigned successfully:', assignments);
+          
+          // Show success message for team assignment
+          console.log(`Team ${projectData.teamId} assigned to project "${result.name}" with ${assignments.length} members`);
+        } catch (teamAssignError) {
+          console.warn('Failed to assign team to project, but project was created:', teamAssignError);
+          // Don't throw error here, project was created successfully
+        }
+      }
       
       setProjects(prev => [...prev, result]);
       setIsCreateModalOpen(false);
@@ -207,6 +265,54 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         ? prev.filter(id => id !== projectId)
         : [...prev, projectId]
     );
+  };
+
+  // Refresh projects data (for when teams are assigned)
+  const refreshProjects = async () => {
+    if (!isAuthenticated || !userId) return;
+    
+    const currentOrgId = orgId || orgIdProp || getOrgId();
+    try {
+      const data = await ProjectService.getAllProjects(userId, currentOrgId, 'scrum');
+      
+      // Fetch assigned team information for each project
+      const projectsWithTeams = await Promise.all(
+        (data || []).map(async (project) => {
+          try {
+            const assignedTeamId = await ProjectService.getAssignedTeam(
+              Number(project.id), 
+              project.templateType
+            );
+            return {
+              ...project,
+              assignedTeamId
+            };
+          } catch (error) {
+            console.warn(`Failed to fetch assigned team for project ${project.id}:`, error);
+            return project;
+          }
+        })
+      );
+      
+      setProjects(projectsWithTeams);
+    } catch (err) {
+      console.error('Error refreshing projects:', err);
+    }
+  };
+
+  // Handle project update
+  const handleProjectUpdated = (updatedProject: Project) => {
+    setProjects(prev => 
+      prev.map(project => 
+        project.id === updatedProject.id ? updatedProject : project
+      )
+    );
+  };
+
+  // Handle project deletion
+  const handleProjectDeleted = () => {
+    // Refresh the entire project list after deletion
+    refreshProjects();
   };
 
   // Calculate statistics
@@ -370,6 +476,9 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
                       }}
                       isStarred={starredProjects.includes(String(project.id))}
                       onToggleStar={toggleStar}
+                      onTeamAssigned={refreshProjects}
+                      onProjectUpdated={handleProjectUpdated}
+                      onProjectDeleted={handleProjectDeleted}
                     />
                   ))}
                 </Box>
