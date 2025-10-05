@@ -84,16 +84,29 @@ export interface Team {
   updatedAt: string;
   projectCount?: number;
   
+  // Additional properties from backend
+  memberCount?: number; // From OrganizationTeamResponse
+  teamType?: string; // Team type (DEVELOPMENT, DESIGN, etc.)
+  maxMembers?: number; // Maximum members allowed
+  status?: string; // Team status (ACTIVE, INACTIVE, etc.)
+  hasAvailableSlots?: boolean; // Whether team has available slots
+  
   // Backend compatibility - these should be mapped to the above properties
   team_id?: string;
-  teamName?: string;
+  teamId?: string; // From OrganizationTeamResponse
+  teamName?: string; // From OrganizationTeamResponse
   name?: string;
   organization_id?: string;
   lead_id?: string;
   lead_name?: string;
+  teamLeadId?: string; // From TeamResponse
+  teamLeadName?: string; // From TeamResponse
   created_at?: string;
   updated_at?: string;
   project_count?: number;
+  member_count?: number; // From OrganizationTeamResponse
+  team_type?: string; // From OrganizationTeamResponse
+  currentMemberCount?: number; // From TeamResponse
 }
 
 export interface TeamMember {
@@ -106,6 +119,24 @@ export interface TeamMember {
   role: TeamRole;
   joinedAt: string;
   avatar?: string;
+}
+
+// Raw backend response format
+export interface TeamMemberDetailRaw {
+  member_id: number;
+  name: string;
+  email: string;
+  role: string;
+  team_lead: boolean;
+}
+
+// Transformed frontend format  
+export interface TeamMemberDetail {
+  memberId: number;
+  name: string;
+  email: string;
+  role: string;
+  isTeamLead: boolean;
 }
 
 export interface CreateTeamRequest {

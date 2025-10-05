@@ -3,29 +3,62 @@ import { tokenManager } from '../../utils/tokenManager';
 import type {
   Team,
   CreateTeamRequest,
-  UpdateTeamMemberRequest
+  UpdateTeamMemberRequest,
+  TeamMemberDetail,
+  TeamMemberDetailRaw
 } from '../../types/api/organizations';
 
 // Helper function to transform team data from backend to frontend interface
 const transformTeam = (team: any): Team => {
   return {
     ...team,
-    id: team.id || team.team_id || '',
-    team_name: team.team_name || team.teamName || team.name || '',
+    // Handle both TeamResponse (id) and OrganizationTeamResponse (teamId)
+    id: team.id || team.teamId || team.team_id || '',
+    // Handle both formats: teamName from OrganizationTeamResponse, name from TeamResponse
+    team_name: team.teamName || team.team_name || team.name || '',
     description: team.description || '',
-    organizationId: team.organization_id || team.organizationId || '',
-    leadId: team.lead_id || team.leadId || '',
-    leadName: team.lead_name || team.leadName || '',
+    // Map organizationId properly
+    organizationId: team.organizationId || team.organization_id || '',
+    // Map team lead information
+    leadId: team.teamLeadId || team.lead_id || team.leadId || '',
+    leadName: team.teamLeadName || team.lead_name || team.leadName || '',
+    // Map timestamps
     createdAt: team.created_at || team.createdAt || '',
     updatedAt: team.updated_at || team.updatedAt || '',
+    // Handle members array or member count
     members: team.members || [],
+    // Map project count
     projectCount: team.project_count || team.projectCount || 0,
+    // Handle member count from OrganizationTeamResponse
+    memberCount: team.memberCount || team.member_count || team.currentMemberCount || (team.members ? team.members.length : 0),
+    // Handle team type
+    teamType: team.teamType || team.team_type || team.type || '',
+    // Handle other properties that might be present
+    maxMembers: team.maxMembers || team.max_members || 0,
+    status: team.status || 'ACTIVE',
+    hasAvailableSlots: team.hasAvailableSlots || false,
   };
 };
 
 // Helper function to transform array of teams
 const transformTeams = (teams: any[]): Team[] => {
   return teams.map(transformTeam);
+};
+
+// Helper function to transform team member data from backend to frontend interface
+const transformTeamMember = (rawMember: TeamMemberDetailRaw): TeamMemberDetail => {
+  return {
+    memberId: rawMember.member_id,
+    name: rawMember.name,
+    email: rawMember.email,
+    role: rawMember.role,
+    isTeamLead: rawMember.team_lead,
+  };
+};
+
+// Helper function to transform array of team members
+const transformTeamMembers = (rawMembers: TeamMemberDetailRaw[]): TeamMemberDetail[] => {
+  return rawMembers.map(transformTeamMember);
 };
 
 // Create a dedicated API client for teams service
@@ -207,7 +240,20 @@ export const teamsApi = {
       throw new Error('User not authenticated');
     }
     
-    const response = await teamsApiClient.patch(`/users/teams/${teamId}/lead/${userId}?requesterId=${requesterId}`);
+    const response = await teamsApiClient.put(`/users/teams/${teamId}/lead/${userId}?requesterId=${requesterId}`);
+    return response.data;
+  },
+
+  // Get detailed team members
+  getTeamMembers: async (teamId: string): Promise<TeamMemberDetail[]> => {
+    const response = await teamsApiClient.get(`/users/teams/${teamId}/members`);
+    // Transform the raw backend response to frontend format
+    return transformTeamMembers(response.data);
+  },
+
+  // Get teams that a user belongs to in a specific organization
+  getUserTeamsInOrganization: async (organizationId: string, userId: string): Promise<Team[]> => {
+    const response = await teamsApiClient.get(`/users/teams/organization/${organizationId}/user/${userId}`);
     return response.data;
   }
 };
