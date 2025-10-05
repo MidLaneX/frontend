@@ -35,7 +35,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   loading = false,
 }) => {
   const [formData, setFormData] = useState<AddMemberRequest>({
-    userId: 0,
+    userEmail: '',
     role: 'member',
   });
   const [error, setError] = useState<string>('');
@@ -44,8 +44,8 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     e.preventDefault();
     setError('');
 
-    if (!formData.userId || formData.userId <= 0) {
-      setError('Valid User ID is required');
+    if (!formData.userEmail || !formData.userEmail.includes('@')) {
+      setError('Valid email address is required');
       return;
     }
 
@@ -59,7 +59,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
   const handleClose = () => {
     setFormData({
-      userId: 0,
+      userEmail: '',
       role: 'member',
     });
     setError('');
@@ -116,19 +116,19 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
           )}
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* User ID Input */}
+            {/* User Email Input */}
             <TextField
               fullWidth
-              label="User ID"
-              type="number"
-              value={formData.userId || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, userId: parseInt(e.target.value) || 0 }))}
+              label="User Email"
+              type="email"
+              value={formData.userEmail || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, userEmail: e.target.value }))}
               required
-              placeholder="Enter user ID"
+              placeholder="Enter user email address"
               InputProps={{
                 startAdornment: <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />,
               }}
-              helperText="Enter the ID of the user to add to this organization"
+              helperText="Enter the email address of the user to add to this organization"
             />
 
             {/* Role Selection */}

@@ -10,11 +10,27 @@ export interface Organization {
   location?: string;
   ownerId: string;
   ownerName: string;
+  ownerEmail: string;
   createdAt: string;
   updatedAt: string;
   member_count: number;
   team_count: number;
   settings?: OrganizationSettings;
+  // Role-based properties
+  userRole?: OrganizationRole; // Current user's role in this organization
+  isOwner?: boolean; // Quick check if current user is the owner
+  
+  // Backend compatibility - these should be mapped to the above properties
+  owner_id?: string;
+  owner_name?: string;
+  owner_email?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OrganizationWithRole extends Organization {
+  userRole: OrganizationRole;
+  isOwner: boolean;
 }
 
 export interface OrganizationSettings {
@@ -43,10 +59,16 @@ export interface OrganizationMember {
   joinedAt: string;
   avatar?: string;
   teams: string[]; // Team IDs the member belongs to
+  
+  // Backend compatibility - these should be mapped to the above properties
+  user_id?: string;
+  firstName?: string;
+  lastName?: string;
+  joined_at?: string;
 }
 
 export interface AddMemberRequest {
-  userId: number;
+  userEmail: string;
   role?: MemberRole;
 }
 
@@ -57,10 +79,21 @@ export interface Team {
   organizationId: string;
   leadId?: string;
   leadName?: string;
-  members: TeamMember[];
+  members?: TeamMember[]; // Made optional since backend might not always include members
   createdAt: string;
   updatedAt: string;
   projectCount?: number;
+  
+  // Backend compatibility - these should be mapped to the above properties
+  team_id?: string;
+  teamName?: string;
+  name?: string;
+  organization_id?: string;
+  lead_id?: string;
+  lead_name?: string;
+  created_at?: string;
+  updated_at?: string;
+  project_count?: number;
 }
 
 export interface TeamMember {
@@ -90,6 +123,9 @@ export interface UpdateTeamMemberRequest {
 
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
 
+// Organization role represents current user's role in the organization
+export type OrganizationRole = 'owner' | 'member';
+
 export type TeamRole = 'lead' | 'member';
 
 export type TeamType = 'development' | 'design' | 'marketing' | 'sales' | 'support' | 'operations' | 'management' | 'other';
@@ -118,4 +154,23 @@ export interface TeamCardProps {
   onMemberRemove: (teamId: string, memberId: string) => void;
   onPromoteToLead: (teamId: string, memberId: string) => void;
   onDemoteFromLead: (teamId: string, memberId: string) => void;
+}
+
+// Response types for different organization API endpoints
+export interface OrganizationListResponse {
+  ownedOrganizations: Organization[];
+  memberOrganizations: Organization[];
+  allOrganizations: OrganizationWithRole[];
+}
+
+// Permission helper interface
+export interface OrganizationPermissions {
+  canEdit: boolean;
+  canDelete: boolean;
+  canAddMembers: boolean;
+  canRemoveMembers: boolean;
+  canCreateTeams: boolean;
+  canManageTeams: boolean;
+  canViewMembers: boolean;
+  canViewTeams: boolean;
 }

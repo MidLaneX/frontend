@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { ProjectService } from '../services/ProjectService'
 import type { Project } from "../types"
+import type { CreateProjectDTO } from "../types/dto"
 import {
   ProjectStats,
   ProjectControls,
@@ -39,14 +40,52 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
   const [sortBy, setSortBy] = useState<'name' | 'progress' | 'date'>('name');
   const itemsPerPage = 6;
 
-  // Use props if provided, otherwise fallback
-  const userId = userIdProp || user?.userId || parseInt(localStorage.getItem('userId') || '5');
-  const [orgId, setOrgId] = useState(orgIdProp);
+  // Use props if provided, otherwise fallback to localStorage or user context
+  const getUserId = () => {
+    if (userIdProp) return userIdProp;
+    if (user?.userId) return user.userId;
+    
+    // Try to get from localStorage auth_tokens
+    try {
+      const authTokens = localStorage.getItem('auth_tokens');
+      if (authTokens) {
+        const parsed = JSON.parse(authTokens);
+        const id = parsed.userId || parsed.user_id;
+        if (id) return typeof id === 'number' ? id : parseInt(id);
+      }
+    } catch (e) {
+      console.warn('Failed to parse auth_tokens from localStorage:', e);
+    }
+    
+    // Final fallback
+    return parseInt(localStorage.getItem('userId') || '5');
+  };
+
+  const getOrgId = () => {
+    if (orgIdProp) return orgIdProp;
+    
+    // Try to get from localStorage
+    try {
+      const storedOrgId = localStorage.getItem('orgId');
+      if (storedOrgId) return parseInt(storedOrgId);
+    } catch (e) {
+      console.warn('Failed to parse orgId from localStorage:', e);
+    }
+    
+    // Default fallback
+    return 1;
+  };
+
+  const userId = getUserId();
+  const [orgId, setOrgId] = useState(orgIdProp || getOrgId());
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']);
+  
+  // User profile state
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Don't render if not authenticated
   if (!isAuthenticated) {
@@ -61,6 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
   useEffect(() => {
     const fetchProjects = async () => {
       if (!isAuthenticated || !userId) {
+        console.log('Skipping project fetch - user not authenticated or no userId');
         return;
       }
       
@@ -81,7 +121,14 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         }
       } catch (err) {
         console.error('Error fetching projects:', err);
-        setError('Failed to load projects. Please try again.');
+        console.error('Error details:', {
+          message: err instanceof Error ? err.message : 'Unknown error',
+          response: (err as any)?.response?.data,
+          status: (err as any)?.response?.status,
+          url: (err as any)?.config?.url
+        });
+        setError('Failed to load projects from API. Please check if the backend is running.');
+        setProjects([]); // Ensure projects is empty array, not undefined
       } finally {
         setLoading(false);
       }
@@ -93,22 +140,60 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
   const handleCreateProject = async (projectData: any) => {
     setLoading(true);
     setError(null);
+    
     try {
-      const projectToCreate = {
-        ...projectData,
-        orgId: orgId || orgIdProp,
-        userId: userId,
-        role: 'ADMIN',
+      // Ensure we have valid orgId and userId
+      const currentOrgId = orgId || orgIdProp || getOrgId();
+      const currentUserId = userId;
+      
+      console.log('Dashboard - Creating project with:', {
+        userId: currentUserId,
+        orgId: currentOrgId,
+        projectData
+      });
+      
+      if (!currentOrgId || !currentUserId) {
+        throw new Error('Organization ID or User ID is missing. Please ensure you are properly logged in.');
+      }
+      
+      // Store current context in localStorage for backend to access
+      localStorage.setItem('currentUserId', String(currentUserId));
+      localStorage.setItem('currentOrgId', String(currentOrgId));
+      
+      const now = new Date().toISOString();
+      
+      // Create the complete payload as expected by backend
+      const createProjectPayload: CreateProjectDTO = {
+        id: null,
+        orgId: currentOrgId,
+        name: projectData.name,
+        type: projectData.type || 'SOFTWARE',
+        templateType: projectData.templateType || 'scrum',
+        features: projectData.features || ['Login', 'Dashboard', 'Analytics'],
+        createdAt: now,
+        updatedAt: now,
         createdBy: projectData.createdBy || user?.email || 'Unknown User'
       };
-      console.log('Creating project:', projectToCreate);
-      const result = await ProjectService.createProject(projectToCreate, projectToCreate.templateType);
-      console.log('Created project:', result);
+      
+      console.log('Complete API payload:', createProjectPayload);
+      console.log('Template type:', createProjectPayload.templateType);
+      
+      const result = await ProjectService.createProject(createProjectPayload, createProjectPayload.templateType);
+      console.log('Successfully created project:', result);
+      
       setProjects(prev => [...prev, result]);
       setIsCreateModalOpen(false);
-    } catch (err) {
+      
+      // Update orgId state if it wasn't set before
+      if (!orgId && currentOrgId) {
+        setOrgId(currentOrgId);
+        localStorage.setItem('orgId', String(currentOrgId));
+      }
+      
+    } catch (err: any) {
       console.error('Error creating project:', err);
-      setError('Failed to create project. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create project. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -138,7 +223,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
   const filteredProjects = React.useMemo(() => {
     let filtered = projects.filter(project => {
       const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           (project.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+                           (project.key || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = filterType === 'all' || (project.type || '').toLowerCase() === filterType.toLowerCase();
       return matchesSearch && matchesType;
     });

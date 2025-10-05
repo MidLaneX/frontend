@@ -71,7 +71,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
   const navigate = useNavigate();
   const features = project.features || [];
 
-  console.log('🔍 DynamicProjectNavigation Debug:', {
+  console.log(' DynamicProjectNavigation Debug:', {
     project,
     features,
     projectFeaturesLength: project.features?.length,
@@ -96,7 +96,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
   useEffect(() => {
     if (normalizedFeatures.length === 0) return;
 
-    console.log('🔄 useEffect triggered:', {
+    console.log('useEffect triggered:', {
       paramFeatureName,
       normalizedFeatures: normalizedFeatures.map(f => f.path),
       currentActiveTab: activeTab
@@ -105,19 +105,19 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
     // If we have a feature in URL and it's valid, use it
     if (paramFeatureName && normalizedFeatures.some(f => f.path === paramFeatureName)) {
       if (activeTab !== paramFeatureName) {
-        console.log('✅ Setting activeTab to valid URL param:', paramFeatureName);
+        console.log(' Setting activeTab to valid URL param:', paramFeatureName);
         setActiveTab(paramFeatureName);
       }
     } else {
       // If no valid feature in URL, use first feature and navigate to it
       const firstFeaturePath = normalizedFeatures[0].path;
       if (activeTab !== firstFeaturePath) {
-        console.log('🔄 Setting activeTab to first feature:', firstFeaturePath);
+        console.log(' Setting activeTab to first feature:', firstFeaturePath);
         setActiveTab(firstFeaturePath);
         
         // Only navigate if we don't already have a feature in the URL
         if (projectId && templateType && !paramFeatureName) {
-          console.log('🚀 Navigating to first feature:', firstFeaturePath);
+          console.log(' Navigating to first feature:', firstFeaturePath);
           navigate(`/projects/${projectId}/${templateType}/${firstFeaturePath}`, { replace: true });
         }
       }
@@ -126,7 +126,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
 
   const handleTabChange = useCallback(
     (_: React.SyntheticEvent, newValue: string) => {
-      console.log('🖱️ Tab clicked:', {
+      console.log(' Tab clicked:', {
         newValue,
         currentActiveTab: activeTab,
         projectId,
@@ -136,7 +136,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
       setActiveTab(newValue);
       if (projectId && templateType) {
         const newPath = `/projects/${projectId}/${templateType}/${newValue}`;
-        console.log('🚀 Navigating to:', newPath);
+        console.log(' Navigating to:', newPath);
         navigate(newPath);
       }
     },
@@ -147,7 +147,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
     const activeFeature = normalizedFeatures.find(f => f.path === activeTab);
     if (!activeFeature) return <FeaturePlaceholder featureName={activeTab} />;
 
-    console.log('🚀 Loading feature:', {
+    console.log(' Loading feature:', {
       activeFeature,
       importPath: `../${activeFeature.path}/index.tsx`,
       projectId: typeof project.id === 'string' ? parseInt(project.id) : project.id,
@@ -160,7 +160,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({ pro
     // To:   src/components/features/backlog/index, src/components/features/sprint/index, etc.
     const FeatureComponent = lazy(() =>
       import(`../${activeFeature.path}/index.tsx`).catch((error) => {
-        console.error(`❌ Failed to load component for ${activeFeature.path}:`, error);
+        console.error(` Failed to load component for ${activeFeature.path}:`, error);
         return {
           default: () => <FeaturePlaceholder featureName={activeFeature.path} />,
         };
