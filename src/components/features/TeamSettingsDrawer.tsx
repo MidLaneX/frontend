@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Drawer,
   Box,
@@ -23,6 +23,7 @@ import {
   Alert,
   Chip,
   Avatar,
+  CircularProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -33,7 +34,8 @@ import {
   Settings as SettingsIcon,
   Group as GroupIcon,
 } from '@mui/icons-material';
-import type { Team, OrganizationMember } from '../../types/api/organizations';
+import type { Team, OrganizationMember, TeamMemberDetail } from '../../types/api/organizations';
+import { teamsApi } from '../../api/endpoints/teams';
 
 interface TeamSettingsDrawerProps {
   open: boolean;
@@ -76,6 +78,8 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [teamMembers, setTeamMembers] = useState<TeamMemberDetail[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   // Dialog states
   const [editTeamDialog, setEditTeamDialog] = useState<EditTeamDialogState>({
@@ -96,11 +100,34 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
 
   // Get available members to add (not already in team)
   const availableMembers = members.filter(member => 
-    !team?.members?.some(teamMember => teamMember.id === member.id)
+    !teamMembers.some(teamMember => teamMember?.memberId?.toString() === member.id)
   );
 
-  // Get team members for lead selection
-  const teamMembers = team?.members || [];
+  // Function to fetch team members
+  const fetchTeamMembers = async () => {
+    if (!team?.id) {
+      setTeamMembers([]);
+      return;
+    }
+    
+    try {
+      setLoadingMembers(true);
+      const members = await teamsApi.getTeamMembers(team.id);
+      console.log('Fetched team members:', members);
+      setTeamMembers(members);
+    } catch (err: any) {
+      console.error('Failed to fetch team members:', err);
+      setError(err.message || 'Failed to load team members');
+      setTeamMembers([]);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
+  // Fetch team members when team changes
+  useEffect(() => {
+    fetchTeamMembers();
+  }, [team?.id]);
 
   const handleEditTeam = () => {
     if (!team) return;
@@ -146,6 +173,9 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
       
       await onAddMember(addMemberDialog.selectedMemberIds);
       
+      // Refresh team members after adding
+      await fetchTeamMembers();
+      
       setAddMemberDialog({ ...addMemberDialog, open: false });
     } catch (err: any) {
       setError(err.message || 'Failed to add member');
@@ -155,9 +185,10 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
   };
 
   const handleUpdateLead = () => {
+    const currentLead = teamMembers.find(m => m?.isTeamLead);
     setUpdateLeadDialog({
       open: true,
-      selectedUserId: team?.leadId || '',
+      selectedUserId: currentLead?.memberId?.toString() || '',
     });
   };
 
@@ -167,6 +198,9 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
       setError('');
       
       await onUpdateTeamLead(updateLeadDialog.selectedUserId);
+      
+      // Refresh team members after updating lead
+      await fetchTeamMembers();
       
       setUpdateLeadDialog({ ...updateLeadDialog, open: false });
     } catch (err: any) {
@@ -183,6 +217,9 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
         setError('');
         
         await onRemoveMember(userId);
+        
+        // Refresh team members after removing
+        await fetchTeamMembers();
       } catch (err: any) {
         setError(err.message || 'Failed to remove member');
       } finally {
@@ -248,13 +285,13 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Chip
                     size="small"
-                    label={`${team.members?.length || 0} members`}
+                    label={`${teamMembers.length} members`}
                     variant="outlined"
                   />
-                  {team.leadName && (
+                  {teamMembers.find(m => m?.isTeamLead) && (
                     <Chip
                       size="small"
-                      label={`Lead: ${team.leadName}`}
+                      label={`Lead: ${teamMembers.find(m => m?.isTeamLead)?.name || 'Unknown'}`}
                       color="primary"
                       variant="outlined"
                     />
@@ -322,15 +359,19 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
                   Team Members
                 </Typography>
                 
-                {teamMembers.length === 0 ? (
+                {loadingMembers ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : teamMembers.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">
                     No members in this team
                   </Typography>
                 ) : (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {teamMembers.map((member) => (
+                    {teamMembers.filter(member => member && member.memberId && member.name).map((member) => (
                       <Box
-                        key={member.id}
+                        key={member.memberId}
                         sx={{
                           display: 'flex',
                           alignItems: 'center',
@@ -343,18 +384,21 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
-                            {member.firstName?.[0] || 'U'}{member.lastName?.[0] || 'N'}
+                            {member.name?.split(' ').map(n => n?.[0]).join('').toUpperCase() || 'U'}
                           </Avatar>
                           <Box>
                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {member.firstName || 'Unknown'} {member.lastName || 'Name'}
+                              {member.name || 'Unknown'}
                             </Typography>
-                            {team?.leadId === member.id && (
+                            <Typography variant="caption" color="text.secondary">
+                              {member.email || 'No email'}
+                            </Typography>
+                            {member.isTeamLead && (
                               <Chip
                                 size="small"
                                 label="Team Lead"
                                 color="primary"
-                                sx={{ height: 16, fontSize: '0.7rem' }}
+                                sx={{ height: 16, fontSize: '0.7rem', ml: 1 }}
                               />
                             )}
                           </Box>
@@ -362,7 +406,7 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
                         
                         <IconButton
                           size="small"
-                          onClick={() => handleRemoveMember(member.id)}
+                          onClick={() => handleRemoveMember(member.memberId?.toString() || '')}
                           disabled={loading}
                           sx={{ color: 'error.main' }}
                         >
@@ -511,17 +555,20 @@ const TeamSettingsDrawer: React.FC<TeamSettingsDrawerProps> = ({
               })}
               label="Select New Team Lead"
             >
-              {teamMembers.map((member) => (
-                <MenuItem key={member.id} value={member.id}>
+              {teamMembers.filter(member => member && member.memberId && member.name).map((member) => (
+                <MenuItem key={member.memberId} value={member.memberId.toString()}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
-                      {member.firstName?.[0] || 'U'}{member.lastName?.[0] || 'N'}
+                      {member.name?.split(' ').map(n => n?.[0]).join('').toUpperCase() || 'U'}
                     </Avatar>
                     <Box>
                       <Typography variant="body2">
-                        {member.firstName || 'Unknown'} {member.lastName || 'Name'}
+                        {member.name || 'Unknown'}
                       </Typography>
-                      {team?.leadId === member.id && (
+                      <Typography variant="caption" color="text.secondary">
+                        {member.email || 'No email'}
+                      </Typography>
+                      {member.isTeamLead && (
                         <Typography variant="caption" color="primary">
                           Current Lead
                         </Typography>
