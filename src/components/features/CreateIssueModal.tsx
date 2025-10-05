@@ -231,13 +231,25 @@ const CreateIssueModal: React.FC<CreateIssueModalProps> = ({ open, onClose, onCr
                   value={formData.assignee}
                   label="Assignee"
                   onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
+                  disabled={!project.teamMembers || project.teamMembers.length === 0}
                 >
-                  {project.teamMembers.map((member) => (
-                    <MenuItem key={member.name} value={member.name}>
-                      {member.name}
+                  {project.teamMembers && project.teamMembers.length > 0 ? (
+                    project.teamMembers.map((member) => (
+                      <MenuItem key={member.name} value={member.name}>
+                        {member.name} ({member.role})
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem value="" disabled>
+                      No team members available
                     </MenuItem>
-                  ))}
+                  )}
                 </Select>
+                {(!project.teamMembers || project.teamMembers.length === 0) && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    No team members found. Please add team members to the project first.
+                  </Typography>
+                )}
               </FormControl>
 
               {/* Priority */}

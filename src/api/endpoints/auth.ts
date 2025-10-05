@@ -40,6 +40,13 @@ export interface RefreshTokenResponse {
   user_id: number; // Backend sends user_id (snake_case)
 }
 
+export interface UserProfile {
+  first_name: string;
+  last_name: string;
+  email: string;
+  profile_picture_url: string;
+}
+
 export const authApi = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await apiClient.post<AuthResponse>('/auth/initial/login', data);
@@ -63,5 +70,10 @@ export const authApi = {
 
   logout: async (): Promise<void> => {
     await apiClient.post('/auth/logout');
+  },
+
+  getUserProfile: async (userId: number): Promise<UserProfile> => {
+    const response = await apiClient.get<UserProfile>(`/auth/initial/${userId}/me`);
+    return response.data;
   },
 };

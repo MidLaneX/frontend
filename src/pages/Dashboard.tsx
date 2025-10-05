@@ -83,6 +83,9 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']);
+  
+  // User profile state
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Don't render if not authenticated
   if (!isAuthenticated) {
@@ -97,6 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
   useEffect(() => {
     const fetchProjects = async () => {
       if (!isAuthenticated || !userId) {
+        console.log('Skipping project fetch - user not authenticated or no userId');
         return;
       }
       
@@ -137,7 +141,14 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
         }
       } catch (err) {
         console.error('Error fetching projects:', err);
-        setError('Failed to load projects. Please try again.');
+        console.error('Error details:', {
+          message: err instanceof Error ? err.message : 'Unknown error',
+          response: (err as any)?.response?.data,
+          status: (err as any)?.response?.status,
+          url: (err as any)?.config?.url
+        });
+        setError('Failed to load projects from API. Please check if the backend is running.');
+        setProjects([]); // Ensure projects is empty array, not undefined
       } finally {
         setLoading(false);
       }

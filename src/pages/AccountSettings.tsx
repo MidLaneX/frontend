@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Card,
@@ -20,6 +20,7 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemSecondaryAction,
+  CircularProgress,
 } from '@mui/material'
 import {
   Person as PersonIcon,
@@ -39,6 +40,8 @@ import {
   Palette as PaletteIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material'
+import { UserService } from '@/services/UserService'
+import { useAuth } from '@/context/AuthContext'
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -67,24 +70,64 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const AccountSettings: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Profile data
+  // Profile data - will be populated from API
   const [profileData, setProfileData] = useState({
-    firstName: 'Parakrama',
-    lastName: 'Rathnayaka',
-    email: 'Parakramawork@midlinex.com',
-    phone: '+94 77 123 4567',
-    jobTitle: 'Senior Full Stack Developer',
-    department: 'Engineering',
-    location: 'Colombo, Sri Lanka',
-    timezone: 'Asia/Colombo',
-    language: 'English',
-    bio: 'Passionate full-stack developer with 5+ years of experience in building scalable web applications.'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    jobTitle: '',
+    department: '',
+    location: 'Colombo, Sri Lanka', // Keep as default since not in API
+    timezone: 'Asia/Colombo', // Keep as default since not in API
+    language: 'English', // Keep as default since not in API
+    bio: 'Passionate developer building scalable web applications.' // Keep as default since not in API
   });
+
+  // Fetch user profile on component mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!isAuthenticated || !user?.userId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log('Fetching user profile for account settings, userId:', user.userId);
+        const profile = await UserService.getUserProfile(user.userId);
+        console.log('Fetched user profile for settings:', profile);
+        
+        // Update profile data with real API data
+        setProfileData({
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          email: profile.email,
+          phone: profile.phone,
+          jobTitle: profile.job_title,
+          department: profile.department,
+          location: 'Colombo, Sri Lanka', // Default value
+          timezone: 'Asia/Colombo', // Default value
+          language: 'English', // Default value
+          bio: 'Passionate developer building scalable web applications.' // Default value
+        });
+      } catch (err) {
+        console.error('Error fetching user profile for account settings:', err);
+        setError('Failed to load user profile. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.userId, isAuthenticated]);
 
   // Security settings
   const [securitySettings, setSecuritySettings] = useState({
@@ -108,10 +151,26 @@ const AccountSettings: React.FC = () => {
     setTabValue(newValue);
   };
 
-  const handleSaveProfile = () => {
-    setIsEditing(false);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+  const handleSaveProfile = async () => {
+    if (!user?.userId) return;
+
+    try {
+      console.log('Saving profile data:', profileData);
+      await UserService.updateUserProfile(user.userId, {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        jobTitle: profileData.jobTitle,
+        department: profileData.department
+      });
+      
+      setIsEditing(false);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+      console.log('Profile updated successfully');
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError('Failed to update profile. Please try again.');
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -146,6 +205,20 @@ const AccountSettings: React.FC = () => {
         </Typography>
       </Box>
 
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
       {/* Success notification */}
       {showNotification && (
         <Alert 
@@ -157,7 +230,8 @@ const AccountSettings: React.FC = () => {
         </Alert>
       )}
 
-      {/* Main Content */}
+      {/* Main Content - Only show when not loading */}
+      {!loading && (
       <Card 
         sx={{ 
           borderRadius: 3,
@@ -212,7 +286,7 @@ const AccountSettings: React.FC = () => {
                     boxShadow: '0 4px 12px rgba(255,87,34,0.3)'
                   }}
                 >
-                  {profileData.firstName[0]}{profileData.lastName[0]}
+                  {(profileData.firstName?.[0] || '').toUpperCase()}{(profileData.lastName?.[0] || '').toUpperCase()}
                 </Avatar>
                 <Tooltip title="Change profile picture">
                   <IconButton 
@@ -293,9 +367,10 @@ const AccountSettings: React.FC = () => {
                 label="Email Address"
                 value={profileData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                disabled={!isEditing}
+                disabled={true} // Email should not be editable
                 fullWidth
                 sx={{ mb: 3 }}
+                helperText="Email address cannot be changed. Contact support if needed."
               />
               <TextField
                 label="Phone Number"
@@ -750,6 +825,7 @@ const AccountSettings: React.FC = () => {
           </Box>
         </TabPanel>
       </Card>
+      )}
     </Box>
   )
 }

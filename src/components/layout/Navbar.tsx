@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   AppBar, 
   Toolbar, 
@@ -32,7 +32,7 @@ import { useAuth } from '@/context/AuthContext'
 
 const Navbar: React.FC = () => {
   const location = useLocation()
-  const { logout } = useAuth()
+  const { logout, userProfile, fetchUserProfile, user } = useAuth()
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null)
   const [appsMenuAnchor, setAppsMenuAnchor] = useState<null | HTMLElement>(null)
   const [notificationsAnchor, setNotificationsAnchor] = useState<null | HTMLElement>(null)
@@ -66,8 +66,40 @@ const Navbar: React.FC = () => {
     handleCloseMenus()
   }
 
+  // Fetch user profile when component mounts
+  useEffect(() => {
+    if (user && !userProfile) {
+      fetchUserProfile()
+    }
+  }, [user, userProfile, fetchUserProfile])
+
   const isActiveRoute = (path: string) => {
     return location.pathname === path
+  }
+
+  // Function to get initials from user name
+  const getUserInitials = () => {
+    if (userProfile?.first_name && userProfile?.last_name) {
+      return `${userProfile.first_name.charAt(0).toUpperCase()}${userProfile.last_name.charAt(0).toUpperCase()}`
+    }
+    if (userProfile?.first_name) {
+      return userProfile.first_name.charAt(0).toUpperCase()
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase()
+    }
+    return 'U' // Default fallback
+  }
+
+  // Function to get full name from user profile
+  const getFullName = () => {
+    if (userProfile?.first_name && userProfile?.last_name) {
+      return `${userProfile.first_name} ${userProfile.last_name}`
+    }
+    if (userProfile?.first_name) {
+      return userProfile.first_name
+    }
+    return user?.name || 'User'
   }
 
   return (
@@ -387,7 +419,7 @@ const Navbar: React.FC = () => {
                   transition: 'all 0.3s ease'
                 }}
               >
-                PB
+                {getUserInitials()}
               </Avatar>
             </IconButton>
           </Tooltip>
@@ -763,14 +795,14 @@ const Navbar: React.FC = () => {
                 fontWeight: 700,
                 boxShadow: '0 2px 8px rgba(255,87,34,0.3)'
               }}>
-                PB
+                {getUserInitials()}
               </Avatar>
               <Box>
                 <Typography variant="body1" sx={{ fontWeight: 700, color: '#172B4D' }}>
-                  Parakrama Rathnayaka
+                  {getFullName()}
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '13px' }}>
-                  Parakramawork@midlinex.com
+                  {userProfile?.email || user?.email || 'user@example.com'}
                 </Typography>
                 <Chip 
                   label="Premium" 
