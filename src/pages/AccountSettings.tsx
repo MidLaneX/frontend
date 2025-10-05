@@ -314,9 +314,9 @@ const AccountSettings: React.FC = () => {
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   <Chip 
-                    label="Premium Account"
+                    label="Freemium Account"
                     size="small"
-                    sx={{ bgcolor: '#FFAB00', color: 'white', fontWeight: 600 }}
+                    sx={{ bgcolor: '#0052CC', color: 'white', fontWeight: 600 }}
                   />
                   <Chip 
                     label="Verified"
@@ -688,139 +688,107 @@ const AccountSettings: React.FC = () => {
             {/* Current Plan */}
             <Paper sx={{ p: 3, mb: 3, borderRadius: 2, border: '1px solid #DFE1E6' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <PaymentIcon sx={{ color: '#FFAB00', mr: 2 }} />
+                <PaymentIcon sx={{ color: '#0052CC', mr: 2 }} />
                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#172B4D' }}>
                   Current Plan
                 </Typography>
                 <Chip 
-                  label="Premium"
+                  label="Freemium"
                   size="small"
-                  sx={{ ml: 2, bgcolor: '#FFAB00', color: 'white', fontWeight: 600 }}
+                  sx={{ ml: 2, bgcolor: '#0052CC', color: 'white', fontWeight: 600 }}
                 />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: 700, color: '#172B4D', mb: 1 }}>
-                    $29.99<Typography component="span" variant="body1" sx={{ color: '#5E6C84' }}>/month</Typography>
+                    Free<Typography component="span" variant="body1" sx={{ color: '#5E6C84' }}> Forever</Typography>
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#5E6C84', mb: 2 }}>
-                    Billed monthly • Next payment: August 15, 2025
+                    Enjoy our core features at no cost
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip label="Unlimited Projects" size="small" sx={{ bgcolor: '#E3FCEF', color: '#00875A' }} />
-                    <Chip label="Advanced Analytics" size="small" sx={{ bgcolor: '#E7F3FF', color: '#0052CC' }} />
-                    <Chip label="Priority Support" size="small" sx={{ bgcolor: '#FFF7E6', color: '#FF8B00' }} />
+                    <Chip label="Core Features" size="small" sx={{ bgcolor: '#E3FCEF', color: '#00875A' }} />
+                    <Chip label="Basic Projects" size="small" sx={{ bgcolor: '#E7F3FF', color: '#0052CC' }} />
+                    <Chip label="Community Support" size="small" sx={{ bgcolor: '#FFF7E6', color: '#FF8B00' }} />
                   </Box>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
-                    Change Plan
-                  </Button>
-                  <Button variant="text" sx={{ textTransform: 'none', fontWeight: 600, color: '#DE350B' }}>
-                    Cancel
+                  <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#FFAB00', '&:hover': { bgcolor: '#FF8B00' } }}>
+                    Upgrade Soon
                   </Button>
                 </Box>
               </Box>
+              
+              {/* Premium Coming Soon Alert */}
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  bgcolor: '#E7F3FF', 
+                  border: '1px solid #B3D4FF',
+                  '& .MuiAlert-icon': { color: '#0052CC' }
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  🚀 Premium Plan Coming Soon!
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#5E6C84' }}>
+                  We're working on advanced features including unlimited projects, advanced analytics, 
+                  AI-powered insights, priority support, and much more. Stay tuned!
+                </Typography>
+              </Alert>
             </Paper>
 
             {/* Payment Method */}
             <Paper sx={{ p: 3, mb: 3, borderRadius: 2, border: '1px solid #DFE1E6' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <CreditCardIcon sx={{ color: '#0052CC', mr: 2 }} />
+                <CreditCardIcon sx={{ color: '#5E6C84', mr: 2 }} />
                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#172B4D' }}>
                   Payment Method
                 </Typography>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Box sx={{ 
-                    width: 40, 
-                    height: 24, 
-                    bgcolor: '#0052CC', 
-                    borderRadius: 1, 
-                    mr: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <Typography sx={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>
-                      VISA
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                      •••• •••• •••• 4532
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#5E6C84' }}>
-                      Expires 12/25
-                    </Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button variant="outlined" size="small" sx={{ textTransform: 'none', fontWeight: 600 }}>
-                    Update
-                  </Button>
-                  <Button variant="text" size="small" sx={{ textTransform: 'none', fontWeight: 600, color: '#DE350B' }}>
-                    Remove
-                  </Button>
-                </Box>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                flexDirection: 'column',
+                py: 4,
+                bgcolor: '#F4F5F7',
+                borderRadius: 2
+              }}>
+                <CreditCardIcon sx={{ color: '#B3BAC5', fontSize: 48, mb: 2 }} />
+                <Typography variant="body1" sx={{ fontWeight: 600, color: '#5E6C84', mb: 1 }}>
+                  No Payment Method Required
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#8993A4', textAlign: 'center' }}>
+                  You're currently on our free plan. Add a payment method when premium features become available.
+                </Typography>
               </Box>
             </Paper>
 
-            {/* Billing History */}
+            {/* Account Activity */}
             <Paper sx={{ p: 3, borderRadius: 2, border: '1px solid #DFE1E6' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  Billing History
+                  Account Activity
                 </Typography>
-                <Button variant="outlined" size="small" sx={{ textTransform: 'none', fontWeight: 600 }}>
-                  Download All
-                </Button>
               </Box>
-              <List>
-                <ListItem sx={{ borderBottom: '1px solid #F4F5F7' }}>
-                  <ListItemText 
-                    primary="August 2025"
-                    secondary="Premium Plan • Paid July 15, 2025"
-                  />
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                      $29.99
-                    </Typography>
-                    <Button size="small" sx={{ textTransform: 'none', fontSize: '12px' }}>
-                      Download
-                    </Button>
-                  </Box>
-                </ListItem>
-                <ListItem sx={{ borderBottom: '1px solid #F4F5F7' }}>
-                  <ListItemText 
-                    primary="July 2025"
-                    secondary="Premium Plan • Paid June 15, 2025"
-                  />
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                      $29.99
-                    </Typography>
-                    <Button size="small" sx={{ textTransform: 'none', fontSize: '12px' }}>
-                      Download
-                    </Button>
-                  </Box>
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="June 2025"
-                    secondary="Premium Plan • Paid May 15, 2025"
-                  />
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                      $29.99
-                    </Typography>
-                    <Button size="small" sx={{ textTransform: 'none', fontSize: '12px' }}>
-                      Download
-                    </Button>
-                  </Box>
-                </ListItem>
-              </List>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                flexDirection: 'column',
+                py: 4,
+                bgcolor: '#F4F5F7',
+                borderRadius: 2
+              }}>
+                <ScheduleIcon sx={{ color: '#B3BAC5', fontSize: 48, mb: 2 }} />
+                <Typography variant="body1" sx={{ fontWeight: 600, color: '#5E6C84', mb: 1 }}>
+                  No Billing History
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#8993A4', textAlign: 'center' }}>
+                  You're enjoying our free plan! Billing history will appear here when you upgrade to premium.
+                </Typography>
+              </Box>
             </Paper>
           </Box>
         </TabPanel>
