@@ -35,6 +35,7 @@ import {
   Visibility as ViewIcon,
   SupervisorAccount as OwnerIcon,
   Settings as SettingsIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { tokenManager } from '../utils/tokenManager';
@@ -51,6 +52,7 @@ import AddMemberModal from '../components/features/AddMemberModal';
 import AddTeamMemberModal from '../components/features/AddTeamMemberModal';
 import CreateTeamModal from '../components/features/CreateTeamModal';
 import TeamSettingsDrawer from '../components/features/TeamSettingsDrawer';
+import OrganizationSettingsDrawer from '../components/features/OrganizationSettingsDrawer';
 import type {
   OrganizationWithRole,
   OrganizationMember,
@@ -90,7 +92,9 @@ const OrganizationPage: React.FC = () => {
   const [selectedOrg, setSelectedOrg] = useState<OrganizationWithRole | null>(null);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [userTeams, setUserTeams] = useState<Team[]>([]); // Teams user belongs to in member organizations
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false); // Loading state for organization data
   const [organizationTabValue, setOrganizationTabValue] = useState(0); // 0: Member orgs, 1: Owned orgs
   const [detailTabValue, setDetailTabValue] = useState(0); // 0: Members, 1: Teams
   const [error, setError] = useState<string>('');
@@ -109,6 +113,7 @@ const OrganizationPage: React.FC = () => {
   const [addTeamMemberModalOpen, setAddTeamMemberModalOpen] = useState(false);
   const [createTeamModalOpen, setCreateTeamModalOpen] = useState(false);
   const [teamSettingsDrawerOpen, setTeamSettingsDrawerOpen] = useState(false);
+  const [orgSettingsDrawerOpen, setOrgSettingsDrawerOpen] = useState(false);
 
   // Menu states
   const [memberMenuAnchor, setMemberMenuAnchor] = useState<null | HTMLElement>(null);
@@ -186,22 +191,42 @@ const OrganizationPage: React.FC = () => {
 
   const loadOrganizationData = async (orgId: string) => {
     try {
+      setDataLoading(true);
       console.log('Loading organization data for:', orgId);
-      const [membersData, teamsData] = await Promise.all([
-        organizationsApi.getOrganizationMembers(orgId),
-        teamsApi.getTeams(orgId)
-      ]);
-      console.log('Members loaded:', membersData);
-      console.log('First member data:', membersData[0]);
-      console.log('Teams loaded:', teamsData);
-      console.log('First team data:', teamsData[0]);
-      console.log('First team ID:', teamsData[0]?.id, 'Type:', typeof teamsData[0]?.id);
-      setMembers(membersData);
-      setTeams(teamsData);
+      const currentUserId = tokenManager.getUserId();
+      
+      if (!currentUserId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check if user owns this organization
+      const isOwner = selectedOrg?.userRole === 'owner';
+      
+      if (isOwner) {
+        // For owned organizations, load both members and teams as before
+        const [membersData, teamsData] = await Promise.all([
+          organizationsApi.getOrganizationMembers(orgId),
+          teamsApi.getTeams(orgId)
+        ]);
+        console.log('Members loaded:', membersData);
+        console.log('Teams loaded:', teamsData);
+        setMembers(membersData);
+        setTeams(teamsData);
+        setUserTeams([]); // Clear user teams for owned organizations
+      } else {
+        // For member organizations, only load teams the user belongs to
+        const userTeamsData = await teamsApi.getUserTeamsInOrganization(orgId, currentUserId);
+        console.log('User teams loaded:', userTeamsData);
+        setUserTeams(userTeamsData);
+        setMembers([]); // Clear members for member organizations
+        setTeams([]); // Clear all teams for member organizations
+      }
     } catch (err: any) {
       console.error('Failed to load organization data:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to load organization data';
       setError(errorMessage);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -397,13 +422,18 @@ const OrganizationPage: React.FC = () => {
     if (!selectedTeam) return;
     
     // Add members one by one and return the final team state
-    let updatedTeam: Team | null = null;
     for (const userId of memberIds) {
-      updatedTeam = await teamsApi.addTeamMemberById(selectedTeam.id, userId);
+      await teamsApi.addTeamMemberById(selectedTeam.id, userId);
     }
-    if (updatedTeam) {
-      setTeams(prev => prev.map(t => t.id === selectedTeam.id ? updatedTeam : t));
-      setSelectedTeam(updatedTeam); // Update the selected team with new data
+    
+    // Reload organization data to get updated team information
+    await loadOrganizationData(selectedOrg!.id);
+    
+    // Update selected team with fresh data
+    const updatedTeams = await teamsApi.getTeams(selectedOrg!.id);
+    const freshTeam = updatedTeams.find(t => t.id === selectedTeam.id);
+    if (freshTeam) {
+      setSelectedTeam(freshTeam);
     }
   };
 
@@ -424,17 +454,87 @@ const OrganizationPage: React.FC = () => {
   const handleTeamSettingsUpdateTeam = async (data: { team_name: string; description: string }) => {
     if (!selectedTeam) return;
     
-    const updatedTeam = await teamsApi.updateTeamById(selectedTeam.id, data);
-    setTeams(prev => prev.map(t => t.id === selectedTeam.id ? updatedTeam : t));
-    setSelectedTeam(updatedTeam);
+    await teamsApi.updateTeamById(selectedTeam.id, data);
+    
+    // Reload organization data to get updated team information
+    await loadOrganizationData(selectedOrg!.id);
+    
+    // Update selected team with fresh data
+    const updatedTeams = await teamsApi.getTeams(selectedOrg!.id);
+    const freshTeam = updatedTeams.find(t => t.id === selectedTeam.id);
+    if (freshTeam) {
+      setSelectedTeam(freshTeam);
+    }
   };
 
   const handleTeamSettingsUpdateLead = async (userId: string) => {
     if (!selectedTeam) return;
     
     const updatedTeam = await teamsApi.updateTeamLead(selectedTeam.id, userId);
-    setTeams(prev => prev.map(t => t.id === selectedTeam.id ? updatedTeam : t));
-    setSelectedTeam(updatedTeam);
+    
+    // Reload organization data to get fresh team information with updated lead details
+    await loadOrganizationData(selectedOrg!.id);
+    
+    // Update selected team with fresh data
+    const updatedTeams = await teamsApi.getTeams(selectedOrg!.id);
+    const freshTeam = updatedTeams.find(t => t.id === selectedTeam.id);
+    if (freshTeam) {
+      setSelectedTeam(freshTeam);
+    }
+  };
+
+  // Organization Settings Handlers
+  const handleUpdateOrganization = async (orgId: string, data: any) => {
+    try {
+      const updatedOrg = await organizationsApi.updateOrganization(orgId, data);
+      
+      // Update the organization in the appropriate list
+      const currentUserId = tokenManager.getUserId();
+      if (!currentUserId) {
+        throw new Error('User not authenticated');
+      }
+      
+      const enrichedOrg = enrichOrganizationWithRole(updatedOrg, currentUserId) as OrganizationWithRole;
+      
+      // Update owned organizations if this org is owned by the user
+      setOwnedOrganizations(prev => 
+        prev.map(org => org.id === orgId ? enrichedOrg : org)
+      );
+      
+      // Update member organizations if this org is in member list
+      setMemberOrganizations(prev => 
+        prev.map(org => org.id === orgId ? enrichedOrg : org)
+      );
+      
+      // Update selected org if it's the currently selected one
+      if (selectedOrg?.id === orgId) {
+        setSelectedOrg(enrichedOrg);
+      }
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const handleDeleteOrganization = async (orgId: string) => {
+    try {
+      await organizationsApi.deleteOrganization(orgId);
+      
+      // Remove from owned organizations
+      setOwnedOrganizations(prev => prev.filter(org => org.id !== orgId));
+      
+      // Remove from member organizations
+      setMemberOrganizations(prev => prev.filter(org => org.id !== orgId));
+      
+      // If this was the selected org, clear selection
+      if (selectedOrg?.id === orgId) {
+        setSelectedOrg(null);
+      }
+      
+      // Close the settings drawer
+      setOrgSettingsDrawerOpen(false);
+    } catch (err: any) {
+      throw err;
+    }
   };
 
 // getCurrentUserRole function removed - using direct permission checking instead
@@ -602,7 +702,21 @@ const OrganizationPage: React.FC = () => {
           <Paper sx={{ mb: 3, borderRadius: 2 }}>
             <Tabs
               value={organizationTabValue}
-              onChange={(_, newValue) => setOrganizationTabValue(newValue)}
+              onChange={async (_, newValue) => {
+                setOrganizationTabValue(newValue);
+                // When switching tabs, select the first organization from the new tab and refresh its data
+                if (newValue === 0 && memberOrganizations.length > 0) {
+                  // Switched to member organizations tab
+                  const firstMemberOrg = memberOrganizations[0];
+                  setSelectedOrg(firstMemberOrg);
+                  await loadOrganizationData(firstMemberOrg.id);
+                } else if (newValue === 1 && ownedOrganizations.length > 0) {
+                  // Switched to owned organizations tab
+                  const firstOwnedOrg = ownedOrganizations[0];
+                  setSelectedOrg(firstOwnedOrg);
+                  await loadOrganizationData(firstOwnedOrg.id);
+                }
+              }}
               sx={{ 
                 borderBottom: 1, 
                 borderColor: 'divider',
@@ -639,7 +753,11 @@ const OrganizationPage: React.FC = () => {
                             boxShadow: '0 2px 8px rgba(9,30,66,0.15)',
                           },
                         }}
-                        onClick={() => setSelectedOrg(org)}
+                        onClick={async () => {
+                          setSelectedOrg(org);
+                          // Refresh data when selecting a different organization
+                          await loadOrganizationData(org.id);
+                        }}
                       >
                         <CardContent sx={{ pb: 1 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -656,9 +774,10 @@ const OrganizationPage: React.FC = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrg(org);
+                                setOrgSettingsDrawerOpen(true);
                               }}
                             >
-                              <MoreVertIcon fontSize="small" />
+                              <SettingsIcon fontSize="small" />
                             </IconButton>
                           </Box>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -708,17 +827,6 @@ const OrganizationPage: React.FC = () => {
                             >
                               Go to Projects
                             </Button>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedOrg(org);
-                              }}
-                              sx={{ textTransform: 'none' }}
-                            >
-                              Manage
-                            </Button>
                           </Box>
                         </CardContent>
                       </Card>
@@ -753,7 +861,11 @@ const OrganizationPage: React.FC = () => {
                             boxShadow: '0 2px 8px rgba(9,30,66,0.15)',
                           },
                         }}
-                        onClick={() => setSelectedOrg(org)}
+                        onClick={async () => {
+                          setSelectedOrg(org);
+                          // Refresh data when selecting a different organization
+                          await loadOrganizationData(org.id);
+                        }}
                       >
                         <CardContent sx={{ pb: 1 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -770,9 +882,10 @@ const OrganizationPage: React.FC = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrg(org);
+                                setOrgSettingsDrawerOpen(true);
                               }}
                             >
-                              <MoreVertIcon fontSize="small" />
+                              <SettingsIcon fontSize="small" />
                             </IconButton>
                           </Box>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -822,17 +935,6 @@ const OrganizationPage: React.FC = () => {
                             >
                               Go to Projects
                             </Button>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedOrg(org);
-                              }}
-                              sx={{ textTransform: 'none' }}
-                            >
-                              Manage
-                            </Button>
                           </Box>
                         </CardContent>
                       </Card>
@@ -863,201 +965,301 @@ const OrganizationPage: React.FC = () => {
         )}
       </Box>
 
-      {/* Organization Management Tabs */}
+      {/* Organization Management */}
       {selectedOrg && (
         <Box>
-          <Tabs
-            value={detailTabValue}
-            onChange={(_, newValue) => setDetailTabValue(newValue)}
-            sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
-          >
-            <Tab label={`Members (${members.length})`} icon={<PeopleIcon />} iconPosition="start" />
-            <Tab label={`Teams (${teams.length})`} icon={<GroupIcon />} iconPosition="start" />
-          </Tabs>
-
-          {/* Members Tab */}
-          <TabPanel value={detailTabValue} index={0}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Organization Members
-              </Typography>
-              {canManageMembers && (
-                <Button
-                  variant="outlined"
-                  startIcon={<PersonAddIcon />}
-                  onClick={() => setAddMemberModalOpen(true)}
-                  sx={{ textTransform: 'none' }}
-                >
-                  Add Member
-                </Button>
-              )}
+          {dataLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+              <Skeleton variant="rectangular" width="100%" height={200} sx={{ borderRadius: 1 }} />
             </Box>
+          )}
+          
+          {!dataLoading && selectedOrg.userRole === 'owner' ? (
+            // For owned organizations, show tabs with members and teams
+            <>
+              <Tabs
+                value={detailTabValue}
+                onChange={(_, newValue) => setDetailTabValue(newValue)}
+                sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+              >
+                <Tab label={`Members (${members.length})`} icon={<PeopleIcon />} iconPosition="start" />
+                <Tab label={`Teams (${teams.length})`} icon={<GroupIcon />} iconPosition="start" />
+              </Tabs>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
-              {members.map((member) => (
-                <Box key={member.id}>
-                  <Card sx={{ height: '100%' }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ width: 48, height: 48 }}>
-                            {member.first_name?.[0] || 'U'}{member.last_name?.[0] || 'N'}
-                          </Avatar>
-                          <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                              {member.first_name || 'Unknown'} {member.last_name || 'Name'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {member.email}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        {canManageMembers && member.role !== 'owner' && (
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              setSelectedMember(member);
-                              setMemberMenuAnchor(e.currentTarget);
-                            }}
-                          >
-                            <MoreVertIcon fontSize="small" />
-                          </IconButton>
-                        )}
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip
-                          label={getRoleDisplayName(member.role)}
-                          size="small"
-                          icon={getRoleIcon(member.role)}
-                          sx={{
-                            bgcolor: getRoleColor(member.role),
-                            color: 'white',
-                            fontWeight: 600,
-                          }}
-                        />
-                        {selectedOrg && selectedOrg.userRole === 'owner' && (
-                          <Chip
-                            label="You"
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: '0.75rem' }}
-                          />
-                        )}
-                        {selectedOrg && selectedOrg.userRole === 'member' && (
-                          <Chip
-                            label="Member View"
-                            size="small"
-                            variant="outlined"
-                            color="info"
-                            sx={{ fontSize: '0.75rem' }}
-                          />
-                        )}
-                      </Box>
-                      {member.teams?.length > 0 && (
-                        <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
-                          Member of {member.teams?.length} team(s)
-                        </Typography>
-                      )}
-                    </CardContent>
-                  </Card>
+              {/* Members Tab */}
+              <TabPanel value={detailTabValue} index={0}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                    Organization Members
+                  </Typography>
+                  {canManageMembers && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<PersonAddIcon />}
+                      onClick={() => setAddMemberModalOpen(true)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Add Member
+                    </Button>
+                  )}
                 </Box>
-              ))}
-            </Box>
-          </TabPanel>
 
-          {/* Teams Tab */}
-          <TabPanel value={detailTabValue} index={1}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Teams
-              </Typography>
-              {canManageTeams && (
-                <Button
-                  variant="outlined"
-                  startIcon={<GroupAddIcon />}
-                  onClick={() => setCreateTeamModalOpen(true)}
-                  sx={{ textTransform: 'none' }}
-                >
-                  Create Team
-                </Button>
-              )}
-            </Box>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
-              {teams?.map((team) => (
-                <Box key={team.id}>
-                  <Card sx={{ height: '100%' }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: '#36B37E', width: 48, height: 48 }}>
-                            <GroupIcon />
-                          </Avatar>
-                          <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                              {team.team_name}
-                            </Typography>
-                            {team.leadName && (
-                              <Typography variant="body2" color="text.secondary">
-                                Lead: {team.leadName}
-                              </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
+                  {members.map((member) => (
+                    <Box key={member.id}>
+                      <Card sx={{ height: '100%' }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Avatar sx={{ width: 48, height: 48 }}>
+                                {member.first_name?.[0] || 'U'}{member.last_name?.[0] || 'N'}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                  {member.first_name || 'Unknown'} {member.last_name || 'Name'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {member.email}
+                                </Typography>
+                              </Box>
+                            </Box>
+                            {canManageMembers && member.role !== 'owner' && (
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  setSelectedMember(member);
+                                  setMemberMenuAnchor(e.currentTarget);
+                                }}
+                              >
+                                <MoreVertIcon fontSize="small" />
+                              </IconButton>
                             )}
                           </Box>
-                        </Box>
-                        {canManageTeams && selectedOrg?.userRole === 'owner' && (
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenTeamSettings(team)}
-                            title="Team Settings"
-                          >
-                            <SettingsIcon fontSize="small" />
-                          </IconButton>
-                        )}
-                        {canManageTeams && selectedOrg?.userRole !== 'owner' && (
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              console.log('Selected team for menu:', team);
-                              console.log('Team ID:', team.id, 'Type:', typeof team.id);
-                              setSelectedTeam(team);
-                              setTeamMenuAnchor(e.currentTarget);
-                            }}
-                          >
-                            <MoreVertIcon fontSize="small" />
-                          </IconButton>
-                        )}
-                      </Box>
-                      
-                      {team.description && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                          {team.description}
-                        </Typography>
-                      )}
-
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          {team.members?.length ?? 0} member(s)
-                        </Typography>
-                        <AvatarGroup max={4} sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: 12 } }}>
-                          {team.members?.map((member) => (
-                            <Tooltip key={member.id} title={`${member.firstName || 'Unknown'} ${member.lastName || 'Name'}`}>
-                              <Avatar>
-                                {member.firstName?.[0] || 'U'}{member.lastName?.[0] || 'N'}
-                              </Avatar>
-                            </Tooltip>
-                          )) ?? []}
-                        </AvatarGroup>
-                      </Box>
-
-                      <Typography variant="caption" color="text.secondary">
-                        Created {new Date(team.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip
+                              label={getRoleDisplayName(member.role)}
+                              size="small"
+                              icon={getRoleIcon(member.role)}
+                              sx={{
+                                bgcolor: getRoleColor(member.role),
+                                color: 'white',
+                                fontWeight: 600,
+                              }}
+                            />
+                            {selectedOrg && selectedOrg.userRole === 'owner' && (
+                              <Chip
+                                label="You"
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.75rem' }}
+                              />
+                            )}
+                            {selectedOrg && selectedOrg.userRole === 'member' && (
+                              <Chip
+                                label="Member View"
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                sx={{ fontSize: '0.75rem' }}
+                              />
+                            )}
+                          </Box>
+                          {member.teams?.length > 0 && (
+                            <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                              Member of {member.teams?.length} team(s)
+                            </Typography>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Box>
+                  ))}
                 </Box>
-              ))}
+              </TabPanel>
+
+              {/* Teams Tab */}
+              <TabPanel value={detailTabValue} index={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                    Teams
+                  </Typography>
+                  {canManageTeams && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<GroupAddIcon />}
+                      onClick={() => setCreateTeamModalOpen(true)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Create Team
+                    </Button>
+                  )}
+                </Box>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
+                  {teams?.map((team) => (
+                    <Box key={team.id}>
+                      <Card sx={{ height: '100%' }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Avatar sx={{ bgcolor: '#36B37E', width: 48, height: 48 }}>
+                                <GroupIcon />
+                              </Avatar>
+                              <Box>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                  {team.team_name}
+                                </Typography>
+                                {team.leadName && (
+                                  <Typography variant="body2" color="text.secondary">
+                                    Lead: {team.leadName}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Box>
+                            {canManageTeams && selectedOrg?.userRole === 'owner' && (
+                              <IconButton
+                                size="small"
+                                onClick={() => handleOpenTeamSettings(team)}
+                                title="Team Settings"
+                              >
+                                <SettingsIcon fontSize="small" />
+                              </IconButton>
+                            )}
+                            {canManageTeams && selectedOrg?.userRole !== 'owner' && (
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  console.log('Selected team for menu:', team);
+                                  console.log('Team ID:', team.id, 'Type:', typeof team.id);
+                                  setSelectedTeam(team);
+                                  setTeamMenuAnchor(e.currentTarget);
+                                }}
+                              >
+                                <MoreVertIcon fontSize="small" />
+                              </IconButton>
+                            )}
+                          </Box>
+                          
+                          {team.description && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                              {team.description}
+                            </Typography>
+                          )}
+
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {team.memberCount ?? team.members?.length ?? 0} member(s)
+                              {team.teamType && (
+                                <Box component="span" sx={{ ml: 1, px: 1, py: 0.5, bgcolor: 'primary.light', color: 'primary.dark', borderRadius: 1, fontSize: '0.7rem' }}>
+                                  {team.teamType}
+                                </Box>
+                              )}
+                            </Typography>
+                            <AvatarGroup max={4} sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: 12 } }}>
+                              {team.members?.map((member) => (
+                                <Tooltip key={member.id} title={`${member.firstName || 'Unknown'} ${member.lastName || 'Name'}`}>
+                                  <Avatar>
+                                    {member.firstName?.[0] || 'U'}{member.lastName?.[0] || 'N'}
+                                  </Avatar>
+                                </Tooltip>
+                              )) ?? []}
+                            </AvatarGroup>
+                          </Box>
+
+                          <Typography variant="caption" color="text.secondary">
+                            Created {new Date(team.createdAt).toLocaleDateString()}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Box>
+                  ))}
+                </Box>
+              </TabPanel>
+            </>
+          ) : (
+            // For member organizations, show only user's teams directly
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                  Your Teams ({userTeams.length})
+                </Typography>
+              </Box>
+
+              {userTeams.length > 0 ? (
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
+                  {userTeams.map((team) => (
+                    <Card key={team.id} sx={{ borderRadius: 2, border: '1px solid #ddd' }}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                              {team.team_name || team.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                              {team.description || 'No description'}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                              <Chip
+                                size="small"
+                                label={`${team.memberCount || team.current_member_count || 0}/${team.maxMembers || team.max_members || 0} members`}
+                                variant="outlined"
+                              />
+                              {(team.teamType || team.team_type) && (
+                                <Chip
+                                  size="small"
+                                  label={team.teamType || team.team_type}
+                                  variant="outlined"
+                                  color="primary"
+                                />
+                              )}
+                              {(team.status === 'ACTIVE' || !team.status) && (
+                                <Chip
+                                  size="small"
+                                  label="Active"
+                                  variant="outlined"
+                                  color="success"
+                                />
+                              )}
+                            </Box>
+                          </Box>
+                        </Box>
+                        {team.leadName && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                            <PersonIcon fontSize="small" color="action" />
+                            <Typography variant="body2" color="text.secondary">
+                              Lead: {team.leadName}
+                            </Typography>
+                          </Box>
+                        )}
+                        {(team.organization_name || selectedOrg?.name) && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                            <BusinessIcon fontSize="small" color="action" />
+                            <Typography variant="body2" color="text.secondary">
+                              Organization: {team.organization_name || selectedOrg?.name}
+                            </Typography>
+                          </Box>
+                        )}
+                        {(team.created_at || team.createdAt) && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            Created {new Date(team.created_at || team.createdAt).toLocaleDateString()}
+                          </Typography>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <GroupIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                  <Typography variant="h6" sx={{ mb: 1, color: 'text.secondary' }}>
+                    You're not part of any teams yet
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                    Contact your organization owner to be added to a team
+                  </Typography>
+                </Box>
+              )}
             </Box>
-          </TabPanel>
+          )}
         </Box>
       )}
 
@@ -1197,6 +1399,15 @@ const OrganizationPage: React.FC = () => {
           />
         </>
       )}
+
+      {/* Organization Settings Drawer */}
+      <OrganizationSettingsDrawer
+        open={orgSettingsDrawerOpen}
+        onClose={() => setOrgSettingsDrawerOpen(false)}
+        organization={selectedOrg}
+        onUpdateOrganization={handleUpdateOrganization}
+        onDeleteOrganization={handleDeleteOrganization}
+      />
     </Box>
   );
 };
