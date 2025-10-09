@@ -6,12 +6,6 @@ import {
   CircularProgress,
   Alert,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
   Chip,
   IconButton,
   Tooltip,
@@ -38,6 +32,7 @@ import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import type { SprintDTO } from '@/types/featurevise/sprint';
 import { TaskService } from '@/services/TaskService';
 import { SprintService } from '@/services/SprintService';
+import { TaskFormDialog } from '@/components/features';
 
 interface ScrumBoardProps {
   projectId: number;
@@ -46,8 +41,6 @@ interface ScrumBoardProps {
 }
 
 const statusColumns: TaskStatus[] = ['Backlog', 'Todo', 'In Progress', 'Review', 'Done'];
-const priorityOptions: TaskPriority[] = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
-const typeOptions: TaskType[] = ['Story', 'Bug', 'Task', 'Epic'];
 
 const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templateType }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -57,21 +50,6 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
-
-  const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: '',
-    description: '',
-    priority: 'Medium',
-    status: 'Backlog', // Changed default status to Backlog
-    type: 'Task',
-    assignee: '',
-    reporter: '',
-    dueDate: '',
-    storyPoints: 3,
-    labels: [],
-    comments: [],
-    sprintId: 0, // Will be updated when latestSprint is loaded
-  });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -100,15 +78,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     fetchLatestSprint();
   }, [projectId, templateType]);
 
-  // Update form default sprintId when latest sprint is loaded
-  useEffect(() => {
-    if (latestSprint && !editTask) {
-      setNewTaskData(prev => ({
-        ...prev,
-        sprintId: latestSprint.id
-      }));
-    }
-  }, [latestSprint, editTask]);
+
 
   // Show only tasks from the latest sprint
   const sprintTasks = useMemo(() => {
@@ -132,17 +102,15 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     fetchTasks();
   };
 
-  const handleSave = async () => {
-    if (!newTaskData.title) return;
-
+  const handleSave = async (taskData: Partial<Task>) => {
     try {
       if (editTask) {
-        await TaskService.updateTask(projectId, Number(editTask.id), newTaskData, templateType);
+        await TaskService.updateTask(projectId, Number(editTask.id), taskData, templateType);
       } else {
         // For new tasks in scrum board, automatically assign to latest sprint
         const sprintId = latestSprint?.id || 0;
         const taskWithSprint = {
-          ...newTaskData,
+          ...taskData,
           sprintId: sprintId,
         } as Omit<Task, 'id'>;
         
@@ -166,7 +134,6 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
 
       setOpenDialog(false);
       setEditTask(null);
-      resetForm();
       fetchTasks();
     } catch (error) {
       console.error('Error saving task:', error);
@@ -260,22 +227,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     }
   };
 
-  const resetForm = () => {
-    setNewTaskData({
-      title: '',
-      description: '',
-      priority: 'Medium',
-      status: 'Backlog', // Reset to Backlog as default
-      type: 'Task',
-      assignee: '',
-      reporter: '',
-      dueDate: '',
-      storyPoints: 3,
-      labels: [],
-      comments: [],
-      sprintId: latestSprint?.id || 0, // Default to latest sprint for new tasks
-    });
-  };
+
 
   const getTaskIcon = (type: TaskType) => {
     switch (type) {
@@ -353,7 +305,6 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
               onClick={(e) => {
                 e.stopPropagation();
                 setEditTask(task);
-                setNewTaskData(task);
                 setOpenDialog(true);
               }}
             >
@@ -809,198 +760,23 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
         </Box>
       </Box>
 
-      {/* Create/Edit Task Dialog */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => setOpenDialog(false)} 
-        fullWidth 
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-          }
+      {/* Task Form Dialog */}
+      <TaskFormDialog
+        open={openDialog}
+        onClose={() => {
+          setOpenDialog(false);
+          setEditTask(null);
         }}
-      >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography variant="h6" fontWeight={600}>
-            {editTask ? 'Edit Issue' : 'Create Issue'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            {editTask ? 'Update issue details' : 'Add a new issue to the sprint'}
-          </Typography>
-          {!editTask && latestSprint && (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1, 
-              p: 1.5, 
-              bgcolor: 'primary.50', 
-              border: '1px solid', 
-              borderColor: 'primary.200',
-              borderRadius: 2,
-              mt: 1
-            }}>
-              <SprintIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-              <Typography variant="caption" color="primary.main" fontWeight={500}>
-                This issue will be assigned to: <strong>{latestSprint.name}</strong>
-              </Typography>
-            </Box>
-          )}
-          {!editTask && !latestSprint && (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1, 
-              p: 1.5, 
-              bgcolor: 'warning.50', 
-              border: '1px solid', 
-              borderColor: 'warning.200',
-              borderRadius: 2,
-              mt: 1
-            }}>
-              <SprintIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-              <Typography variant="caption" color="warning.main" fontWeight={500}>
-                No active sprint found. Issue will be created without sprint assignment.
-              </Typography>
-            </Box>
-          )}
-        </DialogTitle>
-        <DialogContent sx={{ pt: '12px !important' }}>
-          <TextField
-            fullWidth
-            label="Issue Summary"
-            margin="normal"
-            value={newTaskData.title}
-            onChange={(e) => setNewTaskData({ ...newTaskData, title: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Description"
-            margin="normal"
-            multiline
-            rows={3}
-            value={newTaskData.description}
-            onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              select
-              label="Issue Type"
-              value={newTaskData.type}
-              onChange={(e) => setNewTaskData({ ...newTaskData, type: e.target.value as TaskType })}
-              sx={{ flex: 1 }}
-            >
-              {typeOptions.map((t) => (
-                <MenuItem key={t} value={t}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {getTaskIcon(t)}
-                    {t}
-                  </Box>
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              label="Priority"
-              value={newTaskData.priority}
-              onChange={(e) => setNewTaskData({ ...newTaskData, priority: e.target.value as TaskPriority })}
-              sx={{ flex: 1 }}
-            >
-              {priorityOptions.map((p) => (
-                <MenuItem key={p} value={p}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box 
-                      sx={{ 
-                        width: 8, 
-                        height: 8, 
-                        borderRadius: '50%', 
-                        backgroundColor: getPriorityColor(p) 
-                      }} 
-                    />
-                    {p}
-                  </Box>
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              fullWidth
-              label="Assignee"
-              value={newTaskData.assignee}
-              onChange={(e) => setNewTaskData({ ...newTaskData, assignee: e.target.value })}
-            />
-            <TextField
-              fullWidth
-              label="Reporter"
-              value={newTaskData.reporter}
-              onChange={(e) => setNewTaskData({ ...newTaskData, reporter: e.target.value })}
-            />
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              select
-              label="Status"
-              value={newTaskData.status}
-              onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value as TaskStatus })}
-              sx={{ flex: 1 }}
-            >
-              {/* Include all status options */}
-              <MenuItem value="Backlog">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  Backlog
-                </Box>
-              </MenuItem>
-              {statusColumns.map((s) => (
-                <MenuItem key={s} value={s}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {s}
-                  </Box>
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              label="Story Points"
-              type="number"
-              value={newTaskData.storyPoints ?? ''}
-              onChange={(e) => setNewTaskData({ ...newTaskData, storyPoints: Number(e.target.value) })}
-              inputProps={{ min: 0, max: 100 }}
-              sx={{ flex: 1 }}
-            />
-          </Box>
-          <TextField
-            fullWidth
-            label="Due Date"
-            type="date"
-            value={newTaskData.dueDate?.slice(0, 10) || ''}
-            onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value })}
-            InputLabelProps={{ shrink: true }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button 
-            onClick={() => setOpenDialog(false)}
-            sx={{ textTransform: 'none' }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            variant="contained" 
-            onClick={handleSave}
-            sx={{ 
-              textTransform: 'none',
-              fontWeight: 600,
-              borderRadius: 2,
-              px: 3
-            }}
-          >
-            {editTask ? 'Update Issue' : 'Create Issue'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSave={handleSave}
+        editTask={editTask}
+        projectId={projectId}
+        templateType={templateType}
+        defaultStatus="Todo"
+        showSprintInfo={!editTask && !!latestSprint}
+        sprintInfo={latestSprint ? { id: latestSprint.id, name: latestSprint.name } : undefined}
+        title="Scrum Board Task"
+        subtitle={editTask ? 'Update task details' : `Add a new task to the ${latestSprint?.name || 'current'} sprint`}
+      />
     </Box>
   );
 };

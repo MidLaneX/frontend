@@ -11,10 +11,6 @@ import {
   TextField,
   MenuItem,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Stack,
   LinearProgress,
   Badge,
@@ -37,6 +33,7 @@ import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import type { SprintDTO } from '@/types/featurevise/sprint';
 import { TaskService } from '@/services/TaskService';
 import { SprintService } from '@/services/SprintService';
+import { TaskFormDialog } from '@/components/features';
 
 interface BacklogProps {
   projectId: number;
@@ -45,8 +42,6 @@ interface BacklogProps {
 }
 
 const statusOptions: TaskStatus[] = ['Backlog', 'Todo', 'In Progress', 'Review', 'Done'];
-const priorityOptions: TaskPriority[] = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
-const typeOptions: TaskType[] = ['Story', 'Bug', 'Task', 'Epic'];
 
 const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -58,20 +53,6 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
   const [searchQuery, setSearchQuery] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
-
-  const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: '',
-    description: '',
-    priority: 'Medium',
-    status: 'Backlog',
-    type: 'Task',
-    assignee: '',
-    reporter: '',
-    dueDate: '',
-    storyPoints: 3,
-    labels: [],
-    comments: [],
-  });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -105,30 +86,15 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
     fetchTasks();
   };
 
-  const handleSave = async () => {
-    if (!newTaskData.title) return;
-
+  const handleSave = async (taskData: Partial<Task>) => {
     if (editTask) {
-      await TaskService.updateTask(projectId, Number(editTask.id), newTaskData, templateType);
+      await TaskService.updateTask(projectId, Number(editTask.id), taskData, templateType);
     } else {
-      await TaskService.createTask(projectId, newTaskData as Omit<Task, 'id'>, templateType);
+      await TaskService.createTask(projectId, taskData as Omit<Task, 'id'>, templateType);
     }
 
     setOpenDialog(false);
     setEditTask(null);
-    setNewTaskData({
-      title: '',
-      description: '',
-      priority: 'Medium',
-      status: 'Backlog',
-      type: 'Task',
-      assignee: '',
-      reporter: '',
-      dueDate: '',
-      storyPoints: 3,
-      labels: [],
-      comments: [],
-    });
     fetchTasks();
   };
 
@@ -350,7 +316,6 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
                 color="primary"
                 onClick={() => {
                   setEditTask(task);
-                  setNewTaskData(task);
                   setOpenDialog(true);
                 }}
               >
@@ -862,98 +827,21 @@ const Backlog: React.FC<BacklogProps> = ({ projectId, projectName, templateType 
         </>
         )}
 
-      {/* Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editTask ? 'Edit Task' : 'Create Task'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Title"
-            margin="dense"
-            value={newTaskData.title}
-            onChange={(e) => setNewTaskData({ ...newTaskData, title: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            label="Description"
-            margin="dense"
-            multiline
-            value={newTaskData.description}
-            onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            label="Assignee"
-            margin="dense"
-            value={newTaskData.assignee}
-            onChange={(e) => setNewTaskData({ ...newTaskData, assignee: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            label="Reporter"
-            margin="dense"
-            value={newTaskData.reporter}
-            onChange={(e) => setNewTaskData({ ...newTaskData, reporter: e.target.value })}
-          />
-          <TextField
-            fullWidth
-            label="Due Date"
-            type="date"
-            margin="dense"
-            value={newTaskData.dueDate?.slice(0, 10) || ''}
-            onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value })}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            select
-            fullWidth
-            label="Priority"
-            margin="dense"
-            value={newTaskData.priority}
-            onChange={(e) => setNewTaskData({ ...newTaskData, priority: e.target.value as TaskPriority })}
-          >
-            {priorityOptions.map((p) => (
-              <MenuItem key={p} value={p}>{p}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            fullWidth
-            label="Status"
-            margin="dense"
-            value={newTaskData.status}
-            onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value as TaskStatus })}
-          >
-            {statusOptions.map((s) => (
-              <MenuItem key={s} value={s}>{s}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            fullWidth
-            label="Type"
-            margin="dense"
-            value={newTaskData.type}
-            onChange={(e) => setNewTaskData({ ...newTaskData, type: e.target.value as TaskType })}
-          >
-            {typeOptions.map((t) => (
-              <MenuItem key={t} value={t}>{t}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            fullWidth
-            label="Story Points"
-            type="number"
-            margin="dense"
-            value={newTaskData.storyPoints ?? ''}
-            onChange={(e) => setNewTaskData({ ...newTaskData, storyPoints: Number(e.target.value) })}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave}>Save</Button>
-        </DialogActions>
-      </Dialog>
+      {/* Task Form Dialog */}
+      <TaskFormDialog
+        open={openDialog}
+        onClose={() => {
+          setOpenDialog(false);
+          setEditTask(null);
+        }}
+        onSave={handleSave}
+        editTask={editTask}
+        projectId={projectId}
+        templateType={templateType}
+        defaultStatus="Backlog"
+        title="Backlog Task"
+        subtitle={`Add tasks to your ${projectName} backlog`}
+      />
     </Box>
     </DragDropContext>
   );

@@ -1,16 +1,20 @@
 // Core domain types - Tasks
 export interface Task {
   id: number;
+  projectId: number;
   title: string;
   description?: string;
   sprintId: number;
   assignee: string;
   reporter: string;
   dueDate: string;
+  epic: string;
   priority: TaskPriority;
   status: TaskStatus;
   type: TaskType;
   storyPoints?: number;
+  createdAt: string;
+  updatedAt: string;
   labels: string[];
   comments: Comment[];
 }

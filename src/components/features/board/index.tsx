@@ -7,14 +7,6 @@ import {
   Typography,
   Button,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Chip,
   IconButton,
   Avatar,
@@ -38,6 +30,7 @@ import {
   ViewWeek as BoardIcon,
 } from '@mui/icons-material';
 import { TaskService } from '@/services/TaskService';
+import { TaskFormDialog } from '@/components/features';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 
 interface BoardProps {
@@ -59,20 +52,6 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
   // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
-
-  const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: '',
-    description: '',
-    priority: 'Medium',
-    status: 'Todo',
-    type: 'Task',
-    assignee: '',
-    reporter: '',
-    dueDate: '',
-    storyPoints: 3,
-    labels: [],
-    comments: [],
-  });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -158,19 +137,16 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
     }
   };
 
-  const handleSave = async () => {
-    if (!newTaskData.title) return;
-
+  const handleSave = async (taskData: Partial<Task>) => {
     try {
       if (editTask) {
-        await TaskService.updateTask(Number(projectId), Number(editTask.id), newTaskData, templateType);
+        await TaskService.updateTask(Number(projectId), Number(editTask.id), taskData, templateType);
       } else {
-        await TaskService.createTask(Number(projectId), newTaskData as Omit<Task, 'id'>, templateType);
+        await TaskService.createTask(Number(projectId), taskData as Omit<Task, 'id'>, templateType);
       }
 
       setOpenDialog(false);
       setEditTask(null);
-      resetForm();
       fetchTasks();
     } catch (error) {
       console.error('Failed to save task:', error);
@@ -178,21 +154,7 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
     }
   };
 
-  const resetForm = () => {
-    setNewTaskData({
-      title: '',
-      description: '',
-      priority: 'Medium',
-      status: 'Todo',
-      type: 'Task',
-      assignee: '',
-      reporter: '',
-      dueDate: '',
-      storyPoints: 3,
-      labels: [],
-      comments: [],
-    });
-  };
+
 
   const getTaskIcon = (type: TaskType) => {
     switch (type) {
@@ -290,19 +252,6 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditTask(task);
-                    setNewTaskData({
-                      title: task.title,
-                      description: task.description,
-                      priority: task.priority,
-                      status: task.status,
-                      type: task.type,
-                      assignee: task.assignee,
-                      reporter: task.reporter,
-                      dueDate: task.dueDate,
-                      storyPoints: task.storyPoints,
-                      labels: task.labels,
-                      comments: task.comments,
-                    });
                     setOpenDialog(true);
                   }}
                 >
@@ -482,7 +431,6 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
                   variant="outlined"
                   startIcon={<AddIcon />}
                   onClick={() => {
-                    setNewTaskData({ ...newTaskData, status });
                     setOpenDialog(true);
                   }}
                   sx={{
@@ -582,126 +530,21 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
           {statusColumns.map(status => renderColumn(status))}
         </Box>
 
-        {/* Create/Edit Task Dialog */}
-        <Dialog 
-          open={openDialog} 
-          onClose={() => setOpenDialog(false)} 
-          fullWidth 
-          maxWidth="sm"
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-            }
+        {/* Task Form Dialog */}
+        <TaskFormDialog
+          open={openDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            setEditTask(null);
           }}
-        >
-          <DialogTitle sx={{ pb: 1 }}>
-            {editTask ? 'Edit Task' : 'Create New Task'}
-          </DialogTitle>
-          
-          <DialogContent sx={{ pt: 2 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField
-                label="Title"
-                fullWidth
-                value={newTaskData.title}
-                onChange={(e) => setNewTaskData({ ...newTaskData, title: e.target.value })}
-              />
-              
-              <TextField
-                label="Description"
-                fullWidth
-                multiline
-                rows={3}
-                value={newTaskData.description}
-                onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
-              />
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Type</InputLabel>
-                  <Select
-                    value={newTaskData.type}
-                    label="Type"
-                    onChange={(e) => setNewTaskData({ ...newTaskData, type: e.target.value as TaskType })}
-                  >
-                    {typeOptions.map(type => (
-                      <MenuItem key={type} value={type}>{type}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
-                <FormControl fullWidth>
-                  <InputLabel>Priority</InputLabel>
-                  <Select
-                    value={newTaskData.priority}
-                    label="Priority"
-                    onChange={(e) => setNewTaskData({ ...newTaskData, priority: e.target.value as TaskPriority })}
-                  >
-                    {priorityOptions.map(priority => (
-                      <MenuItem key={priority} value={priority}>{priority}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={newTaskData.status}
-                    label="Status"
-                    onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value as TaskStatus })}
-                  >
-                    {statusColumns.map(status => (
-                      <MenuItem key={status} value={status}>{status}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
-                <TextField
-                  label="Story Points"
-                  type="number"
-                  fullWidth
-                  value={newTaskData.storyPoints}
-                  onChange={(e) => setNewTaskData({ ...newTaskData, storyPoints: Number(e.target.value) })}
-                />
-              </Box>
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="Assignee"
-                  fullWidth
-                  value={newTaskData.assignee}
-                  onChange={(e) => setNewTaskData({ ...newTaskData, assignee: e.target.value })}
-                />
-                
-                <TextField
-                  label="Reporter"
-                  fullWidth
-                  value={newTaskData.reporter}
-                  onChange={(e) => setNewTaskData({ ...newTaskData, reporter: e.target.value })}
-                />
-              </Box>
-              
-              <TextField
-                label="Due Date"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={newTaskData.dueDate}
-                onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value })}
-              />
-            </Box>
-          </DialogContent>
-          
-          <DialogActions sx={{ p: 3, pt: 1 }}>
-            <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button variant="contained" onClick={handleSave}>
-              {editTask ? 'Update' : 'Create'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onSave={handleSave}
+          editTask={editTask}
+          projectId={Number(projectId)}
+          templateType={templateType || 'kanban'}
+          defaultStatus="Todo"
+          title="Board Task"
+          subtitle={`Add or edit tasks for your ${projectName || 'project'} board`}
+        />
       </Box>
     </DragDropContext>
   );

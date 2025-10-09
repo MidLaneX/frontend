@@ -239,58 +239,145 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
       }));
   }, [tasks]);
 
-  // Recent activities - get tasks with upcoming due dates or recently commented tasks
+  // Recent activities - show latest user actions sorted by timestamp
   const recentActivities = React.useMemo(() => {
-    const now = new Date();
-    const weekFromNow = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+    console.log('=== DEBUG RECENT ACTIVITIES ===');
+    console.log('Tasks:', tasks);
     
-    // Get tasks with upcoming due dates or recent comments
-    const recentTasks = tasks.filter(task => {
-      // Include tasks with due dates within the next week
-      if (task.dueDate) {
-        const dueDate = new Date(task.dueDate);
-        if (dueDate >= now && dueDate <= weekFromNow) {
-          return true;
-        }
-      }
-      
-      // Include tasks with recent comments (last 3 days)
-      if (task.comments && task.comments.length > 0) {
-        const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
-        const hasRecentComment = task.comments.some(comment => {
-          const commentDate = new Date(comment.timestamp);
-          return commentDate >= threeDaysAgo;
+    if (!tasks || tasks.length === 0) {
+      console.log('No tasks found');
+      return [];
+    }
+
+    // Show first 10 tasks as fallback, then try to sort by dates
+    const fallbackTasks = tasks.slice(0, 10).map((task, index) => ({
+      ...task,
+      activityType: 'created',
+      timeAgo: `Task ${index + 1}`,
+      mostRecentTime: Date.now() - (index * 1000)
+    }));
+
+    console.log('Fallback tasks created:', fallbackTasks);
+
+    // Try to parse timestamps if they exist
+    try {
+      const tasksWithTimestamps = tasks.map(task => {
+        console.log(`Processing task: ${task.title}`, {
+          createdAt: task.createdAt,
+          updatedAt: task.updatedAt
         });
-        if (hasRecentComment) return true;
-      }
-      
-      // Include tasks that are currently in progress
-      if (task.status === 'In Progress' || task.status === 'Review') {
-        return true;
-      }
-      
-      return false;
-    });
-    
-    // Sort by priority, then due date, then status
-    return recentTasks
-      .sort((a, b) => {
-        // Priority order: Highest, High, Medium, Low, Lowest
-        const priorityOrder = { 'Highest': 5, 'High': 4, 'Medium': 3, 'Low': 2, 'Lowest': 1 };
-        const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
-        if (priorityDiff !== 0) return priorityDiff;
+
+        let mostRecentTime = Date.now();
+        let activityType = 'created';
+        let timeAgo = 'Just now';
+
+        // Parse createdAt
+        let createdTime = 0;
+        if (task.createdAt) {
+          try {
+            const createdDate = new Date(task.createdAt.replace(' ', 'T'));
+            createdTime = createdDate.getTime();
+          } catch (e) {
+            console.log('Error parsing createdAt:', e);
+          }
+        }
+
+        // Parse updatedAt
+        let updatedTime = 0;
+        if (task.updatedAt) {
+          try {
+            const updatedDate = new Date(task.updatedAt.replace(' ', 'T'));
+            updatedTime = updatedDate.getTime();
+          } catch (e) {
+            console.log('Error parsing updatedAt:', e);
+          }
+        }
+
+        // Determine activity type by comparing timestamps
+        console.log(`Task "${task.title}" analysis:`, {
+          createdAt: task.createdAt,
+          updatedAt: task.updatedAt,
+          createdTime,
+          updatedTime,
+          timeDiff: updatedTime - createdTime
+        });
+
+        if (updatedTime > 0 && createdTime > 0) {
+          // Both timestamps exist - check if task was actually updated
+          const timeDifferenceMs = Math.abs(updatedTime - createdTime);
+          const timeDifferenceSeconds = timeDifferenceMs / 1000;
+          
+          console.log(`Time difference: ${timeDifferenceSeconds} seconds`);
+          
+          // Simple check: if updatedAt is later than createdAt, it's updated
+          if (updatedTime > createdTime) {
+            mostRecentTime = updatedTime;
+            activityType = 'updated';
+            console.log(`→ Task was UPDATED (updated: ${task.updatedAt}, created: ${task.createdAt})`);
+          } else {
+            mostRecentTime = createdTime;
+            activityType = 'created';
+            console.log(`→ Task was CREATED (same timestamps or created is later)`);
+          }
+        } else if (updatedTime > 0) {
+          // Only updated timestamp exists
+          mostRecentTime = updatedTime;
+          activityType = 'updated';
+          console.log(`→ Task was UPDATED (only updatedAt exists)`);
+        } else if (createdTime > 0) {
+          // Only created timestamp exists
+          mostRecentTime = createdTime;
+          activityType = 'created';
+          console.log(`→ Task was CREATED (only createdAt exists)`);
+        }
+
+        // Calculate actual time ago from the most recent timestamp
+        const now = Date.now();
+        const diffMs = now - mostRecentTime;
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
         
-        // Then by due date (sooner first)
-        const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-        const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-        const dateDiff = aDate - bDate;
-        if (dateDiff !== 0) return dateDiff;
-        
-        // Finally by status (In Progress, Review, then others)
-        const statusOrder = { 'In Progress': 3, 'Review': 2, 'Todo': 1, 'Backlog': 0, 'Done': -1 };
-        return statusOrder[b.status] - statusOrder[a.status];
-      })
-      .slice(0, 5);
+        if (diffMinutes < 1) timeAgo = 'Just now';
+        else if (diffMinutes < 60) timeAgo = `${diffMinutes}m ago`;
+        else if (diffHours < 24) timeAgo = `${diffHours}h ago`;
+        else if (diffDays < 30) timeAgo = `${diffDays}d ago`;
+        else timeAgo = `${Math.floor(diffDays / 30)}mo ago`;
+
+        console.log(`Task: ${task.title}, Created: ${task.createdAt}, Updated: ${task.updatedAt}, Activity: ${activityType}, Time: ${timeAgo}`);
+
+        return {
+          ...task,
+          activityType,
+          timeAgo,
+          mostRecentTime
+        };
+      });
+
+      // Sort by most recent timestamp (newest first) and take top 10
+      const sortedTasks = tasksWithTimestamps
+        .sort((a, b) => {
+          console.log(`Sorting: ${a.title} (${a.mostRecentTime}) vs ${b.title} (${b.mostRecentTime})`);
+          console.log(`Result: ${b.mostRecentTime - a.mostRecentTime}`);
+          return b.mostRecentTime - a.mostRecentTime; // Newest first (larger timestamp first)
+        })
+        .slice(0, 10);
+
+      console.log('Final sorted tasks:', sortedTasks.map(t => ({
+        title: t.title,
+        activityType: t.activityType,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+        mostRecentTime: t.mostRecentTime,
+        timeAgo: t.timeAgo
+      })));
+      
+      return sortedTasks;
+
+    } catch (error) {
+      console.log('Error processing timestamps, using fallback:', error);
+      return fallbackTasks;
+    }
   }, [tasks]);
 
   // Summary statistics
@@ -990,6 +1077,17 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
                                       fontSize: '0.7rem',
                                     }}
                                   />
+                                  <Chip 
+                                    label={task.activityType === 'updated' ? 'Updated' : 'Created'}
+                                    size="small" 
+                                    sx={{ 
+                                      backgroundColor: task.activityType === 'updated' ? alpha(theme.palette.info.main, 0.1) : alpha(theme.palette.success.main, 0.1),
+                                      color: task.activityType === 'updated' ? theme.palette.info.main : theme.palette.success.main,
+                                      height: 20,
+                                      fontSize: '0.7rem',
+                                      fontWeight: 500,
+                                    }}
+                                  />
                                 </Stack>
                               </Box>
                             }
@@ -1021,6 +1119,14 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
                                     {task.storyPoints || 0} points
                                   </Typography>
                                 </Stack>
+                                {task.epic && (
+                                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                                    <EpicIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                    <Typography variant="caption">
+                                      Epic: {task.epic}
+                                    </Typography>
+                                  </Stack>
+                                )}
                                 {task.comments && task.comments.length > 0 && (
                                   <Stack direction="row" alignItems="center" spacing={1}>
                                     <PersonIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
@@ -1054,7 +1160,7 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
                         No recent activities
                       </Typography>
                       <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-                        Tasks with upcoming deadlines, recent comments, or in progress will appear here
+                        The 10 most recently created or updated tasks will appear here
                       </Typography>
                     </Box>
                   )}
