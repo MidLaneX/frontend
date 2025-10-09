@@ -49,7 +49,6 @@ import {
   FilterList as FilterIcon,
   Download as ExportIcon,
   Refresh as RefreshIcon,
-  Timeline as TimelineIcon,
   Assessment as AnalyticsIcon,
   Speed as VelocityIcon,
   PlayCircle as InProgressIcon,
@@ -240,11 +239,57 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
       }));
   }, [tasks]);
 
-  // Recent activities (last 5 tasks)
+  // Recent activities - get tasks with upcoming due dates or recently commented tasks
   const recentActivities = React.useMemo(() => {
-    return tasks
-      .slice()
-      .sort((a, b) => new Date(b.dueDate || '').getTime() - new Date(a.dueDate || '').getTime())
+    const now = new Date();
+    const weekFromNow = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+    
+    // Get tasks with upcoming due dates or recent comments
+    const recentTasks = tasks.filter(task => {
+      // Include tasks with due dates within the next week
+      if (task.dueDate) {
+        const dueDate = new Date(task.dueDate);
+        if (dueDate >= now && dueDate <= weekFromNow) {
+          return true;
+        }
+      }
+      
+      // Include tasks with recent comments (last 3 days)
+      if (task.comments && task.comments.length > 0) {
+        const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+        const hasRecentComment = task.comments.some(comment => {
+          const commentDate = new Date(comment.timestamp);
+          return commentDate >= threeDaysAgo;
+        });
+        if (hasRecentComment) return true;
+      }
+      
+      // Include tasks that are currently in progress
+      if (task.status === 'In Progress' || task.status === 'Review') {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    // Sort by priority, then due date, then status
+    return recentTasks
+      .sort((a, b) => {
+        // Priority order: Highest, High, Medium, Low, Lowest
+        const priorityOrder = { 'Highest': 5, 'High': 4, 'Medium': 3, 'Low': 2, 'Lowest': 1 };
+        const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        // Then by due date (sooner first)
+        const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+        const dateDiff = aDate - bDate;
+        if (dateDiff !== 0) return dateDiff;
+        
+        // Finally by status (In Progress, Review, then others)
+        const statusOrder = { 'In Progress': 3, 'Review': 2, 'Todo': 1, 'Backlog': 0, 'Done': -1 };
+        return statusOrder[b.status] - statusOrder[a.status];
+      })
       .slice(0, 5);
   }, [tasks]);
 
@@ -371,11 +416,6 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
           <Tab 
             icon={<VelocityIcon />} 
             label="Velocity" 
-            iconPosition="start"
-          />
-          <Tab 
-            icon={<TimelineIcon />} 
-            label="Timeline" 
             iconPosition="start"
           />
         </Tabs>
@@ -966,13 +1006,29 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
                                   <Typography variant="caption">
                                     {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
                                   </Typography>
+                                  {task.dueDate && new Date(task.dueDate) <= new Date(Date.now() + 24 * 60 * 60 * 1000) && (
+                                    <Chip 
+                                      label="Due Soon" 
+                                      size="small" 
+                                      color="warning" 
+                                      sx={{ height: 16, fontSize: '0.6rem' }}
+                                    />
+                                  )}
                                 </Stack>
-                                <Stack direction="row" alignItems="center" spacing={1}>
+                                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
                                   <EpicIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
                                   <Typography variant="caption">
                                     {task.storyPoints || 0} points
                                   </Typography>
                                 </Stack>
+                                {task.comments && task.comments.length > 0 && (
+                                  <Stack direction="row" alignItems="center" spacing={1}>
+                                    <PersonIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                    <Typography variant="caption">
+                                      {task.comments.length} comment{task.comments.length !== 1 ? 's' : ''}
+                                    </Typography>
+                                  </Stack>
+                                )}
                               </Box>
                             }
                           />
@@ -994,8 +1050,11 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
                       border: `2px dashed ${theme.palette.grey[300]}`,
                     }}>
                       <ScheduleIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" textAlign="center">
                         No recent activities
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
+                        Tasks with upcoming deadlines, recent comments, or in progress will appear here
                       </Typography>
                     </Box>
                   )}
@@ -1006,29 +1065,166 @@ const Estimation: React.FC<EstimationProps> = ({ projectId, projectName, templat
 
           <TabPanel value={tabValue} index={1}>
             {/* Velocity Tab Content */}
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <VelocityIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h5" gutterBottom>
-                Velocity Analytics
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Coming soon! Track your team's velocity and sprint performance.
-              </Typography>
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+              gap: 3, 
+              mb: 4 
+            }}>
+              {/* Team Performance Metrics */}
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  background: theme.palette.background.paper,
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <VelocityIcon color="primary" />
+                      <Typography variant="h6" fontWeight="600">
+                        Team Performance
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ p: 0, mb: 3 }}
+                />
+                
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Story Points Completed vs Total
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={totalStoryPoints > 0 ? (completedStoryPoints / totalStoryPoints) * 100 : 0}
+                    sx={{ height: 12, borderRadius: 2, mb: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {completedStoryPoints} of {totalStoryPoints} story points completed
+                  </Typography>
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Task Completion Rate
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={completionRate}
+                    color="success"
+                    sx={{ height: 12, borderRadius: 2, mb: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {completedTasks} of {totalTasks} tasks completed ({completionRate}%)
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Average Story Points per Task
+                  </Typography>
+                  <Typography variant="h4" color="primary.main" fontWeight="bold">
+                    {totalTasks > 0 ? (totalStoryPoints / totalTasks).toFixed(1) : '0'}
+                  </Typography>
+                </Box>
+              </Paper>
+
+              {/* Workload Distribution */}
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  background: theme.palette.background.paper,
+                }}
+              >
+                <CardHeader
+                  title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PersonIcon color="info" />
+                      <Typography variant="h6" fontWeight="600">
+                        Workload Distribution
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ p: 0, mb: 3 }}
+                />
+
+                <List>
+                  {Object.entries(
+                    tasks.reduce((acc, task) => {
+                      const assignee = task.assignee || 'Unassigned';
+                      if (!acc[assignee]) {
+                        acc[assignee] = { tasks: 0, points: 0, completed: 0 };
+                      }
+                      acc[assignee].tasks++;
+                      acc[assignee].points += task.storyPoints || 0;
+                      if (task.status === 'Done') {
+                        acc[assignee].completed++;
+                      }
+                      return acc;
+                    }, {} as Record<string, { tasks: number; points: number; completed: number }>)
+                  ).map(([assignee, stats]) => (
+                    <ListItem key={assignee} sx={{ px: 0, py: 1 }}>
+                      <ListItemText
+                        primary={assignee}
+                        secondary={
+                          <Box sx={{ mt: 1 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="caption">
+                                {stats.tasks} tasks ({stats.points} points)
+                              </Typography>
+                              <Typography variant="caption" color="success.main">
+                                {stats.completed} completed
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={stats.tasks > 0 ? (stats.completed / stats.tasks) * 100 : 0}
+                              sx={{ height: 6, borderRadius: 1 }}
+                            />
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                  {tasks.length === 0 && (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No task data available for workload analysis
+                      </Typography>
+                    </Box>
+                  )}
+                </List>
+              </Paper>
             </Box>
+
+            {/* Sprint Burndown Placeholder */}
+            <Paper 
+              sx={{ 
+                p: 3, 
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.divider}`,
+                background: theme.palette.background.paper,
+                textAlign: 'center'
+              }}
+            >
+              <VelocityIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                Sprint Burndown Chart
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Coming soon! Track daily progress and velocity trends.
+              </Typography>
+              <Button variant="outlined" disabled>
+                Configure Sprint Settings
+              </Button>
+            </Paper>
           </TabPanel>
 
-          <TabPanel value={tabValue} index={2}>
-            {/* Timeline Tab Content */}
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <TimelineIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h5" gutterBottom>
-                Project Timeline
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Coming soon! Visualize your project timeline and milestones.
-              </Typography>
-            </Box>
-          </TabPanel>
+
         </>
       )}
     </Container>

@@ -85,6 +85,8 @@ const Dashboard: React.FC<DashboardProps> = ({ orgId: orgIdProp, userId: userIdP
   const [starredProjects, setStarredProjects] = useState<string[]>(['1', '3']);
   
   // User profile state
+  // TODO: Replace with actual UserProfile type if available
+  type UserProfile = any;
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Don't render if not authenticated

@@ -74,41 +74,47 @@ export class ProjectService {
     try {
       const response = await projectsApi.getProject(id, template);
       console.log('ProjectService: getProjectById response:', response.data);
+      console.log('ProjectService: response data type:', typeof response.data);
+      console.log('ProjectService: response data keys:', response.data ? Object.keys(response.data) : 'null/undefined');
       
-      // If response.data is already a Project object, return it
-      if (response.data && typeof response.data === 'object' && 'teamMembers' in response.data) {
-        console.log('Project already has teamMembers:', response.data.teamMembers);
-        return response.data as Project;
-      }
-      
-      // If response.data is a ProjectDTO, transform it to Project
+      // Always transform the response to ensure proper Project structure
       const dto = response.data as ProjectDTO;
+      
+      console.log('ProjectService: DTO fields:', {
+        id: dto?.id,
+        name: dto?.name,
+        type: dto?.type,
+        templateType: dto?.templateType,
+        features: dto?.features,
+        featuresLength: dto?.features?.length,
+        orgId: dto?.orgId,
+        createdAt: dto?.createdAt,
+        updatedAt: dto?.updatedAt,
+        createdBy: dto?.createdBy
+      });
+      
       if (dto) {
-        // TODO: Fetch actual team members from backend API
-        // For now, adding sample team members for testing
-        const sampleTeamMembers = [
-          { name: 'John Doe', role: 'Developer', avatar: 'JD' },
-          { name: 'Jane Smith', role: 'Designer', avatar: 'JS' },
-          { name: 'Mike Johnson', role: 'Product Manager', avatar: 'MJ' },
-          { name: 'Sarah Wilson', role: 'QA Engineer', avatar: 'SW' },
-          { name: 'Alex Brown', role: 'DevOps', avatar: 'AB' }
-        ];
-        
-        console.log('Creating project with sample team members:', sampleTeamMembers);
-        
-        return {
-          id: String(dto.id),
+     
+        const transformedProject = {
+          id: dto.id,
           name: dto.name,
           key: dto.name?.toUpperCase().replace(/\s+/g, '_') || '',
-          description: dto.name || '',
+          templateType: dto.templateType, // Default features based on template
+          features: dto.features || [],
           timeline: {
             start: dto.createdAt || new Date().toISOString().split('T')[0],
             end: dto.updatedAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
           },
-          type: dto.type as any,
-          teamMembers: sampleTeamMembers, // Use sample data for now
-          tasks: [] // Initialize empty tasks array
+          type: dto.type,
+          teamMembers: [], // Use sample data for now
+          tasks: [], // Initialize empty tasks array
+          orgId: dto.orgId,
+          createdAt: dto.createdAt,
+          updatedAt: dto.updatedAt,
+          createdBy: dto.createdBy
         };
+        
+        return transformedProject;
       }
       
       return null;
