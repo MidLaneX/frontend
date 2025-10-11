@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import Box from '@mui/material/Box'
-import { Navbar, Sidebar } from "@/components/layout";
+import { Navbar, Sidebar, ChatSidebar } from "@/components/layout";
 import WelcomePage from "@/pages/WelcomePage";
 import Dashboard from "@/pages/Dashboard";
 import Project from "@/pages/Project";
@@ -56,6 +56,7 @@ function AppContent() {
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
       <Navbar />
       <Sidebar />
+      <ChatSidebar />
       <Box
         component="main"
         sx={{
@@ -73,69 +74,69 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Navigate to="/organizations" replace />} />
           <Route path="/welcome" element={<WelcomePage />} />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/projects/:projectId/:templateType" 
+          <Route
+            path="/projects/:projectId/:templateType"
             element={
               <ProtectedRoute>
                 <Project />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/projects/:projectId/:templateType/:featureName" 
+          <Route
+            path="/projects/:projectId/:templateType/:featureName"
             element={
               <ProtectedRoute>
                 <Project />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/organizations" 
+          <Route
+            path="/organizations"
             element={
               <ProtectedRoute>
                 <OrganizationPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/organizationpage/:orgId" 
+          <Route
+            path="/organizationpage/:orgId"
             element={
               <ProtectedRoute>
                 <OrganizationDetailPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/account/settings" 
+          <Route
+            path="/account/settings"
             element={
               <ProtectedRoute>
                 <AccountSettings />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/about" 
+          <Route
+            path="/about"
             element={
               <ProtectedRoute>
                 <About />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/help" 
+          <Route
+            path="/help"
             element={
               <ProtectedRoute>
                 <Help />
               </ProtectedRoute>
-            } 
+            }
           />
 
           <Route path="*" element={<Navigate to="/organizations" replace />} />
