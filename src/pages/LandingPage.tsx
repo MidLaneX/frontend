@@ -28,7 +28,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import type { SignupData } from '../context/AuthContext';
 import type { SocialLoginRequest } from '../api/endpoints/auth';
-import { GoogleLoginButton, FacebookLoginButton } from '../components/auth';
+import { GoogleLoginButton } from '../components/auth';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -154,7 +154,7 @@ const LandingPage: React.FC = () => {
   };
 
   const handleSocialLogin = async (
-    provider: 'google' | 'facebook',
+    provider: 'google',
     accessToken: string,
     email: string,
     name: string,
@@ -174,9 +174,9 @@ const LandingPage: React.FC = () => {
       };
 
       await socialLogin(socialLoginData);
-      setSuccess(`${provider === 'google' ? 'Google' : 'Facebook'} login successful! Redirecting...`);
+      setSuccess('Google login successful! Redirecting...');
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || `${provider === 'google' ? 'Google' : 'Facebook'} login failed. Please try again.`;
+      const errorMessage = err.response?.data?.message || err.message || 'Google login failed. Please try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -425,13 +425,6 @@ const LandingPage: React.FC = () => {
                       onError={handleSocialError}
                       disabled={loading}
                     />
-                    <FacebookLoginButton
-                      onSuccess={(accessToken, email, name, profilePicture) =>
-                        handleSocialLogin('facebook', accessToken, email, name, profilePicture)
-                      }
-                      onError={handleSocialError}
-                      disabled={loading}
-                    />
                   </Stack>
                 </Box>
               </TabPanel>
@@ -521,13 +514,6 @@ const LandingPage: React.FC = () => {
                     <GoogleLoginButton
                       onSuccess={(accessToken, email, name, profilePicture) =>
                         handleSocialLogin('google', accessToken, email, name, profilePicture)
-                      }
-                      onError={handleSocialError}
-                      disabled={loading}
-                    />
-                    <FacebookLoginButton
-                      onSuccess={(accessToken, email, name, profilePicture) =>
-                        handleSocialLogin('facebook', accessToken, email, name, profilePicture)
                       }
                       onError={handleSocialError}
                       disabled={loading}
