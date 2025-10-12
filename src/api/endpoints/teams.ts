@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { tokenManager } from '../../utils/tokenManager';
+import { ENV } from '../../config/env';
 import type {
   Team,
   CreateTeamRequest,
@@ -63,7 +64,7 @@ const transformTeamMembers = (rawMembers: TeamMemberDetailRaw[]): TeamMemberDeta
 
 // Create a dedicated API client for teams service
 const teamsApiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: ENV.API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
