@@ -12,7 +12,6 @@ export const ENV = {
 
   // Social Authentication
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
-  FACEBOOK_APP_ID: import.meta.env.VITE_FACEBOOK_APP_ID || '',
   
   // App Configuration
   APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
