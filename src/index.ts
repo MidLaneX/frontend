@@ -15,8 +15,5 @@ export * from './utils';
 export * from './constants/colors';
 export * from './constants/config';
 
-// Data
-export * from './data/projects';
-
 // Theme
 export { theme } from './config/theme';
