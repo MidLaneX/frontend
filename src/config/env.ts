@@ -5,7 +5,7 @@ export const ENV = {
   DEV: import.meta.env.DEV,
   
   // API Configuration for API gateway
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https:midlanex.duckdns.org/api',
   // API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
 
   // PROJECTS_SERVICE_URL: import.meta.env.VITE_PROJECTS_SERVICE_URL || 'http://localhost:8083/api',
