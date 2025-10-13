@@ -29,25 +29,27 @@ import {
 import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import {
-  Assignment as TaskIcon,
-  BugReport as BugIcon,
-  AutoStories as StoryIcon,
-  EmojiEvents as EpicIcon,
+  AnalyticsOutlined as AnalyticsIcon,
+  RefreshOutlined as RefreshIcon,
+  TrendingUpOutlined as VelocityIcon,
+  AssignmentOutlined as TaskIcon,
+  BugReportOutlined as BugIcon,
+  AutoStoriesOutlined as StoryIcon,
+  EmojiEventsOutlined as EpicIcon,
+  DonutSmallOutlined as InProgressIcon,
+  ShareOutlined as ShareIcon,
+  PictureAsPdfOutlined as PdfIcon,
+  Done as DoneIcon,
   TrendingUp as TrendingUpIcon,
-  FilterList as FilterIcon,
-  Download as ExportIcon,
-  Refresh as RefreshIcon,
-  Assessment as AnalyticsIcon,
-  Speed as VelocityIcon,
-  PlayCircle as InProgressIcon,
-  CheckCircle as DoneIcon,
-  Schedule as ScheduleIcon,
   Warning as WarningIcon,
+  Schedule as ScheduleIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
-import type { Task, TaskStatus, TaskPriority, TaskType } from "@/types";
-import { TaskService } from "@/services/TaskService";
 import Velocity from "./velocity";
+import ShareProjectDialog from "./ShareProjectDialog";
+import type { Task, TaskPriority, TaskStatus, TaskType } from "@/types";
+import { TaskService } from "@/services/TaskService";
+import "./print-styles.css";
 
 interface EstimationProps {
   projectId: number;
@@ -116,6 +118,7 @@ const Estimation: React.FC<EstimationProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -139,6 +142,12 @@ const Estimation: React.FC<EstimationProps> = ({
   useEffect(() => {
     fetchTasks();
   }, [projectId, templateType]);
+
+  // Download report as PDF
+  const handleDownloadPDF = () => {
+    // Create a printable version
+    window.print();
+  };
 
   // Calculate status distribution
   const statusData = React.useMemo(() => {
@@ -404,7 +413,6 @@ const Estimation: React.FC<EstimationProps> = ({
       toolbar: { show: false },
       animations: {
         enabled: true,
-        easing: "easeinout",
         speed: 800,
         animateGradually: { enabled: true, delay: 150 },
       },
@@ -662,7 +670,7 @@ const Estimation: React.FC<EstimationProps> = ({
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={2}>
+        <Stack direction="row" spacing={2} className="no-print">
           <MuiTooltip title="Refresh Data">
             <IconButton
               onClick={fetchTasks}
@@ -677,24 +685,26 @@ const Estimation: React.FC<EstimationProps> = ({
               <RefreshIcon />
             </IconButton>
           </MuiTooltip>
-          <MuiTooltip title="Export Data">
+          <MuiTooltip title="Download PDF">
             <IconButton
+              onClick={handleDownloadPDF}
               sx={{
-                backgroundColor: alpha(theme.palette.success.main, 0.1),
+                backgroundColor: alpha(theme.palette.error.main, 0.1),
                 "&:hover": {
-                  backgroundColor: alpha(theme.palette.success.main, 0.2),
+                  backgroundColor: alpha(theme.palette.error.main, 0.2),
                 },
               }}
             >
-              <ExportIcon />
+              <PdfIcon />
             </IconButton>
           </MuiTooltip>
           <Button
-            variant="outlined"
-            startIcon={<FilterIcon />}
+            variant="contained"
+            startIcon={<ShareIcon />}
+            onClick={() => setShareDialogOpen(true)}
             sx={{ borderRadius: 2 }}
           >
-            Filters
+            Share Report
           </Button>
         </Stack>
       </Box>
@@ -1466,6 +1476,16 @@ const Estimation: React.FC<EstimationProps> = ({
           </TabPanel>
         </>
       )}
+
+      {/* Share Project Dialog */}
+      <ShareProjectDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        projectId={projectId}
+        projectName={projectName || `Project ${projectId}`}
+        templateType={templateType}
+        tasks={tasks}
+      />
     </Container>
   );
 };

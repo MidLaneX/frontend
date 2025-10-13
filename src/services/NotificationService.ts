@@ -177,6 +177,79 @@ export class NotificationService {
   }
 
   /**
+   * Send project status update notification with PDF
+   */
+  static async sendProjectStatusUpdate(
+    recipients: string[],
+    projectData: {
+      projectName: string;
+      updateType: string;
+      updatedBy: string;
+      updateDescription: string;
+      progressPercentage: number;
+      milestones: Array<{ name: string; date: string; status: string }>;
+      tasksCompleted: number;
+      tasksInProgress: number;
+      tasksPending: number;
+      nextSteps: string[];
+      projectUrl: string;
+      additionalNotes?: string;
+    }
+  ): Promise<void> {
+    try {
+      console.log("NotificationService: Sending project status update", {
+        recipients,
+        projectName: projectData.projectName,
+      });
+
+      if (!recipients || recipients.length === 0) {
+        console.log("NotificationService: No recipients, skipping");
+        return;
+      }
+
+      // Clean email addresses
+      const cleanEmails = recipients.map(email => this.extractEmail(email));
+
+      // Format date
+      const updateDate = new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+
+      // Prepare template data
+      const templateData = {
+        projectName: projectData.projectName,
+        recipientName: "Team Member", // Will be personalized in backend if needed
+        updateType: projectData.updateType,
+        updatedBy: projectData.updatedBy,
+        updateDate,
+        updateDescription: projectData.updateDescription,
+        progressPercentage: projectData.progressPercentage,
+        milestones: projectData.milestones,
+        tasksCompleted: projectData.tasksCompleted,
+        tasksInProgress: projectData.tasksInProgress,
+        tasksPending: projectData.tasksPending,
+        nextSteps: projectData.nextSteps,
+        projectUrl: projectData.projectUrl,
+        additionalNotes: projectData.additionalNotes || "Thank you for your continued dedication to this project.",
+      };
+
+      // Send via API
+      await notificationsApi.sendProjectUpdate(
+        cleanEmails,
+        templateData,
+        projectData.progressPercentage >= 80 ? "HIGH" : "NORMAL"
+      );
+
+      console.log("NotificationService: Project status update sent successfully");
+    } catch (error: any) {
+      console.error("NotificationService: Failed to send project status update:", error.message);
+      throw error; // Throw for user feedback
+    }
+  }
+
+  /**
    * Extract email from "Name <email>" or just "email"
    */
   private static extractEmail(emailString: string): string {

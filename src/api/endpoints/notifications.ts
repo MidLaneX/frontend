@@ -157,4 +157,23 @@ export const notificationsApi = {
     };
     return notificationsApiClient.post<{ message: string; success: boolean }>("/send", request);
   },
+
+  /**
+   * Send project status update notification
+   */
+  sendProjectUpdate: (
+    recipients: string[],
+    projectData: ProjectUpdateData,
+    priority: "HIGH" | "NORMAL" | "LOW" = "NORMAL"
+  ) => {
+    console.log("📊 Sending project status update to:", recipients);
+    const request: NotificationRequest = {
+      recipients,
+      subject: `Project Status Update: ${projectData.projectName}`,
+      templateName: "project-update",
+      templateData: projectData,
+      priority,
+    };
+    return notificationsApiClient.post<{ message: string; success: boolean }>("/send", request);
+  },
 };

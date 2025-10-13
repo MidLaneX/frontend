@@ -1,0 +1,94 @@
+/* Print Styles for Project Estimation Report */
+
+@media print {
+  /* Hide navigation and unnecessary elements */
+  nav,
+  .MuiAppBar-root,
+  .no-print,
+  button,
+  .MuiIconButton-root,
+  .MuiTabs-root {
+    display: none !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: white !important;
+  }
+
+  /* Container adjustments */
+  .MuiContainer-root {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    color: #000 !important;
+  }
+
+  /* Cards and Papers */
+  .MuiPaper-root,
+  .MuiCard-root {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  /* Charts - make them visible */
+  .apexcharts-canvas {
+    max-width: 100% !important;
+  }
+
+  /* Grid layouts */
+  .MuiGrid-container {
+    break-inside: avoid;
+  }
+
+  /* Tables */
+  table {
+    break-inside: avoid;
+  }
+
+  /* Progress bars */
+  .MuiLinearProgress-root {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Preserve colors */
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-before: always;
+  }
+
+  /* Header styling for print */
+  .print-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #333;
+    padding-bottom: 1rem;
+  }
+
+  .print-date {
+    text-align: right;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
+  }
+}
