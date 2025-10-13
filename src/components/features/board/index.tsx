@@ -35,6 +35,8 @@ import {
   ViewWeek as BoardIcon,
 } from "@mui/icons-material";
 import { TaskService } from "@/services/TaskService";
+import { NotificationService } from "@/services/NotificationService";
+import { tokenManager } from "@/utils/tokenManager";
 import { TaskFormDialog } from "@/components/features";
 import type { Task, TaskStatus, TaskPriority, TaskType } from "@/types";
 
@@ -167,19 +169,69 @@ const Board: React.FC<BoardProps> = ({
 
   const handleSave = async (taskData: Partial<Task>) => {
     try {
+      const currentUserName = tokenManager.getUserEmail()?.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || "System";
+      const currentProjectName = projectName || `Project ${projectId}`;
+      
       if (editTask) {
-        await TaskService.updateTask(
+        const updatedTask = await TaskService.updateTask(
           Number(projectId),
           Number(editTask.id),
           taskData,
           templateType,
         );
+        
+        // Send notification if assignee changed
+        if (updatedTask && taskData.assignee && editTask.assignee !== taskData.assignee) {
+          console.log("📧 Assignee changed, sending notification...");
+          try {
+            await NotificationService.sendTaskAssignmentNotification(
+              updatedTask,
+              currentProjectName,
+              taskData.assignee,
+              currentUserName
+            );
+          } catch (notifError) {
+            console.error("Failed to send notification:", notifError);
+          }
+        }
       } else {
-        await TaskService.createTask(
+        const createdTask = await TaskService.createTask(
           Number(projectId),
           taskData as Omit<Task, "id">,
           templateType,
         );
+        
+        // Send notification to assignee when task is created
+        if (createdTask && createdTask.assignee) {
+          console.log("📧 Sending notification to assignee:", createdTask.assignee);
+          try {
+            await NotificationService.sendTaskAssignmentNotification(
+              createdTask,
+              currentProjectName,
+              createdTask.assignee,
+              currentUserName
+            );
+            console.log("✅ Assignee notification sent successfully");
+          } catch (notifError) {
+            console.error("❌ Failed to send notification:", notifError);
+          }
+        }
+        
+        // Send notification to reporter if set
+        if (createdTask && createdTask.reporter) {
+          console.log("📧 Sending notification to reporter:", createdTask.reporter);
+          try {
+            await NotificationService.sendReporterNotification(
+              createdTask,
+              currentProjectName,
+              createdTask.reporter,
+              currentUserName
+            );
+            console.log("✅ Reporter notification sent successfully");
+          } catch (notifError) {
+            console.error("❌ Failed to send reporter notification:", notifError);
+          }
+        }
       }
 
       setOpenDialog(false);

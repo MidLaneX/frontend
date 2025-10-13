@@ -39,6 +39,8 @@ import type { SprintDTO } from "@/types/featurevise/sprint";
 import { TaskService } from "@/services/TaskService";
 import { SprintService } from "@/services/SprintService";
 import { TaskFormDialog } from "@/components/features";
+import { NotificationService } from "@/services/NotificationService";
+import { tokenManager } from "@/utils/tokenManager";
 
 interface BacklogProps {
   projectId: number;
@@ -71,6 +73,16 @@ const Backlog: React.FC<BacklogProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
+
+  // Helper to get current user name
+  const getCurrentUserName = () => {
+    const userEmail = tokenManager.getUserEmail();
+    if (userEmail) {
+      const namePart = userEmail.split('@')[0];
+      return namePart.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    return "System";
+  };
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -111,35 +123,130 @@ const Backlog: React.FC<BacklogProps> = ({
   };
 
   const handleSave = async (taskData: Partial<Task>) => {
-    if (editTask) {
-      await TaskService.updateTask(
-        projectId,
-        Number(editTask.id),
-        taskData,
-        templateType,
-      );
-    } else {
-      await TaskService.createTask(
-        projectId,
-        taskData as Omit<Task, "id">,
-        templateType,
-      );
-    }
+    console.log("💾 handleSave called with taskData:", taskData);
+    
+    try {
+      const currentUserName = getCurrentUserName();
+      const currentProjectName = projectName || `Project ${projectId}`;
+      
+      if (editTask) {
+        console.log("✏️ Updating existing task:", editTask.id);
+        
+        // Update existing task
+        const updatedTask = await TaskService.updateTask(
+          projectId,
+          Number(editTask.id),
+          taskData,
+          templateType,
+        );
 
-    setOpenDialog(false);
-    setEditTask(null);
-    fetchTasks();
+        // Check if assignee or reporter changed to send notifications
+        if (updatedTask) {
+          const assigneeChanged = editTask.assignee !== taskData.assignee;
+          const reporterChanged = editTask.reporter !== taskData.reporter;
+
+          console.log("🔄 Change detection:", {
+            assigneeChanged,
+            reporterChanged,
+            oldAssignee: editTask.assignee,
+            newAssignee: taskData.assignee,
+            oldReporter: editTask.reporter,
+            newReporter: taskData.reporter,
+          });
+
+          // Send assignee notification if changed
+          if (assigneeChanged && taskData.assignee) {
+            console.log("📧 Sending notification to new assignee...");
+            await NotificationService.sendTaskAssignmentNotification(
+              updatedTask,
+              currentProjectName,
+              taskData.assignee,
+              currentUserName
+            );
+          }
+
+          // Send reporter notification if changed
+          if (reporterChanged && taskData.reporter) {
+            console.log("📧 Sending notification to new reporter...");
+            await NotificationService.sendReporterNotification(
+              updatedTask,
+              currentProjectName,
+              taskData.reporter,
+              currentUserName
+            );
+          }
+        }
+      } else {
+        console.log("➕ Creating new task");
+        
+        // Create new task
+        const createdTask = await TaskService.createTask(
+          projectId,
+          taskData as Omit<Task, "id">,
+          templateType,
+        );
+
+        console.log("✅ Task created:", createdTask);
+
+        // Send notifications to assignee and reporter
+        if (createdTask) {
+          if (createdTask.assignee) {
+            console.log("� Sending notification to assignee...");
+            await NotificationService.sendTaskAssignmentNotification(
+              createdTask,
+              currentProjectName,
+              createdTask.assignee,
+              currentUserName
+            );
+          }
+
+          if (createdTask.reporter) {
+            console.log("📧 Sending notification to reporter...");
+            await NotificationService.sendReporterNotification(
+              createdTask,
+              currentProjectName,
+              createdTask.reporter,
+              currentUserName
+            );
+          }
+        }
+      }
+
+      setOpenDialog(false);
+      setEditTask(null);
+      fetchTasks();
+    } catch (error) {
+      console.error("❌ Failed to save task:", error);
+      setError("Failed to save task. Please try again.");
+    }
   };
 
   const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
     // Prevent multiple simultaneous updates for the same task
     if (updatingTaskIds.has(taskId)) {
-      console.log(`Task ${taskId} is already being updated`);
+      console.log(`⏭️ Task ${taskId} is already being updated`);
       return;
     }
 
+    // Get the task before updating to compare old status
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) {
+      console.error("❌ Task not found:", taskId);
+      return;
+    }
+    const oldStatus = task.status;
+
+    console.log(`📊 Status change initiated:`, {
+      taskId,
+      taskTitle: task.title,
+      oldStatus,
+      newStatus,
+      reporter: task.reporter,
+      assignee: task.assignee,
+    });
+
     try {
-      console.log(`Updating task ${taskId} status to "${newStatus}"`);
+      console.log(`🔄 Updating task ${taskId} status to "${newStatus}"`);
 
       // Add task to updating set
       setUpdatingTaskIds((prev) => new Set(prev.add(taskId)));
@@ -152,21 +259,50 @@ const Backlog: React.FC<BacklogProps> = ({
       );
 
       if (updatedTask) {
-        console.log("Task status updated successfully:", updatedTask);
+        console.log("✅ Task status updated successfully:", updatedTask);
+        
         // Update the local state with the response from the server
         setTasks((currentTasks) =>
           currentTasks.map((task) =>
             task.id === taskId ? { ...task, ...updatedTask } : task,
           ),
         );
+        
+        // Send notifications based on status change
+        console.log("📬 Checking for status change notification...");
+        const currentUserName = getCurrentUserName();
+        const currentProjectName = projectName || `Project ${projectId}`;
+        
+        // Send review notification when status changes to "Review"
+        if (newStatus === "Review" && updatedTask.reporter) {
+          console.log("🔍 Sending review notification to reporter...");
+          await NotificationService.sendReviewNotification(
+            updatedTask,
+            currentProjectName,
+            updatedTask.reporter,
+            currentUserName
+          );
+        }
+        
+        // Send notification when status changes to "In Progress"
+        if (newStatus === "In Progress" && updatedTask.assignee) {
+          console.log("🚀 Sending in-progress notification to assignee...");
+          await NotificationService.sendTaskAssignmentNotification(
+            updatedTask,
+            currentProjectName,
+            updatedTask.assignee,
+            currentUserName
+          );
+        }
+        
         // Clear any existing errors
         setError(null);
       } else {
-        console.error("Failed to update task status - no response from server");
+        console.error("❌ Failed to update task status - no response from server");
         setError("Failed to update task status. Please try again.");
       }
     } catch (error: any) {
-      console.error("Error updating task status:", error);
+      console.error("❌ Error updating task status:", error);
 
       // Provide more specific error messages based on the error type
       let errorMessage = "Failed to update task status. Please try again.";

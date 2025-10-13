@@ -573,7 +573,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
               disabled={loadingTeamMembers}
               renderValue={(selected) => {
                 if (!selected) return <em>Unassigned</em>;
-                const member = teamMembers.find(m => userDisplayNames[m.memberId] === selected);
+                const member = teamMembers.find(m => m.email === selected);
                 if (!member) return selected;
                 return (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -595,7 +595,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
                 <em>{teamMembers.length === 0 ? "No team members available" : "Unassigned"}</em>
               </MenuItem>
               {teamMembers.map((member) => (
-                <MenuItem key={member.memberId} value={userDisplayNames[member.memberId]}>
+                <MenuItem key={member.memberId} value={member.email}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 0.5 }}>
                     <UserAvatar 
                       user={member} 
@@ -634,7 +634,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
               disabled={loadingTeamMembers}
               renderValue={(selected) => {
                 if (!selected) return <em>No reporter</em>;
-                const member = teamMembers.find(m => userDisplayNames[m.memberId] === selected);
+                const member = teamMembers.find(m => m.email === selected);
                 if (!member) return selected;
                 return (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -656,7 +656,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
                 <em>{teamMembers.length === 0 ? "No team members available" : "No reporter"}</em>
               </MenuItem>
               {teamMembers.map((member) => (
-                <MenuItem key={member.memberId} value={userDisplayNames[member.memberId]}>
+                <MenuItem key={member.memberId} value={member.email}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 0.5 }}>
                     <UserAvatar 
                       user={member} 

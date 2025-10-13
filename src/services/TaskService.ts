@@ -261,4 +261,65 @@ export class TaskService {
 
     return filteredTasks;
   }
+
+  /**
+   * Create a task (notifications handled in component layer)
+   */
+  static async createTaskWithNotification(
+    projectId: number,
+    taskData: Omit<Task, "id">,
+    templateType: string,
+    _projectName: string,
+    _currentUserName: string,
+    _taskUrl: string
+  ): Promise<Task | null> {
+    try {
+      // Create the task first
+      const createdTask = await this.createTask(projectId, taskData, templateType);
+      
+      if (!createdTask) {
+        return null;
+      }
+
+      // Notifications are now handled in the component layer
+      return createdTask;
+    } catch (error) {
+      console.error("Failed to create task with notification:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Update task status (notifications handled in component layer)
+   */
+  static async updateTaskStatusWithNotification(
+    projectId: number,
+    taskId: number,
+    _oldStatus: TaskStatus,
+    newStatus: TaskStatus,
+    templateType: string,
+    _projectName: string,
+    _currentUserName: string,
+    _taskUrl: string
+  ): Promise<Task | null> {
+    try {
+      // Update the task status first
+      const updatedTask = await this.updateTaskStatus(
+        projectId,
+        taskId,
+        newStatus,
+        templateType
+      );
+
+      if (!updatedTask) {
+        return null;
+      }
+
+      // Notifications are now handled in the component layer
+      return updatedTask;
+    } catch (error) {
+      console.error("Failed to update task status with notification:", error);
+      throw error;
+    }
+  }
 }

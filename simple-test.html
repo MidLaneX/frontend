@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Test - Simple</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 10px 5px 10px 0;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: #28a745; font-weight: 600; }
+        .error { color: #dc3545; font-weight: 600; }
+        .info { color: #007bff; }
+        .warning { color: #ffc107; }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        .status.online { background: #d4edda; color: #155724; }
+        .status.offline { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Notification System Tester</h1>
+        <p class="subtitle">Test your notification service directly from the browser</p>
+        
+        <div class="input-group">
+            <label>Recipient Email:</label>
+            <input type="email" id="recipientEmail" placeholder="test@example.com" value="test@example.com">
+        </div>
+
+        <div class="input-group">
+            <label>Task Title:</label>
+            <input type="text" id="taskTitle" placeholder="Test Task" value="Test Task from Browser">
+        </div>
+
+        <div class="input-group">
+            <label>Assignee Name:</label>
+            <input type="text" id="assigneeName" placeholder="John Doe" value="John Doe">
+        </div>
+
+        <div class="input-group">
+            <label>Task Description:</label>
+            <textarea id="taskDescription" placeholder="Task description...">Testing notification system</textarea>
+        </div>
+
+        <button onclick="checkServices()">🔍 Check Services</button>
+        <button onclick="sendTestNotification()">📧 Send Test Notification</button>
+        <button onclick="clearOutput()">🗑️ Clear Log</button>
+
+        <div id="status"></div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const statusDiv = document.getElementById('status');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : 
+                             type === 'error' ? 'error' : 
+                             type === 'warning' ? 'warning' : 'info';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            output.innerHTML = '';
+            log('Log cleared', 'info');
+        }
+
+        function showStatus(message, isOnline) {
+            const className = isOnline ? 'online' : 'offline';
+            const icon = isOnline ? '✅' : '❌';
+            statusDiv.innerHTML += `<span class="status ${className}">${icon} ${message}</span> `;
+        }
+
+        async function checkServices() {
+            clearOutput();
+            statusDiv.innerHTML = '';
+            log('🔍 Checking services...', 'info');
+            log('', 'info');
+
+            // Check notification service
+            try {
+                const response = await fetch('http://localhost:8084/api/v1/notifications/send', {
+                    method: 'OPTIONS'
+                });
+                log('✅ Notification service (port 8084): ONLINE', 'success');
+                showStatus('Notification Service (8084)', true);
+            } catch (error) {
+                log('❌ Notification service (port 8084): OFFLINE', 'error');
+                log(`   Error: ${error.message}`, 'error');
+                showStatus('Notification Service (8084)', false);
+            }
+
+            log('', 'info');
+
+            // Check backend
+            try {
+                const response = await fetch('http://localhost:8080/api/health', {
+                    method: 'GET'
+                });
+                log('✅ Backend service (port 8080): ONLINE', 'success');
+                showStatus('Backend (8080)', true);
+            } catch (error) {
+                log('⚠️  Backend service (port 8080): OFFLINE or no /api/health endpoint', 'warning');
+                showStatus('Backend (8080)', false);
+            }
+
+            log('', 'info');
+            log('✅ Service check complete!', 'success');
+        }
+
+        async function sendTestNotification() {
+            const recipientEmail = document.getElementById('recipientEmail').value;
+            const taskTitle = document.getElementById('taskTitle').value;
+            const assigneeName = document.getElementById('assigneeName').value;
+            const taskDescription = document.getElementById('taskDescription').value;
+
+            if (!recipientEmail || !taskTitle) {
+                log('❌ Please fill in recipient email and task title', 'error');
+                return;
+            }
+
+            clearOutput();
+            log('📧 Sending test notification...', 'info');
+            log('', 'info');
+
+            const payload = {
+                recipients: [recipientEmail],
+                subject: `New Task Assignment: ${taskTitle}`,
+                templateName: "task-assignment",
+                templateData: {
+                    assigneeName: assigneeName,
+                    assignerName: "Test System",
+                    taskTitle: taskTitle,
+                    projectName: "Test Project",
+                    taskDescription: taskDescription,
+                    priority: "High",
+                    dueDate: "October 20, 2025",
+                    estimatedHours: "8",
+                    status: "To Do",
+                    taskUrl: "http://localhost:3000/projects/1/backlog?taskId=999"
+                },
+                priority: "NORMAL"
+            };
+
+            log('📦 Payload:', 'info');
+            log(JSON.stringify(payload, null, 2), 'info');
+            log('', 'info');
+            log('🚀 Sending POST request to: http://localhost:8084/api/v1/notifications/send', 'info');
+            log('', 'info');
+
+            try {
+                const response = await fetch('http://localhost:8084/api/v1/notifications/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ SUCCESS! Notification sent', 'success');
+                    log('', 'info');
+                    log('📨 Response:', 'success');
+                    log(JSON.stringify(data, null, 2), 'success');
+                    log('', 'info');
+                    log(`🎉 Email should be sent to: ${recipientEmail}`, 'success');
+                    log('📬 Check your inbox (and spam folder)!', 'success');
+                } else {
+                    log('❌ FAILED! Server returned error', 'error');
+                    log(`Status: ${response.status} ${response.statusText}`, 'error');
+                    log('', 'info');
+                    log('📨 Error response:', 'error');
+                    log(JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                log('❌ ERROR sending notification', 'error');
+                log(`Error: ${error.message}`, 'error');
+                log('', 'info');
+                log('💡 Possible causes:', 'warning');
+                log('  1. Notification service is not running on port 8084', 'warning');
+                log('  2. CORS is not configured properly', 'warning');
+                log('  3. Network connectivity issue', 'warning');
+            }
+        }
+
+        // Auto-check services on load
+        window.addEventListener('load', () => {
+            log('✅ Test page loaded successfully', 'success');
+            log('📝 Fill in the form and click "Send Test Notification"', 'info');
+            log('🔍 Or click "Check Services" to verify services are running', 'info');
+            log('', 'info');
+        });
+    </script>
+</body>
+</html>
