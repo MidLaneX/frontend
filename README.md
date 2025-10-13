@@ -2,8 +2,8 @@
 
 This is a modern, responsive frontend for a project management application, built with React, TypeScript, and Vite. It features a clean, intuitive user interface inspired by tools like Linear and Jira, with a focus on efficient task management and project visualization.
 
-![Project Management Dashboard Screenshot](https://i.imgur.com/YOUR_SCREENSHOT_URL.png) 
-*(Replace with a screenshot of your application)*
+![Project Management Dashboard Screenshot](https://i.imgur.com/YOUR_SCREENSHOT_URL.png)
+_(Replace with a screenshot of your application)_
 
 ## ✨ Features
 
@@ -37,35 +37,40 @@ Follow these instructions to get a copy of the project up and running on your lo
 ### Installation
 
 1.  **Clone the repository:**
+
     ```sh
     git clone https://github.com/MidLaneX/frontend-app.git
     cd frontend-app
     ```
 
 2.  **Install dependencies:**
-    
+
     Using pnpm (recommended):
+
     ```sh
     pnpm install
     ```
-    
+
     Or using npm:
+
     ```sh
     npm install
     ```
 
 3.  **Run the development server:**
-    
+
     Using pnpm:
+
     ```sh
     pnpm dev
     ```
-    
+
     Or using npm:
+
     ```sh
     npm run dev
     ```
-    
+
     The application will be available at `http://localhost:5173` (or another port if 5173 is in use).
 
 ## 📜 Available Scripts
@@ -73,6 +78,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 In the project directory, you can run the following commands:
 
 ### Using pnpm (recommended):
+
 - `pnpm dev`: Runs the app in development mode.
 - `pnpm build`: Builds the app for production to the `dist` folder.
 - `pnpm build:ci`: Runs full CI build with type-check, lint, and build.
@@ -85,6 +91,7 @@ In the project directory, you can run the following commands:
 - `pnpm clean`: Cleans the build artifacts.
 
 ### Using npm:
+
 - `npm run dev`: Runs the app in development mode.
 - `npm run build`: Builds the app for production to the `dist` folder.
 - `npm run build:ci`: Runs full CI build with type-check, lint, and build.
@@ -101,6 +108,7 @@ In the project directory, you can run the following commands:
 This project uses GitHub Actions for continuous integration and deployment:
 
 ### Workflow Features:
+
 - **🔍 Code Quality Checks**: TypeScript type checking, ESLint linting
 - **🏗️ Build Verification**: Ensures the application builds successfully
 - **📦 Artifact Management**: Stores build artifacts for deployment
@@ -108,21 +116,24 @@ This project uses GitHub Actions for continuous integration and deployment:
 - **🚀 Automated Deployment**: Deploys to production on main branch pushes
 
 ### Workflow Triggers:
+
 - **Push Events**: Triggers on `main` and `develop` branches
 - **Pull Requests**: Runs quality checks and creates preview builds
 - **Manual Dispatch**: Can be triggered manually from GitHub Actions tab
 
 ### Branch Strategy:
+
 - `main`: Production-ready code, auto-deploys on push
 - `develop`: Development branch for feature integration
 - Feature branches: Use pull requests to merge into `develop`
 
 ### Quality Gates:
+
 ✅ TypeScript compilation must pass  
 ✅ ESLint must pass with zero warnings  
 ✅ Build must complete successfully  
 ✅ Security audit must pass  
-✅ All checks required before merge  
+✅ All checks required before merge
 
 ## 📁 Project Structure
 
@@ -152,6 +163,7 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 This application implements automatic token refresh functionality for seamless user authentication:
 
 ### Key Features:
+
 - **Automatic Token Refresh**: Access tokens are automatically refreshed 5 minutes before expiration
 - **Background Monitoring**: Continuous token status monitoring with periodic checks
 - **Retry Logic**: Failed API requests are automatically retried after token refresh
@@ -159,10 +171,10 @@ This application implements automatic token refresh functionality for seamless u
 - **Device Tracking**: Includes device information in refresh requests for security
 
 ### Implementation:
+
 - **TokenManager**: Singleton class handling token storage, validation, and refresh logic
 - **API Interceptors**: Automatic token attachment and refresh on 401 responses
 - **React Hook**: `useTokenRefresh` for monitoring and background token management
 - **Seamless UX**: Users experience no interruptions from token expiration
 
 The system automatically handles JWT access tokens and refresh tokens, ensuring users stay authenticated throughout their session without manual intervention.
-

@@ -1,21 +1,21 @@
-import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Avatar from '@mui/material/Avatar';
+import React from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Avatar from "@mui/material/Avatar";
 import type { Task } from "@/types";
-import BugReportIcon from '@mui/icons-material/BugReport';
-import TaskAltIcon from '@mui/icons-material/TaskAlt';
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
-import EpicIcon from '@mui/icons-material/Flag';
-import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
-import RemoveIcon from '@mui/icons-material/Remove';
+import BugReportIcon from "@mui/icons-material/BugReport";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import AutoStoriesIcon from "@mui/icons-material/AutoStories";
+import EpicIcon from "@mui/icons-material/Flag";
+import KeyboardDoubleArrowUpIcon from "@mui/icons-material/KeyboardDoubleArrowUp";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardDoubleArrowDownIcon from "@mui/icons-material/KeyboardDoubleArrowDown";
+import RemoveIcon from "@mui/icons-material/Remove";
 
 interface TaskCardProps {
   task: Task;
@@ -24,34 +24,38 @@ interface TaskCardProps {
 
 const getPriorityIcon = (priority: string) => {
   switch (priority) {
-    case 'Highest':
-      return <KeyboardDoubleArrowUpIcon sx={{ fontSize: 16, color: '#DE350B' }} />
-    case 'High':
-      return <KeyboardArrowUpIcon sx={{ fontSize: 16, color: '#FF5630' }} />
-    case 'Medium':
-      return <RemoveIcon sx={{ fontSize: 16, color: '#FF8B00' }} />
-    case 'Low':
-      return <KeyboardArrowDownIcon sx={{ fontSize: 16, color: '#36B37E' }} />
-    case 'Lowest':
-      return <KeyboardDoubleArrowDownIcon sx={{ fontSize: 16, color: '#00875A' }} />
+    case "Highest":
+      return (
+        <KeyboardDoubleArrowUpIcon sx={{ fontSize: 16, color: "#DE350B" }} />
+      );
+    case "High":
+      return <KeyboardArrowUpIcon sx={{ fontSize: 16, color: "#FF5630" }} />;
+    case "Medium":
+      return <RemoveIcon sx={{ fontSize: 16, color: "#FF8B00" }} />;
+    case "Low":
+      return <KeyboardArrowDownIcon sx={{ fontSize: 16, color: "#36B37E" }} />;
+    case "Lowest":
+      return (
+        <KeyboardDoubleArrowDownIcon sx={{ fontSize: 16, color: "#00875A" }} />
+      );
     default:
-      return <RemoveIcon sx={{ fontSize: 16, color: '#6B778C' }} />
+      return <RemoveIcon sx={{ fontSize: 16, color: "#6B778C" }} />;
   }
-}
+};
 
 const getTypeIcon = (type: string) => {
   switch (type) {
-    case 'Bug':
-      return <BugReportIcon sx={{ fontSize: 16, color: '#DE350B' }} />
-    case 'Story':
-      return <AutoStoriesIcon sx={{ fontSize: 16, color: '#36B37E' }} />
-    case 'Epic':
-      return <EpicIcon sx={{ fontSize: 16, color: '#6554C0' }} />
-    case 'Task':
+    case "Bug":
+      return <BugReportIcon sx={{ fontSize: 16, color: "#DE350B" }} />;
+    case "Story":
+      return <AutoStoriesIcon sx={{ fontSize: 16, color: "#36B37E" }} />;
+    case "Epic":
+      return <EpicIcon sx={{ fontSize: 16, color: "#6554C0" }} />;
+    case "Task":
     default:
-      return <TaskAltIcon sx={{ fontSize: 16, color: '#0052CC' }} />
+      return <TaskAltIcon sx={{ fontSize: 16, color: "#0052CC" }} />;
   }
-}
+};
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const {

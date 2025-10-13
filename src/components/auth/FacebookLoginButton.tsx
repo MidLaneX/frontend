@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Button } from '@mui/material';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import { socialAuthService } from '../../services/SocialAuthService';
+import React, { useEffect, useState } from "react";
+import { Button } from "@mui/material";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import { socialAuthService } from "../../services/SocialAuthService";
 
 interface FacebookLoginButtonProps {
-  onSuccess: (accessToken: string, email: string, name: string, profilePicture?: string) => void;
+  onSuccess: (
+    accessToken: string,
+    email: string,
+    name: string,
+    profilePicture?: string,
+  ) => void;
   onError: (error: string) => void;
   disabled?: boolean;
 }
@@ -22,8 +27,8 @@ const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
         await socialAuthService.initializeFacebook();
         setIsInitialized(true);
       } catch (error) {
-        console.error('Failed to initialize Facebook login:', error);
-        onError('Failed to initialize Facebook login');
+        console.error("Failed to initialize Facebook login:", error);
+        onError("Failed to initialize Facebook login");
       }
     };
 
@@ -41,10 +46,10 @@ const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
         response.accessToken,
         response.email,
         response.name,
-        response.profilePicture
+        response.profilePicture,
       );
     } catch (error) {
-      onError('Facebook login failed or was cancelled');
+      onError("Facebook login failed or was cancelled");
     }
   };
 
@@ -57,16 +62,16 @@ const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
       startIcon={<FacebookIcon />}
       sx={{
         py: 1.5,
-        textTransform: 'none',
-        borderColor: '#1877F2',
-        color: '#1877F2',
-        '&:hover': {
-          borderColor: '#166FE5',
-          backgroundColor: 'rgba(24, 119, 242, 0.04)',
+        textTransform: "none",
+        borderColor: "#1877F2",
+        color: "#1877F2",
+        "&:hover": {
+          borderColor: "#166FE5",
+          backgroundColor: "rgba(24, 119, 242, 0.04)",
         },
-        '&:disabled': {
-          borderColor: 'divider',
-          color: 'text.disabled',
+        "&:disabled": {
+          borderColor: "divider",
+          color: "text.disabled",
         },
       }}
     >

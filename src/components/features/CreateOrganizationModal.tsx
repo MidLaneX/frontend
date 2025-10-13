@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,8 +10,8 @@ import {
   Typography,
   Alert,
   CircularProgress,
-} from '@mui/material';
-import type { CreateOrganizationRequest } from '../../types/api/organizations';
+} from "@mui/material";
+import type { CreateOrganizationRequest } from "../../types/api/organizations";
 
 interface CreateOrganizationModalProps {
   open: boolean;
@@ -27,21 +27,21 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
   loading = false,
 }) => {
   const [formData, setFormData] = useState<CreateOrganizationRequest>({
-    name: '',
-    description: '',
-    website: '',
-    industry: '',
-    size: '',
-    location: '',
+    name: "",
+    description: "",
+    website: "",
+    industry: "",
+    size: "",
+    location: "",
   });
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!formData.name.trim()) {
-      setError('Organization name is required');
+      setError("Organization name is required");
       return;
     }
 
@@ -49,24 +49,22 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
       await onSubmit(formData);
       handleClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create organization');
+      setError(err.response?.data?.message || "Failed to create organization");
     }
   };
 
   const handleClose = () => {
     setFormData({
-      name: '',
-      description: '',
-      website: '',
-      industry: '',
-      size: '',
-      location: '',
+      name: "",
+      description: "",
+      website: "",
+      industry: "",
+      size: "",
+      location: "",
     });
-    setError('');
+    setError("");
     onClose();
   };
-
-
 
   return (
     <Dialog
@@ -97,18 +95,20 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {/* Basic Information */}
             <Box>
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Basic Information
               </Typography>
-              
+
               <TextField
                 fullWidth
                 label="Organization Name"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
                 required
                 placeholder="Enter organization name"
                 sx={{ mb: 2 }}
@@ -118,7 +118,12 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
                 fullWidth
                 label="Description"
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 multiline
                 rows={3}
                 placeholder="Describe your organization's purpose and goals"
@@ -129,7 +134,9 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
                 fullWidth
                 label="Website"
                 value={formData.website}
-                onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, website: e.target.value }))
+                }
                 placeholder="https://your-organization.com"
                 sx={{ mb: 2 }}
               />
@@ -140,12 +147,14 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Additional Information
               </Typography>
-              
+
               <TextField
                 fullWidth
                 label="Industry"
                 value={formData.industry}
-                onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, industry: e.target.value }))
+                }
                 placeholder="e.g., Technology, Healthcare, Finance"
                 sx={{ mb: 2 }}
               />
@@ -154,7 +163,9 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
                 fullWidth
                 label="Organization Size"
                 value={formData.size}
-                onChange={(e) => setFormData(prev => ({ ...prev, size: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, size: e.target.value }))
+                }
                 placeholder="e.g., 1-10, 11-50, 51-200, 200+"
                 sx={{ mb: 2 }}
               />
@@ -163,7 +174,9 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
                 fullWidth
                 label="Location"
                 value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, location: e.target.value }))
+                }
                 placeholder="e.g., San Francisco, CA or Remote"
               />
             </Box>
@@ -171,11 +184,7 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button
-            onClick={handleClose}
-            variant="outlined"
-            disabled={loading}
-          >
+          <Button onClick={handleClose} variant="outlined" disabled={loading}>
             Cancel
           </Button>
           <Button

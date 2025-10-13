@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import type { Task, TaskStatus } from '../types';
-import { TaskService } from '../services/TaskService';
+import { useState, useEffect } from "react";
+import type { Task, TaskStatus } from "../types";
+import { TaskService } from "../services/TaskService";
 
 /**
  * Hook for managing tasks in a project
@@ -12,26 +12,26 @@ export const useTasks = (projectId: string) => {
 
   useEffect(() => {
     if (!projectId) return;
-    
+
     try {
       const projectTasks = TaskService.getTasksByProjectId(projectId);
       setTasks(projectTasks);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tasks');
+      setError(err instanceof Error ? err.message : "Failed to load tasks");
     } finally {
       setLoading(false);
     }
   }, [projectId]);
 
-  const createTask = (taskData: Omit<Task, 'id' | 'comments'>) => {
+  const createTask = (taskData: Omit<Task, "id" | "comments">) => {
     try {
       const newTask = TaskService.createTask(projectId, taskData);
       if (newTask) {
-        setTasks(prev => [...prev, newTask]);
+        setTasks((prev) => [...prev, newTask]);
       }
       return newTask;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create task');
+      setError(err instanceof Error ? err.message : "Failed to create task");
       return null;
     }
   };
@@ -40,28 +40,34 @@ export const useTasks = (projectId: string) => {
     try {
       const updatedTask = TaskService.updateTask(projectId, taskId, updates);
       if (updatedTask) {
-        setTasks(prev => 
-          prev.map(t => t.id === taskId ? updatedTask : t)
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? updatedTask : t)),
         );
       }
       return updatedTask;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update task');
+      setError(err instanceof Error ? err.message : "Failed to update task");
       return null;
     }
   };
 
   const updateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
     try {
-      const updatedTask = TaskService.updateTaskStatus(projectId, taskId, newStatus);
+      const updatedTask = TaskService.updateTaskStatus(
+        projectId,
+        taskId,
+        newStatus,
+      );
       if (updatedTask) {
-        setTasks(prev => 
-          prev.map(t => t.id === taskId ? updatedTask : t)
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? updatedTask : t)),
         );
       }
       return updatedTask;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update task status');
+      setError(
+        err instanceof Error ? err.message : "Failed to update task status",
+      );
       return null;
     }
   };
@@ -70,11 +76,11 @@ export const useTasks = (projectId: string) => {
     try {
       const success = TaskService.deleteTask(projectId, taskId);
       if (success) {
-        setTasks(prev => prev.filter(t => t.id !== taskId));
+        setTasks((prev) => prev.filter((t) => t.id !== taskId));
       }
       return success;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete task');
+      setError(err instanceof Error ? err.message : "Failed to delete task");
       return false;
     }
   };
@@ -83,7 +89,7 @@ export const useTasks = (projectId: string) => {
     try {
       return TaskService.searchTasks(projectId, query);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to search tasks');
+      setError(err instanceof Error ? err.message : "Failed to search tasks");
       return [];
     }
   };
@@ -97,7 +103,7 @@ export const useTasks = (projectId: string) => {
     try {
       return TaskService.filterTasks(projectId, filters);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to filter tasks');
+      setError(err instanceof Error ? err.message : "Failed to filter tasks");
       return [];
     }
   };
@@ -119,10 +125,10 @@ export const useTasks = (projectId: string) => {
         const projectTasks = TaskService.getTasksByProjectId(projectId);
         setTasks(projectTasks);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load tasks');
+        setError(err instanceof Error ? err.message : "Failed to load tasks");
       } finally {
         setLoading(false);
       }
-    }
+    },
   };
 };

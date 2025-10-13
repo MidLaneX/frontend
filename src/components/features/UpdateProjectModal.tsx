@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -13,13 +13,13 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
-} from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
-import type { Project } from '../../types';
-import type { ProjectDTO } from '../../types/dto';
-import { ProjectService } from '../../services/ProjectService';
-import { useAuth } from '../../context/AuthContext';
+  MenuItem,
+} from "@mui/material";
+import { Close as CloseIcon } from "@mui/icons-material";
+import type { Project } from "../../types";
+import type { ProjectDTO } from "../../types/dto";
+import { ProjectService } from "../../services/ProjectService";
+import { useAuth } from "../../context/AuthContext";
 
 interface UpdateProjectModalProps {
   open: boolean;
@@ -32,13 +32,13 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
   open,
   onClose,
   project,
-  onSuccess
+  onSuccess,
 }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    type: '',
-    createdBy: ''
+    name: "",
+    type: "",
+    createdBy: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +47,9 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
   useEffect(() => {
     if (project) {
       setFormData({
-        name: project.name || '',
-        type: project.type || 'Software',
-        createdBy: project.createdBy?.toString() || ''
+        name: project.name || "",
+        type: project.type || "Software",
+        createdBy: project.createdBy?.toString() || "",
       });
     }
   }, [project]);
@@ -61,30 +61,31 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
 
     try {
       // Get current user ID
-      const userId = user?.userId || parseInt(localStorage.getItem('userId') || '1');
-      
+      const userId =
+        user?.userId || parseInt(localStorage.getItem("userId") || "1");
+
       // Prepare update data matching your backend API
       const updateData: Partial<ProjectDTO> = {
         name: formData.name,
         type: formData.type,
-        createdBy: formData.createdBy
+        createdBy: formData.createdBy,
       };
 
-      console.log('Updating project with data:', updateData);
+      console.log("Updating project with data:", updateData);
 
       const updatedProject = await ProjectService.updateProject(
         Number(project.id),
         project.templateType,
         userId,
-        updateData
+        updateData,
       );
 
-      console.log('Project updated successfully:', updatedProject);
+      console.log("Project updated successfully:", updatedProject);
       onSuccess(updatedProject);
       handleClose();
     } catch (err: any) {
-      console.error('Error updating project:', err);
-      setError(err.message || 'Failed to update project');
+      console.error("Error updating project:", err);
+      setError(err.message || "Failed to update project");
     } finally {
       setLoading(false);
     }
@@ -92,9 +93,9 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
 
   const handleClose = () => {
     setFormData({
-      name: '',
-      type: '',
-      createdBy: ''
+      name: "",
+      type: "",
+      createdBy: "",
     });
     setError(null);
     onClose();
@@ -108,22 +109,24 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2
-        }
+          borderRadius: 2,
+        },
       }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        pb: 1
-      }}>
-        <Typography variant="h6" sx={{ color: '#172B4D', fontWeight: 600 }}>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          pb: 1,
+        }}
+      >
+        <Typography variant="h6" sx={{ color: "#172B4D", fontWeight: 600 }}>
           Update Project
         </Typography>
         <Button
           onClick={handleClose}
-          sx={{ minWidth: 'auto', p: 1 }}
+          sx={{ minWidth: "auto", p: 1 }}
           disabled={loading}
         >
           <CloseIcon />
@@ -138,13 +141,15 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {/* Project Name */}
             <TextField
               fullWidth
               label="Project Name"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               required
               variant="outlined"
               disabled={loading}
@@ -156,7 +161,9 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
               <Select
                 value={formData.type}
                 label="Project Type"
-                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, type: e.target.value }))
+                }
               >
                 <MenuItem value="Software">Software</MenuItem>
                 <MenuItem value="Business">Business</MenuItem>
@@ -169,19 +176,23 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
               fullWidth
               label="Created By"
               value={formData.createdBy}
-              onChange={(e) => setFormData(prev => ({ ...prev, createdBy: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, createdBy: e.target.value }))
+              }
               variant="outlined"
               disabled={loading}
               helperText="Who created or owns this project"
             />
 
             {/* Project Info */}
-            <Box sx={{ 
-              p: 2, 
-              bgcolor: '#F4F5F7', 
-              borderRadius: 1,
-              border: '1px solid #DFE1E6'
-            }}>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: "#F4F5F7",
+                borderRadius: 1,
+                border: "1px solid #DFE1E6",
+              }}
+            >
               <Typography variant="body2" color="text.secondary">
                 <strong>Project ID:</strong> {project.id}
               </Typography>
@@ -199,7 +210,7 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
           <Button
             onClick={handleClose}
             disabled={loading}
-            sx={{ color: '#5E6C84' }}
+            sx={{ color: "#5E6C84" }}
           >
             Cancel
           </Button>
@@ -208,8 +219,8 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
             variant="contained"
             disabled={loading || !formData.name.trim()}
             sx={{
-              bgcolor: '#0052CC',
-              '&:hover': { bgcolor: '#0747A6' }
+              bgcolor: "#0052CC",
+              "&:hover": { bgcolor: "#0747A6" },
             }}
           >
             {loading ? (
@@ -218,7 +229,7 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
                 Updating...
               </>
             ) : (
-              'Update Project'
+              "Update Project"
             )}
           </Button>
         </DialogActions>

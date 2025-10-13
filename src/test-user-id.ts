@@ -1,6 +1,6 @@
 // Test file to verify user_id extraction works correctly
-import { tokenManager } from './utils/tokenManager';
-import type { AuthResponse } from './api/endpoints/auth';
+import { tokenManager } from "./utils/tokenManager";
+import type { AuthResponse } from "./api/endpoints/auth";
 
 // Mock backend response with user_id
 const mockAuthResponse: AuthResponse = {

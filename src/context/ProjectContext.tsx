@@ -1,6 +1,10 @@
-import React, { useReducer } from 'react';
-import type { ReactNode } from 'react';
-import { ProjectContext, type ProjectState, type ProjectAction } from './projectTypes';
+import React, { useReducer } from "react";
+import type { ReactNode } from "react";
+import {
+  ProjectContext,
+  type ProjectState,
+  type ProjectAction,
+} from "./projectTypes";
 
 const initialState: ProjectState = {
   projects: [],
@@ -9,35 +13,44 @@ const initialState: ProjectState = {
   error: null,
 };
 
-const projectReducer = (state: ProjectState, action: ProjectAction): ProjectState => {
+const projectReducer = (
+  state: ProjectState,
+  action: ProjectAction,
+): ProjectState => {
   switch (action.type) {
-    case 'SET_PROJECTS':
+    case "SET_PROJECTS":
       return { ...state, projects: action.payload };
-    case 'SET_CURRENT_PROJECT':
+    case "SET_CURRENT_PROJECT":
       return { ...state, currentProject: action.payload };
-    case 'ADD_PROJECT':
+    case "ADD_PROJECT":
       return { ...state, projects: [...state.projects, action.payload] };
-    case 'UPDATE_PROJECT':
+    case "UPDATE_PROJECT":
       return {
         ...state,
-        projects: state.projects.map(project =>
+        projects: state.projects.map((project) =>
           project.id === action.payload.id
             ? { ...project, ...action.payload.updates }
-            : project
+            : project,
         ),
-        currentProject: state.currentProject?.id === action.payload.id
-          ? { ...state.currentProject, ...action.payload.updates }
-          : state.currentProject,
+        currentProject:
+          state.currentProject?.id === action.payload.id
+            ? { ...state.currentProject, ...action.payload.updates }
+            : state.currentProject,
       };
-    case 'DELETE_PROJECT':
+    case "DELETE_PROJECT":
       return {
         ...state,
-        projects: state.projects.filter(project => project.id !== action.payload),
-        currentProject: state.currentProject?.id === action.payload ? null : state.currentProject,
+        projects: state.projects.filter(
+          (project) => project.id !== action.payload,
+        ),
+        currentProject:
+          state.currentProject?.id === action.payload
+            ? null
+            : state.currentProject,
       };
-    case 'SET_LOADING':
+    case "SET_LOADING":
       return { ...state, loading: action.payload };
-    case 'SET_ERROR':
+    case "SET_ERROR":
       return { ...state, error: action.payload };
     default:
       return state;

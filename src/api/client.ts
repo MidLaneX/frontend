@@ -1,23 +1,27 @@
-import axios from 'axios';
-import type { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { ENV } from '../config/env';
-import { tokenManager } from '../utils/tokenManager';
+import axios from "axios";
+import type {
+  AxiosResponse,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from "axios";
+import { ENV } from "../config/env";
+import { tokenManager } from "../utils/tokenManager";
 
 // Create axios instance with default configuration
 export const apiClient = axios.create({
   baseURL: ENV.API_BASE_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-// Projects Service  
+// Projects Service
 export const projectsApiClient = axios.create({
   baseURL: ENV.API_BASE_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   // ... config
 });
@@ -30,23 +34,25 @@ projectsApiClient.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Also add userId and orgId to headers if available
-    const userId = localStorage.getItem('currentUserId') || localStorage.getItem('userId');
-    const orgId = localStorage.getItem('currentOrgId') || localStorage.getItem('orgId');
-    
+    const userId =
+      localStorage.getItem("currentUserId") || localStorage.getItem("userId");
+    const orgId =
+      localStorage.getItem("currentOrgId") || localStorage.getItem("orgId");
+
     if (userId && config.headers) {
-      config.headers['X-User-Id'] = userId;
+      config.headers["X-User-Id"] = userId;
     }
     if (orgId && config.headers) {
-      config.headers['X-Org-Id'] = orgId;
+      config.headers["X-Org-Id"] = orgId;
     }
-    
+
     return config;
   },
   (error: AxiosError) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for projects API
@@ -56,14 +62,18 @@ projectsApiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config;
-    
+
     // Handle 401 errors with token refresh (same as main apiClient)
-    if (error.response?.status === 401 && originalRequest && !(originalRequest as any)._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !(originalRequest as any)._retry
+    ) {
       (originalRequest as any)._retry = true;
-      
+
       // Try to refresh token
       const refreshed = await tokenManager.refreshAccessToken();
-      
+
       if (refreshed) {
         // Retry the original request with new token
         const newToken = tokenManager.getAccessToken();
@@ -72,46 +82,46 @@ projectsApiClient.interceptors.response.use(
         }
         return projectsApiClient(originalRequest);
       }
-      
+
       // If refresh failed, clear tokens and redirect
       tokenManager.clearTokens();
-      if (window.location.pathname !== '/landing') {
-        window.location.href = '/landing';
+      if (window.location.pathname !== "/landing") {
+        window.location.href = "/landing";
       }
     }
-    
+
     return Promise.reject(error);
-  }
+  },
 );
 
 // Request interceptor
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // Skip token handling for auth endpoints
-    const isAuthEndpoint = config.url?.includes('/auth/initial/');
-    
+    const isAuthEndpoint = config.url?.includes("/auth/initial/");
+
     if (!isAuthEndpoint) {
       // Get valid access token (will refresh if needed)
       const token = await tokenManager.getValidAccessToken();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } else if (config.url?.includes('/auth/initial/refresh')) {
+    } else if (config.url?.includes("/auth/initial/refresh")) {
       // For refresh endpoint, don't add any authorization header
       // The refresh token is sent in the request body
     } else {
       // For other auth endpoints (login, signup), check for legacy token
-      const legacyToken = localStorage.getItem('authToken');
+      const legacyToken = localStorage.getItem("authToken");
       if (legacyToken && config.headers) {
         config.headers.Authorization = `Bearer ${legacyToken}`;
       }
     }
-    
+
     return config;
   },
   (error: AxiosError) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor
@@ -121,18 +131,18 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config;
-    
+
     // Handle 401 errors
     if (error.response?.status === 401 && originalRequest) {
       // Skip retry for auth endpoints
-      const isAuthEndpoint = originalRequest.url?.includes('/auth/initial/');
-      
+      const isAuthEndpoint = originalRequest.url?.includes("/auth/initial/");
+
       if (!isAuthEndpoint && !(originalRequest as any)._retry) {
         (originalRequest as any)._retry = true;
-        
+
         // Try to refresh token
         const refreshed = await tokenManager.refreshAccessToken();
-        
+
         if (refreshed) {
           // Retry the original request with new token
           const newToken = tokenManager.getAccessToken();
@@ -142,16 +152,16 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         }
       }
-      
+
       // If refresh failed or this is an auth endpoint, clear tokens and redirect
       tokenManager.clearTokens();
-      
+
       // Only redirect if we're not already on the landing page
-      if (window.location.pathname !== '/landing') {
-        window.location.href = '/landing';
+      if (window.location.pathname !== "/landing") {
+        window.location.href = "/landing";
       }
     }
-    
+
     return Promise.reject(error);
-  }
+  },
 );

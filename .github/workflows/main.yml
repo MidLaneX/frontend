@@ -14,14 +14,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
+
       - uses: pnpm/action-setup@v2
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -32,7 +32,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - run: pnpm install --frozen-lockfile
-      
+
       - run: |
           pnpm run type-check
           pnpm run lint
@@ -46,7 +46,7 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -75,21 +75,21 @@ jobs:
         with:
           script: |
             const body = `🚀 Build successful! Ready for review.
-            
+
             📦 Build artifacts available  
             🔗 Commit: ${context.sha.substring(0, 7)}  
             ⏰ Built: ${new Date().toISOString()}`;
-            
+
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
+
             const existing = comments.find(c => 
               c.user.type === 'Bot' && c.body.includes('🚀 Build successful!')
             );
-            
+
             if (existing) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -120,10 +120,8 @@ jobs:
       - run: |
           echo "🚀 Deploying to production..."
           echo "📊 Size: $(du -sh dist/ | cut -f1)"
-          
+
           # Add deployment commands:
           # aws s3 sync dist/ s3://bucket --delete
           # vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
           # netlify deploy --prod --dir=dist --auth=${{ secrets.NETLIFY_TOKEN }}
-
-

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
@@ -15,7 +15,7 @@ import {
   CardContent,
   Divider,
   Stack,
-} from '@mui/material';
+} from "@mui/material";
 import {
   AccountCircle,
   Dashboard as DashboardIcon,
@@ -24,11 +24,11 @@ import {
   TrendingUp,
   CheckCircle,
   Speed,
-} from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
-import type { SignupData } from '../context/AuthContext';
-import type { SocialLoginRequest } from '../api/endpoints/auth';
-import { GoogleLoginButton, FacebookLoginButton } from '../components/auth';
+} from "@mui/icons-material";
+import { useAuth } from "../context/AuthContext";
+import type { SignupData } from "../context/AuthContext";
+import type { SocialLoginRequest } from "../api/endpoints/auth";
+import { GoogleLoginButton, FacebookLoginButton } from "../components/auth";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -57,21 +57,21 @@ const LandingPage: React.FC = () => {
   const { login, signup, socialLogin, isAuthenticated } = useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   // Login form state
   const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
 
   // Signup form state
   const [signupData, setSignupData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
   });
 
   // Redirect to dashboard when authenticated
@@ -79,29 +79,31 @@ const LandingPage: React.FC = () => {
     console.log("Authentication state changed:", isAuthenticated);
     if (isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");
-      navigate('/dashboard');
+      navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess(''); 
+    setError("");
+    setSuccess("");
 
     try {
       await login(loginData.email, loginData.password);
-      setSuccess('Login successful! Redirecting...');
-      
+      setSuccess("Login successful! Redirecting...");
     } catch (err: any) {
       // Show exact error message from backend
-      const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please try again.';
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Login failed. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -111,26 +113,26 @@ const LandingPage: React.FC = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     // Validate email
-    if (!signupData.email.includes('@')) {
-      setError('Please enter a valid email address');
+    if (!signupData.email.includes("@")) {
+      setError("Please enter a valid email address");
       setLoading(false);
       return;
     }
 
     // Validate password length
     if (signupData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError("Password must be at least 6 characters long");
       setLoading(false);
       return;
     }
 
     // Validate passwords match
     if (signupData.password !== signupData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
@@ -143,10 +145,13 @@ const LandingPage: React.FC = () => {
       };
 
       await signup(userData);
-      setSuccess('Account created successfully! Redirecting...');
+      setSuccess("Account created successfully! Redirecting...");
     } catch (err: any) {
       // Show exact error message from backend
-      const errorMessage = err.response?.data?.message || err.message || 'Signup failed. Please try again.';
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Signup failed. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -154,15 +159,15 @@ const LandingPage: React.FC = () => {
   };
 
   const handleSocialLogin = async (
-    provider: 'google' | 'facebook',
+    provider: "google" | "facebook",
     accessToken: string,
     email: string,
     name: string,
-    profilePicture?: string
+    profilePicture?: string,
   ) => {
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const socialLoginData: SocialLoginRequest = {
@@ -174,9 +179,14 @@ const LandingPage: React.FC = () => {
       };
 
       await socialLogin(socialLoginData);
-      setSuccess(`${provider === 'google' ? 'Google' : 'Facebook'} login successful! Redirecting...`);
+      setSuccess(
+        `${provider === "google" ? "Google" : "Facebook"} login successful! Redirecting...`,
+      );
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || `${provider === 'google' ? 'Google' : 'Facebook'} login failed. Please try again.`;
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        `${provider === "google" ? "Google" : "Facebook"} login failed. Please try again.`;
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -189,72 +199,88 @@ const LandingPage: React.FC = () => {
 
   const features = [
     {
-      icon: <DashboardIcon sx={{ fontSize: 32, color: 'primary.main' }} />,
-      title: 'Project Dashboard',
-      description: 'Track progress across all your projects with comprehensive overview dashboards.',
+      icon: <DashboardIcon sx={{ fontSize: 32, color: "primary.main" }} />,
+      title: "Project Dashboard",
+      description:
+        "Track progress across all your projects with comprehensive overview dashboards.",
     },
     {
-      icon: <Assignment sx={{ fontSize: 32, color: 'primary.main' }} />,
-      title: 'Task Management',
-      description: 'Create, assign, and organize tasks with our intuitive Kanban boards.',
+      icon: <Assignment sx={{ fontSize: 32, color: "primary.main" }} />,
+      title: "Task Management",
+      description:
+        "Create, assign, and organize tasks with our intuitive Kanban boards.",
     },
     {
-      icon: <Group sx={{ fontSize: 32, color: 'primary.main' }} />,
-      title: 'Team Collaboration',
-      description: 'Work together seamlessly with real-time updates and team communication.',
+      icon: <Group sx={{ fontSize: 32, color: "primary.main" }} />,
+      title: "Team Collaboration",
+      description:
+        "Work together seamlessly with real-time updates and team communication.",
     },
     {
-      icon: <TrendingUp sx={{ fontSize: 32, color: 'primary.main' }} />,
-      title: 'Progress Analytics',
-      description: 'Get insights into project performance with detailed reports and analytics.',
+      icon: <TrendingUp sx={{ fontSize: 32, color: "primary.main" }} />,
+      title: "Progress Analytics",
+      description:
+        "Get insights into project performance with detailed reports and analytics.",
     },
     {
-      icon: <CheckCircle sx={{ fontSize: 32, color: 'success.main' }} />,
-      title: 'Quality Assurance',
-      description: 'Ensure project quality with built-in review processes and checkpoints.',
+      icon: <CheckCircle sx={{ fontSize: 32, color: "success.main" }} />,
+      title: "Quality Assurance",
+      description:
+        "Ensure project quality with built-in review processes and checkpoints.",
     },
     {
-      icon: <Speed sx={{ fontSize: 32, color: 'warning.main' }} />,
-      title: 'Agile Workflows',
-      description: 'Implement agile methodologies with sprint planning and velocity tracking.',
+      icon: <Speed sx={{ fontSize: 32, color: "warning.main" }} />,
+      title: "Agile Workflows",
+      description:
+        "Implement agile methodologies with sprint planning and velocity tracking.",
     },
   ];
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        bgcolor: 'background.default',
-        display: 'flex',
-        flexDirection: 'column',
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {/* Header */}
       <Box
         sx={{
-          bgcolor: 'background.paper',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          bgcolor: "background.paper",
+          borderBottom: "1px solid",
+          borderColor: "divider",
           py: 2,
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h5" component="div" sx={{ fontWeight: 600, color: 'primary.main' }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography
+              variant="h5"
+              component="div"
+              sx={{ fontWeight: 600, color: "primary.main" }}
+            >
               Project Management Platform
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
               <Button
                 variant="outlined"
                 onClick={() => setTabValue(0)}
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: "none" }}
               >
                 Sign In
               </Button>
               <Button
                 variant="contained"
                 onClick={() => setTabValue(1)}
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: "none" }}
               >
                 Get Started
               </Button>
@@ -265,12 +291,14 @@ const LandingPage: React.FC = () => {
 
       {/* Main Content */}
       <Container maxWidth="lg" sx={{ py: 8, flex: 1 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 6,
-          flexDirection: { xs: 'column', md: 'row' }
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexDirection: { xs: "column", md: "row" },
+          }}
+        >
           {/* Left Side - Content */}
           <Box sx={{ flex: 1 }}>
             <Stack spacing={3}>
@@ -278,30 +306,30 @@ const LandingPage: React.FC = () => {
                 variant="h1"
                 sx={{
                   fontWeight: 700,
-                  color: 'text.primary',
+                  color: "text.primary",
                   lineHeight: 1.2,
                 }}
               >
-                Streamline Your{' '}
+                Streamline Your{" "}
                 <Typography
                   component="span"
                   variant="h1"
-                  sx={{ color: 'primary.main', fontWeight: 'inherit' }}
+                  sx={{ color: "primary.main", fontWeight: "inherit" }}
                 >
                   Project Management
                 </Typography>
               </Typography>
-              
+
               <Typography
                 variant="h5"
                 sx={{
-                  color: 'text.secondary',
+                  color: "text.secondary",
                   fontWeight: 400,
                   lineHeight: 1.5,
                 }}
               >
-                Collaborate with your team, track progress, and deliver projects on time 
-                with our comprehensive project management solution.
+                Collaborate with your team, track progress, and deliver projects
+                on time with our comprehensive project management solution.
               </Typography>
 
               <Stack direction="row" spacing={2} sx={{ pt: 2 }}>
@@ -309,7 +337,7 @@ const LandingPage: React.FC = () => {
                   variant="contained"
                   size="large"
                   onClick={() => setTabValue(1)}
-                  sx={{ textTransform: 'none', px: 4 }}
+                  sx={{ textTransform: "none", px: 4 }}
                 >
                   Start Free Trial
                 </Button>
@@ -317,7 +345,7 @@ const LandingPage: React.FC = () => {
                   variant="outlined"
                   size="large"
                   onClick={() => setTabValue(0)}
-                  sx={{ textTransform: 'none', px: 4 }}
+                  sx={{ textTransform: "none", px: 4 }}
                 >
                   Sign In
                 </Button>
@@ -326,21 +354,27 @@ const LandingPage: React.FC = () => {
           </Box>
 
           {/* Right Side - Auth Form */}
-          <Box sx={{ flex: 1, maxWidth: 450, width: '100%' }}>
+          <Box sx={{ flex: 1, maxWidth: 450, width: "100%" }}>
             <Paper
               elevation={3}
               sx={{
                 p: 4,
                 borderRadius: 2,
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'divider',
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <AccountCircle sx={{ fontSize: 24, color: 'primary.main', mr: 1.5 }} />
-                <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                  {tabValue === 0 ? 'Welcome Back' : 'Create Account'}
+              <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                <AccountCircle
+                  sx={{ fontSize: 24, color: "primary.main", mr: 1.5 }}
+                />
+                <Typography
+                  variant="h5"
+                  component="h2"
+                  sx={{ fontWeight: 600, color: "text.primary" }}
+                >
+                  {tabValue === 0 ? "Welcome Back" : "Create Account"}
                 </Typography>
               </Box>
 
@@ -348,12 +382,12 @@ const LandingPage: React.FC = () => {
                 value={tabValue}
                 onChange={handleTabChange}
                 variant="fullWidth"
-                sx={{ 
+                sx={{
                   mb: 3,
-                  '& .MuiTab-root': {
-                    textTransform: 'none',
+                  "& .MuiTab-root": {
+                    textTransform: "none",
                     fontWeight: 500,
-                  }
+                  },
                 }}
               >
                 <Tab label="Sign In" />
@@ -406,28 +440,49 @@ const LandingPage: React.FC = () => {
                     variant="contained"
                     size="large"
                     disabled={loading}
-                    sx={{ py: 1.5, textTransform: 'none', fontWeight: 600, mb: 2 }}
+                    sx={{
+                      py: 1.5,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      mb: 2,
+                    }}
                   >
-                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+                    {loading ? (
+                      <CircularProgress size={24} color="inherit" />
+                    ) : (
+                      "Sign In"
+                    )}
                   </Button>
-                  
+
                   <Divider sx={{ my: 2 }}>
                     <Typography variant="body2" color="text.secondary">
                       or continue with
                     </Typography>
                   </Divider>
-                  
+
                   <Stack spacing={2}>
                     <GoogleLoginButton
                       onSuccess={(accessToken, email, name, profilePicture) =>
-                        handleSocialLogin('google', accessToken, email, name, profilePicture)
+                        handleSocialLogin(
+                          "google",
+                          accessToken,
+                          email,
+                          name,
+                          profilePicture,
+                        )
                       }
                       onError={handleSocialError}
                       disabled={loading}
                     />
                     <FacebookLoginButton
                       onSuccess={(accessToken, email, name, profilePicture) =>
-                        handleSocialLogin('facebook', accessToken, email, name, profilePicture)
+                        handleSocialLogin(
+                          "facebook",
+                          accessToken,
+                          email,
+                          name,
+                          profilePicture,
+                        )
                       }
                       onError={handleSocialError}
                       disabled={loading}
@@ -492,9 +547,13 @@ const LandingPage: React.FC = () => {
                         confirmPassword: e.target.value,
                       })
                     }
-                    error={signupData.confirmPassword !== '' && signupData.password !== signupData.confirmPassword}
+                    error={
+                      signupData.confirmPassword !== "" &&
+                      signupData.password !== signupData.confirmPassword
+                    }
                     helperText={
-                      signupData.confirmPassword !== '' && signupData.password !== signupData.confirmPassword
+                      signupData.confirmPassword !== "" &&
+                      signupData.password !== signupData.confirmPassword
                         ? "Passwords don't match"
                         : "Re-enter your password"
                     }
@@ -506,28 +565,49 @@ const LandingPage: React.FC = () => {
                     variant="contained"
                     size="large"
                     disabled={loading}
-                    sx={{ py: 1.5, textTransform: 'none', fontWeight: 600, mb: 2 }}
+                    sx={{
+                      py: 1.5,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      mb: 2,
+                    }}
                   >
-                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
+                    {loading ? (
+                      <CircularProgress size={24} color="inherit" />
+                    ) : (
+                      "Create Account"
+                    )}
                   </Button>
-                  
+
                   <Divider sx={{ my: 2 }}>
                     <Typography variant="body2" color="text.secondary">
                       or sign up with
                     </Typography>
                   </Divider>
-                  
+
                   <Stack spacing={2}>
                     <GoogleLoginButton
                       onSuccess={(accessToken, email, name, profilePicture) =>
-                        handleSocialLogin('google', accessToken, email, name, profilePicture)
+                        handleSocialLogin(
+                          "google",
+                          accessToken,
+                          email,
+                          name,
+                          profilePicture,
+                        )
                       }
                       onError={handleSocialError}
                       disabled={loading}
                     />
                     <FacebookLoginButton
                       onSuccess={(accessToken, email, name, profilePicture) =>
-                        handleSocialLogin('facebook', accessToken, email, name, profilePicture)
+                        handleSocialLogin(
+                          "facebook",
+                          accessToken,
+                          email,
+                          name,
+                          profilePicture,
+                        )
                       }
                       onError={handleSocialError}
                       disabled={loading}
@@ -543,56 +623,69 @@ const LandingPage: React.FC = () => {
       <Divider />
 
       {/* Features Section */}
-      <Box sx={{ bgcolor: 'background.paper', py: 8 }}>
+      <Box sx={{ bgcolor: "background.paper", py: 8 }}>
         <Container maxWidth="lg">
           <Stack spacing={6}>
-            <Box sx={{ textAlign: 'center' }}>
+            <Box sx={{ textAlign: "center" }}>
               <Typography
                 variant="h2"
                 component="h2"
                 gutterBottom
-                sx={{ fontWeight: 600, color: 'text.primary', mb: 2 }}
+                sx={{ fontWeight: 600, color: "text.primary", mb: 2 }}
               >
                 Everything you need to manage projects
               </Typography>
               <Typography
                 variant="h6"
-                sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto' }}
+                sx={{ color: "text.secondary", maxWidth: 600, mx: "auto" }}
               >
-                Our platform provides all the tools your team needs to collaborate 
-                effectively and deliver successful projects.
+                Our platform provides all the tools your team needs to
+                collaborate effectively and deliver successful projects.
               </Typography>
             </Box>
-            
-            <Box sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
-              gap: 4,
-            }}>
+
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "1fr 1fr",
+                  md: "1fr 1fr 1fr",
+                },
+                gap: 4,
+              }}
+            >
               {features.map((feature, index) => (
                 <Box key={index}>
                   <Card
                     sx={{
-                      height: '100%',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      boxShadow: 'none',
-                      '&:hover': {
+                      height: "100%",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      boxShadow: "none",
+                      "&:hover": {
                         boxShadow: 2,
-                        transform: 'translateY(-2px)',
-                        transition: 'all 0.2s ease-in-out',
+                        transform: "translateY(-2px)",
+                        transition: "all 0.2s ease-in-out",
                       },
                     }}
                   >
                     <CardContent sx={{ p: 3 }}>
                       <Stack spacing={2}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
                           {feature.icon}
                         </Box>
-                        <Typography variant="h6" component="h3" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                        <Typography
+                          variant="h6"
+                          component="h3"
+                          sx={{ fontWeight: 600, color: "text.primary" }}
+                        >
                           {feature.title}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary", lineHeight: 1.6 }}
+                        >
                           {feature.description}
                         </Typography>
                       </Stack>
@@ -608,15 +701,19 @@ const LandingPage: React.FC = () => {
       {/* Footer */}
       <Box
         sx={{
-          bgcolor: 'background.default',
-          borderTop: '1px solid',
-          borderColor: 'divider',
+          bgcolor: "background.default",
+          borderTop: "1px solid",
+          borderColor: "divider",
           py: 3,
         }}
       >
         <Container maxWidth="lg">
-          <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
-            © 2025 Project Management Platform. Built with React and Material-UI.
+          <Typography
+            variant="body2"
+            sx={{ textAlign: "center", color: "text.secondary" }}
+          >
+            © 2025 Project Management Platform. Built with React and
+            Material-UI.
           </Typography>
         </Container>
       </Box>

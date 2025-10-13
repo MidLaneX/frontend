@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   Paper,
@@ -11,12 +11,12 @@ import {
   ToggleButton,
   InputAdornment,
   Typography,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Search as SearchIcon,
   ViewModule as GridViewIcon,
   ViewList as ListViewIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 interface ProjectControlsProps {
   searchQuery: string;
@@ -25,8 +25,8 @@ interface ProjectControlsProps {
   onFilterChange: (filter: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
+  viewMode: "grid" | "list";
+  onViewModeChange: (mode: "grid" | "list") => void;
   projectCount: number;
 }
 
@@ -47,35 +47,35 @@ const ProjectControls: React.FC<ProjectControlsProps> = ({
         p: 3,
         mb: 3,
         borderRadius: 2,
-        border: '1px solid #DFE1E6',
+        border: "1px solid #DFE1E6",
       }}
     >
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'stretch', md: 'center' },
-          justifyContent: 'space-between',
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          alignItems: { xs: "stretch", md: "center" },
+          justifyContent: "space-between",
           gap: 2,
         }}
       >
         {/* Left section - Title and count */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Typography variant="h6" fontWeight={600} color="text.primary">
             Projects
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {projectCount} {projectCount === 1 ? 'project' : 'projects'}
+            {projectCount} {projectCount === 1 ? "project" : "projects"}
           </Typography>
         </Box>
 
         {/* Right section - Controls */}
         <Box
           sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
             gap: 2,
-            alignItems: { xs: 'stretch', sm: 'center' },
+            alignItems: { xs: "stretch", sm: "center" },
           }}
         >
           {/* Search */}
@@ -88,7 +88,7 @@ const ProjectControls: React.FC<ProjectControlsProps> = ({
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                  <SearchIcon sx={{ color: "text.secondary", fontSize: 20 }} />
                 </InputAdornment>
               ),
             }}

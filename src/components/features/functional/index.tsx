@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -26,7 +26,7 @@ import {
   ListItemText,
   ListItemIcon,
   ListItemButton,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -38,9 +38,9 @@ import {
   TrendingUp as PerformanceIcon,
   Speed as EfficiencyIcon,
   Assessment as ReportIcon,
-} from '@mui/icons-material';
-import { TaskService } from '@/services/TaskService';
-import type { Task, TaskStatus, TaskPriority } from '@/types';
+} from "@mui/icons-material";
+import { TaskService } from "@/services/TaskService";
+import type { Task, TaskStatus, TaskPriority } from "@/types";
 
 interface FunctionalProps {
   projectId: string;
@@ -49,65 +49,89 @@ interface FunctionalProps {
 }
 
 const functionalDepartments = [
-  { 
-    name: 'Executive', 
-    description: 'Strategic planning and leadership',
-    color: '#1a237e',
+  {
+    name: "Executive",
+    description: "Strategic planning and leadership",
+    color: "#1a237e",
     icon: OrganizationIcon,
   },
-  { 
-    name: 'Operations', 
-    description: 'Daily operations and process management',
-    color: '#2e7d32',
+  {
+    name: "Operations",
+    description: "Daily operations and process management",
+    color: "#2e7d32",
     icon: PerformanceIcon,
   },
-  { 
-    name: 'Finance', 
-    description: 'Financial planning and accounting',
-    color: '#d32f2f',
+  {
+    name: "Finance",
+    description: "Financial planning and accounting",
+    color: "#d32f2f",
     icon: ReportIcon,
   },
-  { 
-    name: 'Human Resources', 
-    description: 'People management and development',
-    color: '#f57c00',
+  {
+    name: "Human Resources",
+    description: "People management and development",
+    color: "#f57c00",
     icon: PersonIcon,
   },
-  { 
-    name: 'Marketing', 
-    description: 'Marketing and customer acquisition',
-    color: '#9c27b0',
+  {
+    name: "Marketing",
+    description: "Marketing and customer acquisition",
+    color: "#9c27b0",
     icon: PerformanceIcon,
   },
-  { 
-    name: 'Technology', 
-    description: 'IT infrastructure and development',
-    color: '#1976d2',
+  {
+    name: "Technology",
+    description: "IT infrastructure and development",
+    color: "#1976d2",
     icon: TaskIcon,
   },
 ];
 
-const statusOptions: TaskStatus[] = ['Backlog', 'Todo', 'In Progress', 'Review', 'Done'];
-const priorityOptions: TaskPriority[] = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
-const functionalTypes = ['Department Task', 'Administrative', 'Policy', 'Training', 'Compliance'];
+const statusOptions: TaskStatus[] = [
+  "Backlog",
+  "Todo",
+  "In Progress",
+  "Review",
+  "Done",
+];
+const priorityOptions: TaskPriority[] = [
+  "Highest",
+  "High",
+  "Medium",
+  "Low",
+  "Lowest",
+];
+const functionalTypes = [
+  "Department Task",
+  "Administrative",
+  "Policy",
+  "Training",
+  "Compliance",
+];
 
-const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templateType = 'functional' }) => {
+const Functional: React.FC<FunctionalProps> = ({
+  projectId,
+  projectName,
+  templateType = "functional",
+}) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
-  const [expandedDepartment, setExpandedDepartment] = useState<string | false>(false);
+  const [expandedDepartment, setExpandedDepartment] = useState<string | false>(
+    false,
+  );
 
   const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: '',
-    description: '',
-    priority: 'Medium',
-    status: 'Todo',
-    type: 'Department Task',
-    assignee: '',
-    reporter: '',
-    dueDate: '',
+    title: "",
+    description: "",
+    priority: "Medium",
+    status: "Todo",
+    type: "Department Task",
+    assignee: "",
+    reporter: "",
+    dueDate: "",
     storyPoints: 3,
     labels: [],
     comments: [],
@@ -116,12 +140,15 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const data = await TaskService.getTasksByProjectId(Number(projectId), templateType);
+      const data = await TaskService.getTasksByProjectId(
+        Number(projectId),
+        templateType,
+      );
       setTasks(data || []);
       setError(null);
     } catch (err) {
-      console.error('Failed to load tasks:', err);
-      setError('Failed to load tasks.');
+      console.error("Failed to load tasks:", err);
+      setError("Failed to load tasks.");
     } finally {
       setLoading(false);
     }
@@ -136,9 +163,18 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
 
     try {
       if (editTask) {
-        await TaskService.updateTask(Number(projectId), Number(editTask.id), newTaskData, templateType);
+        await TaskService.updateTask(
+          Number(projectId),
+          Number(editTask.id),
+          newTaskData,
+          templateType,
+        );
       } else {
-        await TaskService.createTask(Number(projectId), newTaskData as Omit<Task, 'id'>, templateType);
+        await TaskService.createTask(
+          Number(projectId),
+          newTaskData as Omit<Task, "id">,
+          templateType,
+        );
       }
 
       setOpenDialog(false);
@@ -146,21 +182,21 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
       resetForm();
       fetchTasks();
     } catch (error) {
-      console.error('Failed to save task:', error);
-      setError('Failed to save task.');
+      console.error("Failed to save task:", error);
+      setError("Failed to save task.");
     }
   };
 
   const resetForm = () => {
     setNewTaskData({
-      title: '',
-      description: '',
-      priority: 'Medium',
-      status: 'Todo',
-      type: 'Department Task',
-      assignee: '',
-      reporter: '',
-      dueDate: '',
+      title: "",
+      description: "",
+      priority: "Medium",
+      status: "Todo",
+      type: "Department Task",
+      assignee: "",
+      reporter: "",
+      dueDate: "",
       storyPoints: 3,
       labels: [],
       comments: [],
@@ -168,54 +204,80 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
   };
 
   const getTasksByDepartment = (department: string) => {
-    return tasks.filter(task => 
-      task.labels && task.labels.includes(department)
+    return tasks.filter(
+      (task) => task.labels && task.labels.includes(department),
     );
   };
 
   const getDepartmentProgress = (department: string) => {
     const deptTasks = getTasksByDepartment(department);
     if (deptTasks.length === 0) return 0;
-    const completedTasks = deptTasks.filter(task => task.status === 'Done');
+    const completedTasks = deptTasks.filter((task) => task.status === "Done");
     return (completedTasks.length / deptTasks.length) * 100;
   };
 
   const getOrganizationEfficiency = () => {
-    const completedTasks = tasks.filter(task => task.status === 'Done').length;
+    const completedTasks = tasks.filter(
+      (task) => task.status === "Done",
+    ).length;
     const totalTasks = tasks.length;
-    return totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : '0';
+    return totalTasks > 0
+      ? ((completedTasks / totalTasks) * 100).toFixed(1)
+      : "0";
   };
 
   const getPriorityColor = (priority: TaskPriority) => {
     switch (priority) {
-      case 'Highest': return '#d32f2f';
-      case 'High': return '#f57c00';
-      case 'Medium': return '#1976d2';
-      case 'Low': return '#388e3c';
-      case 'Lowest': return '#7b1fa2';
-      default: return '#1976d2';
+      case "Highest":
+        return "#d32f2f";
+      case "High":
+        return "#f57c00";
+      case "Medium":
+        return "#1976d2";
+      case "Low":
+        return "#388e3c";
+      case "Lowest":
+        return "#7b1fa2";
+      default:
+        return "#1976d2";
     }
   };
 
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
-      case 'Backlog': return '#757575';
-      case 'Todo': return '#1976d2';
-      case 'In Progress': return '#f57c00';
-      case 'Review': return '#9c27b0';
-      case 'Done': return '#4caf50';
-      default: return '#757575';
+      case "Backlog":
+        return "#757575";
+      case "Todo":
+        return "#1976d2";
+      case "In Progress":
+        return "#f57c00";
+      case "Review":
+        return "#9c27b0";
+      case "Done":
+        return "#4caf50";
+      default:
+        return "#757575";
     }
   };
 
   const renderTaskCard = (task: Task) => (
-    <Card key={task.id} sx={{ mb: 1, borderRadius: 1, border: '1px solid #e0e0e0' }}>
+    <Card
+      key={task.id}
+      sx={{ mb: 1, borderRadius: 1, border: "1px solid #e0e0e0" }}
+    >
       <CardContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 1,
+          }}
+        >
           <Typography variant="subtitle2" fontWeight={600}>
             {task.title}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <Chip
               label={task.priority}
               size="small"
@@ -260,15 +322,25 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
             </IconButton>
           </Box>
         </Box>
-        
+
         {task.description && (
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mb: 1, display: "block" }}
+          >
             {task.description}
           </Typography>
         )}
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {task.assignee && (
               <Avatar sx={{ width: 20, height: 20, fontSize: 10 }}>
                 {task.assignee.charAt(0).toUpperCase()}
@@ -292,30 +364,46 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
+        }}
+      >
         <CircularProgress />
-        <Typography sx={{ ml: 2 }}>Loading functional organization workspace...</Typography>
+        <Typography sx={{ ml: 2 }}>
+          Loading functional organization workspace...
+        </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8f9fa' }}>
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "#f8f9fa",
+      }}
+    >
       {/* Header */}
       <Paper
         elevation={0}
         sx={{
           px: 3,
           py: 2,
-          borderBottom: '1px solid #e0e0e0',
-          bgcolor: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          borderBottom: "1px solid #e0e0e0",
+          bgcolor: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <FunctionalIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <FunctionalIcon sx={{ color: "primary.main", fontSize: 28 }} />
           <Box>
             <Typography variant="h5" fontWeight={700} color="text.primary">
               Functional Organization
@@ -335,7 +423,7 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
             borderRadius: 2,
             px: 3,
             py: 1,
-            textTransform: 'none',
+            textTransform: "none",
             fontWeight: 600,
           }}
         >
@@ -354,9 +442,11 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
         <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
           Organization Metrics
         </Typography>
-        <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-          <Box sx={{ flex: 1, minWidth: 200, textAlign: 'center' }}>
-            <EfficiencyIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
+        <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+          <Box sx={{ flex: 1, minWidth: 200, textAlign: "center" }}>
+            <EfficiencyIcon
+              sx={{ fontSize: 32, color: "success.main", mb: 1 }}
+            />
             <Typography variant="h4" fontWeight={600} color="success.main">
               {getOrganizationEfficiency()}%
             </Typography>
@@ -364,8 +454,10 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
               Overall Efficiency
             </Typography>
           </Box>
-          <Box sx={{ flex: 1, minWidth: 200, textAlign: 'center' }}>
-            <DepartmentIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
+          <Box sx={{ flex: 1, minWidth: 200, textAlign: "center" }}>
+            <DepartmentIcon
+              sx={{ fontSize: 32, color: "primary.main", mb: 1 }}
+            />
             <Typography variant="h4" fontWeight={600} color="primary.main">
               {functionalDepartments.length}
             </Typography>
@@ -373,8 +465,8 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
               Departments
             </Typography>
           </Box>
-          <Box sx={{ flex: 1, minWidth: 200, textAlign: 'center' }}>
-            <TaskIcon sx={{ fontSize: 32, color: 'info.main', mb: 1 }} />
+          <Box sx={{ flex: 1, minWidth: 200, textAlign: "center" }}>
+            <TaskIcon sx={{ fontSize: 32, color: "info.main", mb: 1 }} />
             <Typography variant="h4" fontWeight={600} color="info.main">
               {tasks.length}
             </Typography>
@@ -382,10 +474,10 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
               Total Tasks
             </Typography>
           </Box>
-          <Box sx={{ flex: 1, minWidth: 200, textAlign: 'center' }}>
-            <ReportIcon sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
+          <Box sx={{ flex: 1, minWidth: 200, textAlign: "center" }}>
+            <ReportIcon sx={{ fontSize: 32, color: "warning.main", mb: 1 }} />
             <Typography variant="h4" fontWeight={600} color="warning.main">
-              {tasks.filter(task => task.status === 'In Progress').length}
+              {tasks.filter((task) => task.status === "In Progress").length}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Active Tasks
@@ -395,29 +487,42 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
       </Paper>
 
       {/* Functional Departments Hierarchy */}
-      <Box sx={{ flex: 1, display: 'flex', gap: 3, px: 3, pb: 3, overflow: 'hidden' }}>
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          gap: 3,
+          px: 3,
+          pb: 3,
+          overflow: "hidden",
+        }}
+      >
         {/* Department List */}
-        <Paper sx={{ width: 300, p: 2, borderRadius: 2, overflow: 'auto' }}>
+        <Paper sx={{ width: 300, p: 2, borderRadius: 2, overflow: "auto" }}>
           <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
             Departments
           </Typography>
-          
+
           <List sx={{ p: 0 }}>
-            {functionalDepartments.map(dept => {
+            {functionalDepartments.map((dept) => {
               const Icon = dept.icon;
               const deptTasks = getTasksByDepartment(dept.name);
               const progress = getDepartmentProgress(dept.name);
-              
+
               return (
                 <ListItemButton
                   key={dept.name}
                   selected={expandedDepartment === dept.name}
-                  onClick={() => setExpandedDepartment(expandedDepartment === dept.name ? false : dept.name)}
+                  onClick={() =>
+                    setExpandedDepartment(
+                      expandedDepartment === dept.name ? false : dept.name,
+                    )
+                  }
                   sx={{
                     borderRadius: 1,
                     mb: 1,
-                    border: '1px solid #e0e0e0',
-                    '&.Mui-selected': {
+                    border: "1px solid #e0e0e0",
+                    "&.Mui-selected": {
                       bgcolor: `${dept.color}10`,
                       borderColor: dept.color,
                     },
@@ -437,7 +542,14 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
                         <Typography variant="caption" color="text.secondary">
                           {dept.description}
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            mt: 0.5,
+                          }}
+                        >
                           <LinearProgress
                             variant="determinate"
                             value={progress}
@@ -445,8 +557,8 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
                               flex: 1,
                               height: 3,
                               borderRadius: 1.5,
-                              bgcolor: 'grey.200',
-                              '& .MuiLinearProgress-bar': {
+                              bgcolor: "grey.200",
+                              "& .MuiLinearProgress-bar": {
                                 bgcolor: dept.color,
                               },
                             }}
@@ -465,13 +577,17 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
         </Paper>
 
         {/* Department Tasks */}
-        <Paper sx={{ flex: 1, p: 3, borderRadius: 2, overflow: 'auto' }}>
+        <Paper sx={{ flex: 1, p: 3, borderRadius: 2, overflow: "auto" }}>
           {expandedDepartment ? (
             <Box>
               <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
+                >
                   {(() => {
-                    const dept = functionalDepartments.find(d => d.name === expandedDepartment);
+                    const dept = functionalDepartments.find(
+                      (d) => d.name === expandedDepartment,
+                    );
                     const Icon = dept?.icon || TaskIcon;
                     return <Icon sx={{ color: dept?.color, fontSize: 24 }} />;
                   })()}
@@ -484,11 +600,19 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
                     variant="outlined"
                   />
                 </Box>
-                
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {functionalDepartments.find(d => d.name === expandedDepartment)?.description}
+
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2 }}
+                >
+                  {
+                    functionalDepartments.find(
+                      (d) => d.name === expandedDepartment,
+                    )?.description
+                  }
                 </Typography>
-                
+
                 <Box sx={{ mb: 2 }}>
                   <LinearProgress
                     variant="determinate"
@@ -496,19 +620,27 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
                     sx={{
                       height: 6,
                       borderRadius: 3,
-                      bgcolor: 'grey.200',
+                      bgcolor: "grey.200",
                     }}
                   />
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                    {getDepartmentProgress(expandedDepartment).toFixed(0)}% complete
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 0.5, display: "block" }}
+                  >
+                    {getDepartmentProgress(expandedDepartment).toFixed(0)}%
+                    complete
                   </Typography>
                 </Box>
-                
+
                 <Button
                   variant="outlined"
                   startIcon={<AddIcon />}
                   onClick={() => {
-                    setNewTaskData({ ...newTaskData, labels: [expandedDepartment] });
+                    setNewTaskData({
+                      ...newTaskData,
+                      labels: [expandedDepartment],
+                    });
                     setOpenDialog(true);
                   }}
                   sx={{ mb: 3 }}
@@ -520,21 +652,34 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
               <Divider sx={{ mb: 3 }} />
 
               {getTasksByDepartment(expandedDepartment).length > 0 ? (
-                getTasksByDepartment(expandedDepartment).map(task => renderTaskCard(task))
+                getTasksByDepartment(expandedDepartment).map((task) =>
+                  renderTaskCard(task),
+                )
               ) : (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <TaskIcon sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                <Box sx={{ textAlign: "center", py: 4 }}>
+                  <TaskIcon sx={{ fontSize: 48, color: "grey.400", mb: 2 }} />
+                  <Typography
+                    variant="h6"
+                    color="text.secondary"
+                    sx={{ mb: 1 }}
+                  >
                     No tasks in {expandedDepartment}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
                     Start by adding tasks to this department
                   </Typography>
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
                     onClick={() => {
-                      setNewTaskData({ ...newTaskData, labels: [expandedDepartment] });
+                      setNewTaskData({
+                        ...newTaskData,
+                        labels: [expandedDepartment],
+                      });
                       setOpenDialog(true);
                     }}
                   >
@@ -544,8 +689,8 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
               )}
             </Box>
           ) : (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <FunctionalIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
+            <Box sx={{ textAlign: "center", py: 6 }}>
+              <FunctionalIcon sx={{ fontSize: 64, color: "grey.400", mb: 2 }} />
               <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                 Select a Department
               </Typography>
@@ -558,40 +703,51 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
       </Box>
 
       {/* Create/Edit Task Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {editTask ? 'Edit Task' : 'Create New Task'}
-        </DialogTitle>
-        
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>{editTask ? "Edit Task" : "Create New Task"}</DialogTitle>
+
         <DialogContent sx={{ pt: 2 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
               label="Task Title"
               fullWidth
               value={newTaskData.title}
-              onChange={(e) => setNewTaskData({ ...newTaskData, title: e.target.value })}
+              onChange={(e) =>
+                setNewTaskData({ ...newTaskData, title: e.target.value })
+              }
             />
-            
+
             <TextField
               label="Description"
               fullWidth
               multiline
               rows={3}
               value={newTaskData.description}
-              onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
+              onChange={(e) =>
+                setNewTaskData({ ...newTaskData, description: e.target.value })
+              }
             />
-            
-            <Box sx={{ display: 'flex', gap: 2 }}>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Department</InputLabel>
                 <Select
-                  value={newTaskData.labels?.[0] || ''}
+                  value={newTaskData.labels?.[0] || ""}
                   label="Department"
-                  onChange={(e) => setNewTaskData({ ...newTaskData, labels: [e.target.value] })}
+                  onChange={(e) =>
+                    setNewTaskData({ ...newTaskData, labels: [e.target.value] })
+                  }
                 >
-                  {functionalDepartments.map(dept => (
+                  {functionalDepartments.map((dept) => (
                     <MenuItem key={dept.name} value={dept.name}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
                         <dept.icon sx={{ fontSize: 18, color: dept.color }} />
                         {dept.name}
                       </Box>
@@ -599,83 +755,110 @@ const Functional: React.FC<FunctionalProps> = ({ projectId, projectName, templat
                   ))}
                 </Select>
               </FormControl>
-              
+
               <FormControl fullWidth>
                 <InputLabel>Type</InputLabel>
                 <Select
                   value={newTaskData.type}
                   label="Type"
-                  onChange={(e) => setNewTaskData({ ...newTaskData, type: e.target.value })}
+                  onChange={(e) =>
+                    setNewTaskData({ ...newTaskData, type: e.target.value })
+                  }
                 >
-                  {functionalTypes.map(type => (
-                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                  {functionalTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2 }}>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Priority</InputLabel>
                 <Select
                   value={newTaskData.priority}
                   label="Priority"
-                  onChange={(e) => setNewTaskData({ ...newTaskData, priority: e.target.value as TaskPriority })}
+                  onChange={(e) =>
+                    setNewTaskData({
+                      ...newTaskData,
+                      priority: e.target.value as TaskPriority,
+                    })
+                  }
                 >
-                  {priorityOptions.map(priority => (
-                    <MenuItem key={priority} value={priority}>{priority}</MenuItem>
+                  {priorityOptions.map((priority) => (
+                    <MenuItem key={priority} value={priority}>
+                      {priority}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2 }}>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={newTaskData.status}
                   label="Status"
-                  onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value as TaskStatus })}
+                  onChange={(e) =>
+                    setNewTaskData({
+                      ...newTaskData,
+                      status: e.target.value as TaskStatus,
+                    })
+                  }
                 >
-                  {statusOptions.map(status => (
-                    <MenuItem key={status} value={status}>{status}</MenuItem>
+                  {statusOptions.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-              
+
               <TextField
                 label="Story Points"
                 type="number"
                 fullWidth
                 value={newTaskData.storyPoints}
-                onChange={(e) => setNewTaskData({ ...newTaskData, storyPoints: Number(e.target.value) })}
+                onChange={(e) =>
+                  setNewTaskData({
+                    ...newTaskData,
+                    storyPoints: Number(e.target.value),
+                  })
+                }
               />
             </Box>
-            
-            <Box sx={{ display: 'flex', gap: 2 }}>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
               <TextField
                 label="Assignee"
                 fullWidth
                 value={newTaskData.assignee}
-                onChange={(e) => setNewTaskData({ ...newTaskData, assignee: e.target.value })}
+                onChange={(e) =>
+                  setNewTaskData({ ...newTaskData, assignee: e.target.value })
+                }
               />
-              
+
               <TextField
                 label="Due Date"
                 type="date"
                 fullWidth
                 InputLabelProps={{ shrink: true }}
                 value={newTaskData.dueDate}
-                onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value })}
+                onChange={(e) =>
+                  setNewTaskData({ ...newTaskData, dueDate: e.target.value })
+                }
               />
             </Box>
           </Box>
         </DialogContent>
-        
+
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
           <Button variant="contained" onClick={handleSave}>
-            {editTask ? 'Update' : 'Create'}
+            {editTask ? "Update" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>

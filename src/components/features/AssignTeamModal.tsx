@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Button,
   Dialog,
@@ -9,10 +9,10 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Box
-} from '@mui/material';
-import { ProjectService } from '../../services/ProjectService';
-import type { UserProjectDTO } from '../../types/dto';
+  Box,
+} from "@mui/material";
+import { ProjectService } from "../../services/ProjectService";
+import type { UserProjectDTO } from "../../types/dto";
 
 interface AssignTeamModalProps {
   open: boolean;
@@ -29,7 +29,7 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
   projectId,
   projectName,
   templateType,
-  onSuccess
+  onSuccess,
 }) => {
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
 
   const handleAssignTeam = async () => {
     if (!selectedTeamId) {
-      setError('Please select a team');
+      setError("Please select a team");
       return;
     }
 
@@ -50,20 +50,20 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
       const assignments = await ProjectService.assignTeamToProject(
         projectId,
         templateType,
-        selectedTeamId
+        selectedTeamId,
       );
 
       setSuccess(assignments);
       onSuccess?.(assignments);
-      
+
       // Auto-close after 2 seconds on success
       setTimeout(() => {
         onClose();
         handleReset();
       }, 2000);
-
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to assign team';
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to assign team";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -85,10 +85,8 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        Assign Team to Project
-      </DialogTitle>
-      
+      <DialogTitle>Assign Team to Project</DialogTitle>
+
       <DialogContent>
         <Box sx={{ mb: 2 }}>
           <Typography variant="body1" color="text.secondary">
@@ -107,7 +105,8 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
 
         {success && (
           <Alert severity="success" sx={{ mb: 2 }}>
-            Successfully assigned team! {success.length} team member(s) added to the project.
+            Successfully assigned team! {success.length} team member(s) added to
+            the project.
           </Alert>
         )}
 
@@ -115,14 +114,18 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
           <TextField
             label="Team ID"
             type="number"
-            value={selectedTeamId || ''}
-            onChange={(e) => setSelectedTeamId(e.target.value ? parseInt(e.target.value) : null)}
+            value={selectedTeamId || ""}
+            onChange={(e) =>
+              setSelectedTeamId(
+                e.target.value ? parseInt(e.target.value) : null,
+              )
+            }
             disabled={loading}
             fullWidth
             sx={{ mb: 2 }}
             helperText="Enter the ID of the team you want to assign to this project"
             InputProps={{
-              inputProps: { min: 1 }
+              inputProps: { min: 1 },
             }}
           />
         )}
@@ -130,7 +133,7 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
 
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>
-          {success ? 'Close' : 'Cancel'}
+          {success ? "Close" : "Cancel"}
         </Button>
         {!success && (
           <Button
@@ -139,7 +142,7 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
             disabled={loading || !selectedTeamId}
             startIcon={loading ? <CircularProgress size={20} /> : null}
           >
-            {loading ? 'Assigning...' : 'Assign Team'}
+            {loading ? "Assigning..." : "Assign Team"}
           </Button>
         )}
       </DialogActions>

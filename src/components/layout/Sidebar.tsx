@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Drawer,
   List,
@@ -9,8 +9,8 @@ import {
   Box,
   Typography,
   Avatar,
-} from '@mui/material';
-import { Link, useLocation } from 'react-router-dom';
+} from "@mui/material";
+import { Link, useLocation } from "react-router-dom";
 import {
   Person as ProfileIcon,
   Settings as SettingsIcon,
@@ -18,7 +18,7 @@ import {
   Info as AboutIcon,
   Help as HelpIcon,
   Business as OrganizationIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 const drawerWidth = 280;
 
@@ -32,11 +32,19 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
 
   const navigationItems: NavigationItem[] = [
-    { name: 'For You', icon: <ForYouIcon />, path: '/welcome' },
-    { name: 'Organizations', icon: <OrganizationIcon />, path: '/organizations' },
-    { name: 'Profile & Settings', icon: <ProfileIcon />, path: '/account/settings' },
-    { name: 'About', icon: <AboutIcon />, path: '/about' },
-    { name: 'Help', icon: <HelpIcon />, path: '/help' },
+    { name: "For You", icon: <ForYouIcon />, path: "/welcome" },
+    {
+      name: "Organizations",
+      icon: <OrganizationIcon />,
+      path: "/organizations",
+    },
+    {
+      name: "Profile & Settings",
+      icon: <ProfileIcon />,
+      path: "/account/settings",
+    },
+    { name: "About", icon: <AboutIcon />, path: "/about" },
+    { name: "Help", icon: <HelpIcon />, path: "/help" },
   ];
 
   const isActivePath = (path: string) => {
@@ -52,21 +60,21 @@ const Sidebar: React.FC = () => {
         sx={{
           mx: 1,
           borderRadius: 1,
-          '&.Mui-selected': {
-            backgroundColor: 'primary.light',
-            color: 'primary.contrastText',
-            '&:hover': {
-              backgroundColor: 'primary.main',
+          "&.Mui-selected": {
+            backgroundColor: "primary.light",
+            color: "primary.contrastText",
+            "&:hover": {
+              backgroundColor: "primary.main",
             },
           },
-          '&:hover': {
-            backgroundColor: 'action.hover',
+          "&:hover": {
+            backgroundColor: "action.hover",
           },
         }}
       >
         <ListItemIcon
           sx={{
-            color: isActivePath(item.path) ? 'primary.contrastText' : 'inherit',
+            color: isActivePath(item.path) ? "primary.contrastText" : "inherit",
             minWidth: 40,
           }}
         >
@@ -89,12 +97,12 @@ const Sidebar: React.FC = () => {
       sx={{
         width: drawerWidth,
         flexShrink: 0,
-        '& .MuiDrawer-paper': {
+        "& .MuiDrawer-paper": {
           width: drawerWidth,
-          boxSizing: 'border-box',
-          borderRight: '1px solid',
-          borderColor: 'divider',
-          backgroundColor: 'background.paper',
+          boxSizing: "border-box",
+          borderRight: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
         },
       }}
     >
@@ -102,18 +110,18 @@ const Sidebar: React.FC = () => {
       <Box
         sx={{
           p: 2,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 2,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          borderBottom: "1px solid",
+          borderColor: "divider",
         }}
       >
         <Avatar
           sx={{
             width: 32,
             height: 32,
-            backgroundColor: 'primary.main',
+            backgroundColor: "primary.main",
             fontSize: 14,
             fontWeight: 600,
           }}
@@ -131,7 +139,7 @@ const Sidebar: React.FC = () => {
       </Box>
 
       {/* Navigation */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, overflow: "auto" }}>
         <List sx={{ pt: 2, pb: 1 }}>
           {navigationItems.map(renderNavigationItem)}
         </List>
@@ -141,8 +149,8 @@ const Sidebar: React.FC = () => {
       <Box
         sx={{
           p: 2,
-          borderTop: '1px solid',
-          borderColor: 'divider',
+          borderTop: "1px solid",
+          borderColor: "divider",
         }}
       >
         <Typography variant="caption" color="text.secondary" align="center">

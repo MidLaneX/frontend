@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -20,14 +20,14 @@ import {
   TextField,
   InputAdornment,
   Divider,
-} from '@mui/material';
-import { 
-  Person as PersonIcon, 
+} from "@mui/material";
+import {
+  Person as PersonIcon,
   Search as SearchIcon,
-  Group as GroupIcon 
-} from '@mui/icons-material';
-import type { OrganizationMember, Team } from '../../types/api/organizations';
-import { OrganizationService } from '../../services/OrganizationService';
+  Group as GroupIcon,
+} from "@mui/icons-material";
+import type { OrganizationMember, Team } from "../../types/api/organizations";
+import { OrganizationService } from "../../services/OrganizationService";
 
 interface AddTeamMemberModalProps {
   open: boolean;
@@ -47,11 +47,15 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
   loading = false,
 }) => {
   const [members, setMembers] = useState<OrganizationMember[]>([]);
-  const [filteredMembers, setFilteredMembers] = useState<OrganizationMember[]>([]);
-  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredMembers, setFilteredMembers] = useState<OrganizationMember[]>(
+    [],
+  );
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [searchQuery, setSearchQuery] = useState("");
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   // Load organization members when modal opens
   useEffect(() => {
@@ -63,9 +67,12 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
   // Filter members based on search query
   useEffect(() => {
     if (searchQuery.trim()) {
-      const filtered = members.filter(member =>
-        `${member.first_name} ${member.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.email.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = members.filter(
+        (member) =>
+          `${member.first_name} ${member.last_name}`
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          member.email.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       setFilteredMembers(filtered);
     } else {
@@ -77,44 +84,55 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
   useEffect(() => {
     if (open) {
       setSelectedMemberIds(new Set());
-      setSearchQuery('');
-      setError('');
+      setSearchQuery("");
+      setError("");
     }
   }, [open]);
 
   const loadOrganizationMembers = async () => {
     try {
       setLoadingMembers(true);
-      setError('');
-      
-      console.log('Loading organization members for org:', organizationId);
-      console.log('Team data:', team);
-      console.log('Team members:', team.members);
-      
-      const orgMembers = await OrganizationService.getOrganizationMembers(organizationId);
-      
-      console.log('Loaded organization members:', orgMembers);
-      console.log('orgMembers type:', typeof orgMembers, 'isArray:', Array.isArray(orgMembers));
-      
+      setError("");
+
+      console.log("Loading organization members for org:", organizationId);
+      console.log("Team data:", team);
+      console.log("Team members:", team.members);
+
+      const orgMembers =
+        await OrganizationService.getOrganizationMembers(organizationId);
+
+      console.log("Loaded organization members:", orgMembers);
+      console.log(
+        "orgMembers type:",
+        typeof orgMembers,
+        "isArray:",
+        Array.isArray(orgMembers),
+      );
+
       // Ensure orgMembers is an array
       if (!Array.isArray(orgMembers)) {
-        console.error('Organization members response is not an array:', orgMembers);
-        setError('Invalid response format from server');
+        console.error(
+          "Organization members response is not an array:",
+          orgMembers,
+        );
+        setError("Invalid response format from server");
         return;
       }
-      
+
       // Filter out members who are already in the team
-      const existingTeamMemberIds = new Set((team.members || []).map(m => m.userId || m.id));
-      const availableMembers = orgMembers.filter(member => {
+      const existingTeamMemberIds = new Set(
+        (team.members || []).map((m) => m.userId || m.id),
+      );
+      const availableMembers = orgMembers.filter((member) => {
         const memberId = getMemberId(member);
         return memberId && !existingTeamMemberIds.has(memberId);
       });
-      
-      console.log('Available members after filtering:', availableMembers);
+
+      console.log("Available members after filtering:", availableMembers);
       setMembers(availableMembers);
     } catch (err: any) {
-      console.error('Failed to load organization members:', err);
-      setError('Failed to load organization members');
+      console.error("Failed to load organization members:", err);
+      setError("Failed to load organization members");
     } finally {
       setLoadingMembers(false);
     }
@@ -122,7 +140,7 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
 
   const handleMemberToggle = (memberId: string) => {
     if (!memberId) {
-      console.warn('Attempted to toggle member with undefined/empty ID');
+      console.warn("Attempted to toggle member with undefined/empty ID");
       return;
     }
     const newSelected = new Set(selectedMemberIds);
@@ -136,39 +154,42 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
 
   const handleSubmit = async () => {
     if (selectedMemberIds.size === 0) {
-      setError('Please select at least one member to add');
+      setError("Please select at least one member to add");
       return;
     }
 
-    console.log('AddTeamMemberModal handleSubmit - team:', team);
-    console.log('AddTeamMemberModal handleSubmit - team.id:', team.id);
-    console.log('AddTeamMemberModal handleSubmit - selectedMemberIds:', Array.from(selectedMemberIds));
+    console.log("AddTeamMemberModal handleSubmit - team:", team);
+    console.log("AddTeamMemberModal handleSubmit - team.id:", team.id);
+    console.log(
+      "AddTeamMemberModal handleSubmit - selectedMemberIds:",
+      Array.from(selectedMemberIds),
+    );
 
     try {
       await onSubmit(Array.from(selectedMemberIds));
       handleClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to add team members');
+      setError(err.response?.data?.message || "Failed to add team members");
     }
   };
 
   const handleClose = () => {
     setSelectedMemberIds(new Set());
-    setSearchQuery('');
-    setError('');
+    setSearchQuery("");
+    setError("");
     onClose();
   };
 
   const getMemberId = (member: OrganizationMember): string => {
-    return member.id || member.userId || member.user_id || '';
+    return member.id || member.userId || member.user_id || "";
   };
 
   const getMemberInitials = (member: OrganizationMember): string => {
-    return `${member.first_name?.[0] || 'U'}${member.last_name?.[0] || 'N'}`;
+    return `${member.first_name?.[0] || "U"}${member.last_name?.[0] || "N"}`;
   };
 
   const getMemberDisplayName = (member: OrganizationMember): string => {
-    return `${member.first_name || 'Unknown'} ${member.last_name || 'Name'}`;
+    return `${member.first_name || "Unknown"} ${member.last_name || "Name"}`;
   };
 
   return (
@@ -180,13 +201,13 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
       PaperProps={{
         sx: {
           borderRadius: 2,
-          minHeight: '60vh',
+          minHeight: "60vh",
         },
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <GroupIcon sx={{ color: 'primary.main' }} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <GroupIcon sx={{ color: "primary.main" }} />
           <Box>
             <Typography variant="h5" component="h2" fontWeight={600}>
               Add Members to Team
@@ -223,13 +244,22 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
 
         {/* Selection Summary */}
         {selectedMemberIds.size > 0 && (
-          <Box sx={{ mb: 2, p: 2, bgcolor: 'primary.50', borderRadius: 1, border: '1px solid', borderColor: 'primary.200' }}>
+          <Box
+            sx={{
+              mb: 2,
+              p: 2,
+              bgcolor: "primary.50",
+              borderRadius: 1,
+              border: "1px solid",
+              borderColor: "primary.200",
+            }}
+          >
             <Typography variant="subtitle2" color="primary.main" sx={{ mb: 1 }}>
               Selected Members ({selectedMemberIds.size})
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {Array.from(selectedMemberIds).map(memberId => {
-                const member = members.find(m => getMemberId(m) === memberId);
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {Array.from(selectedMemberIds).map((memberId) => {
+                const member = members.find((m) => getMemberId(m) === memberId);
                 return member ? (
                   <Chip
                     key={memberId}
@@ -247,24 +277,25 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
 
         {/* Members List */}
         {loadingMembers ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         ) : filteredMembers.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <PersonIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+          <Box sx={{ textAlign: "center", py: 4 }}>
+            <PersonIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
             <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-              {members.length === 0 ? 'No available members' : 'No members found'}
+              {members.length === 0
+                ? "No available members"
+                : "No members found"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {members.length === 0 
-                ? 'All organization members are already part of this team'
-                : 'Try adjusting your search criteria'
-              }
+              {members.length === 0
+                ? "All organization members are already part of this team"
+                : "Try adjusting your search criteria"}
             </Typography>
           </Box>
         ) : (
-          <List sx={{ maxHeight: 400, overflow: 'auto' }}>
+          <List sx={{ maxHeight: 400, overflow: "auto" }}>
             {filteredMembers.map((member, index) => (
               <React.Fragment key={getMemberId(member)}>
                 <ListItem
@@ -273,28 +304,42 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
                   sx={{
                     borderRadius: 1,
                     mb: 1,
-                    bgcolor: selectedMemberIds.has(getMemberId(member)) ? 'action.selected' : 'transparent',
-                    '&:hover': {
-                      bgcolor: selectedMemberIds.has(getMemberId(member)) ? 'action.selected' : 'action.hover',
+                    bgcolor: selectedMemberIds.has(getMemberId(member))
+                      ? "action.selected"
+                      : "transparent",
+                    "&:hover": {
+                      bgcolor: selectedMemberIds.has(getMemberId(member))
+                        ? "action.selected"
+                        : "action.hover",
                     },
                   }}
                 >
                   <ListItemAvatar>
-                    <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
+                    <Avatar
+                      sx={{ width: 40, height: 40, bgcolor: "primary.main" }}
+                    >
                       {getMemberInitials(member)}
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
                     primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
                         <Typography variant="subtitle1" fontWeight={500}>
                           {getMemberDisplayName(member)}
                         </Typography>
                         <Chip
                           label={member.role}
                           size="small"
-                          color={member.role === 'owner' ? 'error' : member.role === 'admin' ? 'warning' : 'default'}
-                          sx={{ textTransform: 'capitalize' }}
+                          color={
+                            member.role === "owner"
+                              ? "error"
+                              : member.role === "admin"
+                                ? "warning"
+                                : "default"
+                          }
+                          sx={{ textTransform: "capitalize" }}
                         />
                       </Box>
                     }
@@ -312,7 +357,9 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
                     />
                   </ListItemSecondaryAction>
                 </ListItem>
-                {index < filteredMembers.length - 1 && <Divider variant="inset" component="li" />}
+                {index < filteredMembers.length - 1 && (
+                  <Divider variant="inset" component="li" />
+                )}
               </React.Fragment>
             ))}
           </List>
@@ -320,11 +367,7 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button
-          onClick={handleClose}
-          variant="outlined"
-          disabled={loading}
-        >
+        <Button onClick={handleClose} variant="outlined" disabled={loading}>
           Cancel
         </Button>
         <Button
@@ -333,7 +376,8 @@ const AddTeamMemberModal: React.FC<AddTeamMemberModalProps> = ({
           disabled={loading || selectedMemberIds.size === 0}
           startIcon={loading ? <CircularProgress size={20} /> : <PersonIcon />}
         >
-          Add {selectedMemberIds.size > 0 ? `${selectedMemberIds.size} ` : ''}Member{selectedMemberIds.size !== 1 ? 's' : ''}
+          Add {selectedMemberIds.size > 0 ? `${selectedMemberIds.size} ` : ""}
+          Member{selectedMemberIds.size !== 1 ? "s" : ""}
         </Button>
       </DialogActions>
     </Dialog>

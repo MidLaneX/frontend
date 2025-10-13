@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Chip from '@mui/material/Chip';
-import Avatar from '@mui/material/Avatar';
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
-import EditIcon from '@mui/icons-material/Edit';
+import React, { useState } from "react";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Chip from "@mui/material/Chip";
+import Avatar from "@mui/material/Avatar";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import EditIcon from "@mui/icons-material/Edit";
 import type { Task, Comment } from "@/types";
 
 interface TaskDetailModalProps {
@@ -24,10 +24,15 @@ interface TaskDetailModalProps {
   onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
 }
 
-const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, onUpdateTask }) => {
+const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
+  task,
+  open,
+  onClose,
+  onUpdateTask,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Task | null>(null);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
 
   React.useEffect(() => {
     if (task) {
@@ -44,42 +49,53 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, open, onClose, 
 
   const handleAddComment = () => {
     if (!newComment.trim()) return;
-    
+
     const comment = {
       id: Date.now().toString(),
-      author: 'Current User',
+      author: "Current User",
       text: newComment,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     const updatedTask = {
       ...editedTask,
-      comments: [...editedTask.comments, comment]
+      comments: [...editedTask.comments, comment],
     };
-    
+
     setEditedTask(updatedTask);
     onUpdateTask(task.id, updatedTask);
-    setNewComment('');
+    setNewComment("");
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'Bug': return '#DE350B';
-      case 'Story': return '#36B37E';
-      case 'Epic': return '#6554C0';
-      case 'Task': return '#0052CC';
-      default: return '#0052CC';
+      case "Bug":
+        return "#DE350B";
+      case "Story":
+        return "#36B37E";
+      case "Epic":
+        return "#6554C0";
+      case "Task":
+        return "#0052CC";
+      default:
+        return "#0052CC";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'Highest': return '#DE350B';
-      case 'High': return '#FF5630';
-      case 'Medium': return '#FF8B00';
-      case 'Low': return '#36B37E';
-      case 'Lowest': return '#00875A';
-      default: return '#6B778C';
+      case "Highest":
+        return "#DE350B";
+      case "High":
+        return "#FF5630";
+      case "Medium":
+        return "#FF8B00";
+      case "Low":
+        return "#36B37E";
+      case "Lowest":
+        return "#00875A";
+      default:
+        return "#6B778C";
     }
   };
 

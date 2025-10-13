@@ -1,15 +1,11 @@
-import React from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-} from '@mui/material';
+import React from "react";
+import { Box, Paper, Typography } from "@mui/material";
 import {
   Work as ProjectIcon,
   Assignment as TaskIcon,
   CheckCircle as CompletedIcon,
   People as TeamIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 interface ProjectStatsProps {
   totalProjects: number;
@@ -24,46 +20,47 @@ const ProjectStats: React.FC<ProjectStatsProps> = ({
   completedTasks,
   totalTeamMembers,
 }) => {
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const completionRate =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   const stats = [
     {
-      title: 'Projects',
+      title: "Projects",
       value: totalProjects,
       icon: ProjectIcon,
-      color: '#0052CC',
+      color: "#0052CC",
     },
     {
-      title: 'Tasks',
+      title: "Tasks",
       value: totalTasks,
       icon: TaskIcon,
-      color: '#6554C0',
+      color: "#6554C0",
     },
     {
-      title: 'Completion Rate',
+      title: "Completion Rate",
       value: `${completionRate}%`,
       icon: CompletedIcon,
-      color: '#00875A',
+      color: "#00875A",
     },
     {
-      title: 'Team Members',
+      title: "Team Members",
       value: totalTeamMembers,
       icon: TeamIcon,
-      color: '#FF5630',
+      color: "#FF5630",
     },
   ];
 
   return (
-    <Box 
-      sx={{ 
-        display: 'grid',
+    <Box
+      sx={{
+        display: "grid",
         gridTemplateColumns: {
-          xs: 'repeat(2, 1fr)',
-          sm: 'repeat(2, 1fr)', 
-          md: 'repeat(4, 1fr)'
+          xs: "repeat(2, 1fr)",
+          sm: "repeat(2, 1fr)",
+          md: "repeat(4, 1fr)",
         },
         gap: 3,
-        mb: 4 
+        mb: 4,
       }}
     >
       {stats.map((stat) => {
@@ -74,24 +71,24 @@ const ProjectStats: React.FC<ProjectStatsProps> = ({
             sx={{
               p: 3,
               borderRadius: 2,
-              border: '1px solid #DFE1E6',
-              '&:hover': {
-                boxShadow: '0 4px 8px rgba(0,0,0,0.12)',
-                transform: 'translateY(-2px)',
+              border: "1px solid #DFE1E6",
+              "&:hover": {
+                boxShadow: "0 4px 8px rgba(0,0,0,0.12)",
+                transform: "translateY(-2px)",
               },
-              transition: 'all 0.2s ease-in-out',
+              transition: "all 0.2s ease-in-out",
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               <Box
                 sx={{
                   width: 40,
                   height: 40,
                   borderRadius: 1,
                   backgroundColor: `${stat.color}15`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   mr: 2,
                 }}
               >

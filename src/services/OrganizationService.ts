@@ -1,6 +1,7 @@
-﻿import { organizationsApi } from '../api/endpoints/organizations';
-import { getRoleDisplayInfo } from '../utils/organizationPermissions';
-import type { MemberRole, OrganizationRole } from '../types/api/organizations';
+﻿import { organizationsApi } from "../api/endpoints/organizations";
+import { teamsApi } from "../api/endpoints/teams";
+import { getRoleDisplayInfo } from "../utils/organizationPermissions";
+import type { MemberRole, OrganizationRole, TeamMemberDetail } from "../types/api/organizations";
 
 export class OrganizationService {
   // Direct API calls for backward compatibility
@@ -10,6 +11,10 @@ export class OrganizationService {
 
   static async getOrganizations() {
     return organizationsApi.getAllUserOrganizations();
+  }
+
+  static async getTeamMembers(teamId: string): Promise<TeamMemberDetail[]> {
+    return teamsApi.getTeamMembers(teamId);
   }
 
   // Utility methods
@@ -22,14 +27,16 @@ export class OrganizationService {
   }
 
   static canManageMembers(userRole: MemberRole | OrganizationRole): boolean {
-    return userRole === 'owner' || userRole === 'admin';
+    return userRole === "owner" || userRole === "admin";
   }
 
   static canManageTeams(userRole: MemberRole | OrganizationRole): boolean {
-    return userRole === 'owner' || userRole === 'admin';
+    return userRole === "owner" || userRole === "admin";
   }
 
-  static canDeleteOrganization(userRole: MemberRole | OrganizationRole): boolean {
-    return userRole === 'owner';
+  static canDeleteOrganization(
+    userRole: MemberRole | OrganizationRole,
+  ): boolean {
+    return userRole === "owner";
   }
 }

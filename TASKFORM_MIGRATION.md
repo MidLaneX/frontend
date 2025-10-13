@@ -1,19 +1,22 @@
 # TaskFormDialog Migration Guide
 
 ## Overview
+
 We have successfully created a common `TaskFormDialog` component with epic assignment functionality and enhanced story points visibility. This document outlines how to migrate all remaining features to use this common component.
 
 ## ✅ Completed Features
+
 - ✅ **backlog/index.tsx** - Fully migrated to TaskFormDialog
 - ✅ **scrum_board/index.tsx** - Fully migrated to TaskFormDialog
 
 ## 🔄 Features Requiring Migration
 
 ### Features with TaskService.createTask usage:
+
 1. **board/index.tsx** - ⚠️ Partially started
-2. **startup/index.tsx** 
+2. **startup/index.tsx**
 3. **sixsigma/index.tsx**
-4. **matrix/index.tsx** 
+4. **matrix/index.tsx**
 5. **list/index.tsx**
 6. **lean/index.tsx**
 7. **functional/index.tsx**
@@ -24,7 +27,9 @@ We have successfully created a common `TaskFormDialog` component with epic assig
 ## Migration Steps for Each Feature
 
 ### 1. Update Imports
+
 **Remove:**
+
 ```tsx
 import {
   Dialog,
@@ -36,38 +41,44 @@ import {
   FormControl,
   InputLabel,
   Select, // if only used for task forms
-} from '@mui/material';
+} from "@mui/material";
 ```
 
 **Add:**
+
 ```tsx
-import { TaskFormDialog } from '@/components/features';
+import { TaskFormDialog } from "@/components/features";
 ```
 
 ### 2. Remove State Variables
+
 **Remove:**
+
 ```tsx
 const [newTaskData, setNewTaskData] = useState<Partial<Task>>({...});
 ```
 
 **Keep:**
+
 ```tsx
 const [openDialog, setOpenDialog] = useState(false);
 const [editTask, setEditTask] = useState<Task | null>(null);
 ```
 
 ### 3. Update handleSave Function
+
 **Change from:**
+
 ```tsx
 const handleSave = async () => {
   if (!newTaskData.title) return;
-  
+
   if (editTask) {
     await TaskService.updateTask(projectId, Number(editTask.id), newTaskData, templateType);
   } else {
     await TaskService.createTask(projectId, newTaskData as Omit<Task, 'id'>, templateType);
   }
-  
+
   setOpenDialog(false);
   setEditTask(null);
   setNewTaskData({...}); // Remove this
@@ -76,14 +87,24 @@ const handleSave = async () => {
 ```
 
 **Change to:**
+
 ```tsx
 const handleSave = async (taskData: Partial<Task>) => {
   if (editTask) {
-    await TaskService.updateTask(projectId, Number(editTask.id), taskData, templateType);
+    await TaskService.updateTask(
+      projectId,
+      Number(editTask.id),
+      taskData,
+      templateType,
+    );
   } else {
-    await TaskService.createTask(projectId, taskData as Omit<Task, 'id'>, templateType);
+    await TaskService.createTask(
+      projectId,
+      taskData as Omit<Task, "id">,
+      templateType,
+    );
   }
-  
+
   setOpenDialog(false);
   setEditTask(null);
   fetchTasks();
@@ -91,7 +112,9 @@ const handleSave = async (taskData: Partial<Task>) => {
 ```
 
 ### 4. Update Edit Button Handlers
+
 **Change from:**
+
 ```tsx
 onClick={() => {
   setEditTask(task);
@@ -101,6 +124,7 @@ onClick={() => {
 ```
 
 **Change to:**
+
 ```tsx
 onClick={() => {
   setEditTask(task);
@@ -109,7 +133,9 @@ onClick={() => {
 ```
 
 ### 5. Replace Dialog with TaskFormDialog
+
 **Remove entire Dialog section and replace with:**
+
 ```tsx
 <TaskFormDialog
   open={openDialog}
@@ -128,12 +154,16 @@ onClick={() => {
 ```
 
 ### 6. Remove Helper Functions
+
 **Remove:**
+
 - `resetForm()` functions
 - Any other task form related helper functions
 
 ### 7. Clean Up Constants (if unused elsewhere)
+
 **Remove if only used for task forms:**
+
 ```tsx
 const priorityOptions: TaskPriority[] = [...]
 const typeOptions: TaskType[] = [...]
@@ -142,6 +172,7 @@ const typeOptions: TaskType[] = [...]
 ## TaskFormDialog Features
 
 ### ✨ Enhanced Features:
+
 - **Epic Assignment**: Automatically loads and displays available epics for assignment
 - **Story Points Visibility**: Enhanced UI with Fibonacci scale guidance and prominent display
 - **Sprint Assignment**: Shows sprint information when creating tasks
@@ -150,6 +181,7 @@ const typeOptions: TaskType[] = [...]
 - **Professional UI**: Modern Material-UI design with proper spacing and colors
 
 ### Props Available:
+
 ```tsx
 interface TaskFormDialogProps {
   open: boolean;
@@ -188,8 +220,9 @@ interface TaskFormDialogProps {
 ## Testing Checklist
 
 For each migrated feature:
+
 - [ ] Task creation works
-- [ ] Task editing works  
+- [ ] Task editing works
 - [ ] Epic assignment dropdown appears and works
 - [ ] Story points field is prominent and validated
 - [ ] Form validation works (required title)
