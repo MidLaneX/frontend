@@ -248,11 +248,8 @@ const OrganizationPage: React.FC = () => {
         setUserTeams([]); // Clear user teams for owned organizations
       } else {
         // For member organizations, only load teams the user belongs to
-        const userTeamsData = await teamsApi.getUserTeamsInOrganization(
-          orgId,
-          currentUserId,
-        );
-        console.log("User teams loaded:", userTeamsData);
+        const userTeamsData = await teamsApi.getUserTeamsInOrganization(orgId, String(currentUserId));
+        console.log('User teams loaded:', userTeamsData);
         setUserTeams(userTeamsData);
         setMembers([]); // Clear members for member organizations
         setTeams([]); // Clear all teams for member organizations
@@ -547,9 +544,9 @@ const OrganizationPage: React.FC = () => {
 
   const handleTeamSettingsUpdateLead = async (userId: string) => {
     if (!selectedTeam) return;
-
-    const updatedTeam = await teamsApi.updateTeamLead(selectedTeam.id, userId);
-
+    
+    await teamsApi.updateTeamLead(selectedTeam.id, userId);
+    
     // Reload organization data to get fresh team information with updated lead details
     await loadOrganizationData(selectedOrg!.id);
 
@@ -1625,7 +1622,7 @@ const OrganizationPage: React.FC = () => {
                             >
                               <Chip
                                 size="small"
-                                label={`${team.memberCount || team.current_member_count || 0}/${team.maxMembers || team.max_members || 0} members`}
+                                label={`${team.memberCount || 0}/${team.maxMembers || 0} members`}
                                 variant="outlined"
                               />
                               {(team.teamType || team.team_type) && (
@@ -1662,19 +1659,11 @@ const OrganizationPage: React.FC = () => {
                             </Typography>
                           </Box>
                         )}
-                        {(team.organization_name || selectedOrg?.name) && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                              mt: 1,
-                            }}
-                          >
+                        {selectedOrg?.name && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
                             <BusinessIcon fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary">
-                              Organization:{" "}
-                              {team.organization_name || selectedOrg?.name}
+                              Organization: {selectedOrg.name}
                             </Typography>
                           </Box>
                         )}

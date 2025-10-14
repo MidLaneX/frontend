@@ -51,8 +51,9 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     const project: Omit<Project, "id" | "tasks"> = {
       name: formData.name,
       key: formData.key.toUpperCase(),
-      description: formData.description,
       type: formData.type,
+      templateType: 'scrum', // Default template type
+      features: [], // Initialize empty features array
       timeline: {
         start: formData.startDate,
         end: formData.endDate,

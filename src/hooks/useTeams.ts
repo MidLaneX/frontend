@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export interface Team {
+interface MockTeam {
   id: number;
   name: string;
   description?: string;
@@ -49,7 +49,7 @@ const mockTeams: Team[] = [
 ];
 
 export const useTeams = () => {
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<MockTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

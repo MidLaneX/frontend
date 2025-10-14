@@ -12,11 +12,8 @@ export * from "./hooks";
 export * from "./utils";
 
 // Constants
-export * from "./constants/colors";
-export * from "./constants/config";
-
-// Data
-export * from "./data/projects";
+export * from './constants/colors';
+export * from './constants/config';
 
 // Theme
 export { theme } from "./config/theme";

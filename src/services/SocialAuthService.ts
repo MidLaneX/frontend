@@ -2,7 +2,7 @@ import { ENV } from "../config/env";
 
 export interface SocialAuthResponse {
   accessToken: string;
-  provider: "google" | "facebook";
+  provider: 'google';
   email: string;
   name: string;
   profilePicture?: string;
@@ -13,15 +13,7 @@ export interface GoogleCredentialResponse {
   select_by: string;
 }
 
-export interface FacebookAuthResponse {
-  authResponse: {
-    accessToken: string;
-    expiresIn: number;
-    signedRequest: string;
-    userID: string;
-  };
-  status: string;
-}
+
 
 declare global {
   interface Window {
@@ -33,14 +25,6 @@ declare global {
           prompt: () => void;
         };
       };
-    };
-    FB?: {
-      init: (config: any) => void;
-      login: (
-        callback: (response: FacebookAuthResponse) => void,
-        options?: any,
-      ) => void;
-      api: (path: string, callback: (response: any) => void) => void;
     };
   }
 }
@@ -113,66 +97,9 @@ export class SocialAuthService {
     });
   }
 
-  // Initialize Facebook SDK
-  initializeFacebook(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!ENV.FACEBOOK_APP_ID) {
-        reject(new Error("Facebook App ID not configured"));
-        return;
-      }
 
-      // Load Facebook SDK script if not already loaded
-      if (!window.FB) {
-        const script = document.createElement("script");
-        script.src = "https://connect.facebook.net/en_US/sdk.js";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          window.FB?.init({
-            appId: ENV.FACEBOOK_APP_ID,
-            cookie: true,
-            xfbml: true,
-            version: "v18.0",
-          });
-          resolve();
-        };
-        script.onerror = () => reject(new Error("Failed to load Facebook SDK"));
-        document.head.appendChild(script);
-      } else {
-        resolve();
-      }
-    });
-  }
 
-  // Facebook login
-  loginWithFacebook(): Promise<SocialAuthResponse> {
-    return new Promise((resolve, reject) => {
-      if (!window.FB) {
-        reject(new Error("Facebook SDK not initialized"));
-        return;
-      }
 
-      window.FB.login(
-        (response: FacebookAuthResponse) => {
-          if (response.authResponse) {
-            // Get user profile information
-            window.FB?.api("/me?fields=name,email,picture", (userInfo: any) => {
-              resolve({
-                accessToken: response.authResponse.accessToken,
-                provider: "facebook",
-                email: userInfo.email,
-                name: userInfo.name,
-                profilePicture: userInfo.picture?.data?.url,
-              });
-            });
-          } else {
-            reject(new Error("Facebook login was cancelled or failed"));
-          }
-        },
-        { scope: "email,public_profile" },
-      );
-    });
-  }
 
   // Decode Google JWT token (simplified version)
   decodeGoogleCredential(credential: string): Promise<SocialAuthResponse> {

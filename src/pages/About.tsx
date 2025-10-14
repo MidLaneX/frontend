@@ -488,25 +488,9 @@ const About: React.FC = () => {
             Built with cutting-edge technologies to ensure reliability,
             performance, and security
           </Typography>
-
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 2,
-              justifyContent: "center",
-            }}
-          >
-            {[
-              "React",
-              "TypeScript",
-              "Material-UI",
-              "Node.js",
-              "MongoDB",
-              "AWS",
-              "Docker",
-              "Kubernetes",
-            ].map((tech) => (
+          
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+            {['React', 'TypeScript', 'Material-UI', 'Node.js', 'Postgres', 'Google Cloud', 'Docker'].map((tech) => (
               <Chip
                 key={tech}
                 label={tech}

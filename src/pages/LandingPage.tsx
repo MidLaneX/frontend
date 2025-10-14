@@ -15,7 +15,8 @@ import {
   CardContent,
   Divider,
   Stack,
-} from "@mui/material";
+  Chip,
+} from '@mui/material';
 import {
   AccountCircle,
   Dashboard as DashboardIcon,
@@ -24,11 +25,11 @@ import {
   TrendingUp,
   CheckCircle,
   Speed,
-} from "@mui/icons-material";
-import { useAuth } from "../context/AuthContext";
-import type { SignupData } from "../context/AuthContext";
-import type { SocialLoginRequest } from "../api/endpoints/auth";
-import { GoogleLoginButton, FacebookLoginButton } from "../components/auth";
+} from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
+import type { SignupData } from '../context/AuthContext';
+import type { SocialLoginRequest } from '../api/endpoints/auth';
+import { GoogleLoginButton } from '../components/auth';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -159,7 +160,7 @@ const LandingPage: React.FC = () => {
   };
 
   const handleSocialLogin = async (
-    provider: "google" | "facebook",
+    provider: 'google',
     accessToken: string,
     email: string,
     name: string,
@@ -179,14 +180,9 @@ const LandingPage: React.FC = () => {
       };
 
       await socialLogin(socialLoginData);
-      setSuccess(
-        `${provider === "google" ? "Google" : "Facebook"} login successful! Redirecting...`,
-      );
+      setSuccess('Google login successful! Redirecting...');
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        `${provider === "google" ? "Google" : "Facebook"} login failed. Please try again.`;
+      const errorMessage = err.response?.data?.message || err.message || 'Google login failed. Please try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -239,48 +235,97 @@ const LandingPage: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        bgcolor: "background.default",
-        display: "flex",
-        flexDirection: "column",
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '60vh',
+          background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, rgba(156, 39, 176, 0.05) 100%)',
+          zIndex: 0,
+        }
       }}
     >
       {/* Header */}
       <Box
         sx={{
-          bgcolor: "background.paper",
-          borderBottom: "1px solid",
-          borderColor: "divider",
+          bgcolor: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
           py: 2,
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000,
+          boxShadow: '0 2px 20px rgba(0, 0, 0, 0.08)',
         }}
       >
         <Container maxWidth="lg">
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography
-              variant="h5"
-              component="div"
-              sx={{ fontWeight: 600, color: "primary.main" }}
-            >
-              Project Management Platform
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <DashboardIcon sx={{ color: 'white', fontSize: 20 }} />
+              </Box>
+              <Typography variant="h5" component="div" sx={{ 
+                fontWeight: 700, 
+                background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                letterSpacing: '-0.5px'
+              }}>
+                ProjectFlow
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setTabValue(0)}
-                sx={{ textTransform: "none" }}
+                sx={{ 
+                  textTransform: 'none',
+                  borderRadius: '12px',
+                  px: 3,
+                  py: 1,
+                  fontWeight: 500,
+                  border: '2px solid transparent',
+                  background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1976d2, #9c27b0) border-box',
+                }}
               >
                 Sign In
               </Button>
               <Button
                 variant="contained"
                 onClick={() => setTabValue(1)}
-                sx={{ textTransform: "none" }}
+                sx={{ 
+                  textTransform: 'none',
+                  borderRadius: '12px',
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                  boxShadow: '0 4px 20px rgba(25, 118, 210, 0.3)',
+                  '&:hover': {
+                    boxShadow: '0 6px 30px rgba(25, 118, 210, 0.4)',
+                    transform: 'translateY(-2px)',
+                  }
+                }}
               >
                 Get Started
               </Button>
@@ -289,55 +334,105 @@ const LandingPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* Main Content */}
-      <Container maxWidth="lg" sx={{ py: 8, flex: 1 }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            flexDirection: { xs: "column", md: "row" },
-          }}
-        >
+      {/* Hero Section */}
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 12 }, flex: 1, position: 'relative', zIndex: 1 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 8,
+          flexDirection: { xs: 'column', md: 'row' },
+          minHeight: { xs: 'auto', md: '70vh' }
+        }}>
           {/* Left Side - Content */}
-          <Box sx={{ flex: 1 }}>
-            <Stack spacing={3}>
-              <Typography
-                variant="h1"
-                sx={{
-                  fontWeight: 700,
-                  color: "text.primary",
-                  lineHeight: 1.2,
-                }}
-              >
-                Streamline Your{" "}
+          <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
+            <Stack spacing={4} sx={{ maxWidth: { xs: '100%', md: '600px' } }}>
+              <Box>
                 <Typography
-                  component="span"
-                  variant="h1"
-                  sx={{ color: "primary.main", fontWeight: "inherit" }}
+                  variant="body1"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: 2,
+                    fontSize: '0.875rem',
+                    mb: 2,
+                  }}
                 >
-                  Project Management
+                  The Future of Team Collaboration
                 </Typography>
-              </Typography>
-
+                <Typography
+                  variant="h1"
+                  sx={{
+                    fontWeight: 800,
+                    color: 'text.primary',
+                    lineHeight: 1.1,
+                    fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' },
+                    letterSpacing: '-0.02em',
+                    mb: 2,
+                  }}
+                >
+                  Transform Your{' '}
+                  <Box
+                    component="span"
+                    sx={{
+                      background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontWeight: 'inherit',
+                      position: 'relative',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        bottom: '-8px',
+                        left: 0,
+                        right: 0,
+                        height: '4px',
+                        background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                        borderRadius: '2px',
+                      }
+                    }}
+                  >
+                    Project Workflow
+                  </Box>
+                </Typography>
+              </Box>
+              
               <Typography
-                variant="h5"
+                variant="h6"
                 sx={{
                   color: "text.secondary",
                   fontWeight: 400,
-                  lineHeight: 1.5,
+                  lineHeight: 1.6,
+                  fontSize: { xs: '1.1rem', md: '1.25rem' },
+                  maxWidth: '500px'
                 }}
               >
-                Collaborate with your team, track progress, and deliver projects
-                on time with our comprehensive project management solution.
+                Empower your team with intelligent project management tools. 
+                Streamline workflows, boost productivity, and deliver exceptional results 
+                with our cutting-edge platform.
               </Typography>
 
-              <Stack direction="row" spacing={2} sx={{ pt: 2 }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ pt: 3 }}>
                 <Button
                   variant="contained"
                   size="large"
                   onClick={() => setTabValue(1)}
-                  sx={{ textTransform: "none", px: 4 }}
+                  sx={{ 
+                    textTransform: 'none', 
+                    px: 6, 
+                    py: 2,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                    boxShadow: '0 8px 32px rgba(25, 118, 210, 0.3)',
+                    '&:hover': {
+                      boxShadow: '0 12px 48px rgba(25, 118, 210, 0.4)',
+                      transform: 'translateY(-3px)',
+                    },
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
                 >
                   Start Free Trial
                 </Button>
@@ -345,49 +440,146 @@ const LandingPage: React.FC = () => {
                   variant="outlined"
                   size="large"
                   onClick={() => setTabValue(0)}
-                  sx={{ textTransform: "none", px: 4 }}
+                  sx={{ 
+                    textTransform: 'none', 
+                    px: 6, 
+                    py: 2,
+                    fontSize: '1.1rem',
+                    fontWeight: 500,
+                    borderRadius: '16px',
+                    borderWidth: '2px',
+                    '&:hover': {
+                      borderWidth: '2px',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 32px rgba(25, 118, 210, 0.2)',
+                    },
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
                 >
-                  Sign In
+                  Watch Demo
                 </Button>
               </Stack>
+
+              {/* Trust indicators */}
+              <Box sx={{ pt: 4 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    mb: 2,
+                    fontSize: '0.875rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                  }}
+                >
+                  Trusted by 10,000+ teams worldwide
+                </Typography>
+                <Stack direction="row" spacing={3} sx={{ opacity: 0.7 }}>
+                  <Chip 
+                    label="⭐ 4.9/5 Rating" 
+                    size="small" 
+                    variant="outlined"
+                    sx={{ borderRadius: '12px' }}
+                  />
+                  <Chip 
+                    label="🚀 99.9% Uptime" 
+                    size="small" 
+                    variant="outlined"
+                    sx={{ borderRadius: '12px' }}
+                  />
+                  <Chip 
+                    label="🔒 SOC 2 Compliant" 
+                    size="small" 
+                    variant="outlined"
+                    sx={{ borderRadius: '12px' }}
+                  />
+                </Stack>
+              </Box>
             </Stack>
           </Box>
 
           {/* Right Side - Auth Form */}
-          <Box sx={{ flex: 1, maxWidth: 450, width: "100%" }}>
+          <Box sx={{ flex: 1, maxWidth: 480, width: '100%' }}>
             <Paper
-              elevation={3}
+              elevation={0}
               sx={{
-                p: 4,
-                borderRadius: 2,
-                bgcolor: "background.paper",
-                border: "1px solid",
-                borderColor: "divider",
+                p: 5,
+                borderRadius: '24px',
+                bgcolor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid',
+                borderColor: 'rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05)',
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  borderRadius: '24px',
+                  padding: '1px',
+                  background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.3), rgba(156, 39, 176, 0.3))',
+                  mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  maskComposite: 'subtract',
+                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  WebkitMaskComposite: 'subtract',
+                },
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                <AccountCircle
-                  sx={{ fontSize: 24, color: "primary.main", mr: 1.5 }}
-                />
-                <Typography
-                  variant="h5"
-                  component="h2"
-                  sx={{ fontWeight: 600, color: "text.primary" }}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, position: 'relative', zIndex: 1 }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mr: 2,
+                  }}
                 >
-                  {tabValue === 0 ? "Welcome Back" : "Create Account"}
-                </Typography>
+                  <AccountCircle sx={{ fontSize: 24, color: 'white' }} />
+                </Box>
+                <Box>
+                  <Typography variant="h4" component="h2" sx={{ 
+                    fontWeight: 700, 
+                    color: 'text.primary',
+                    fontSize: '1.5rem',
+                    lineHeight: 1.2,
+                  }}>
+                    {tabValue === 0 ? 'Welcome Back!' : 'Join ProjectFlow'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    {tabValue === 0 ? 'Sign in to your account' : 'Create your free account'}
+                  </Typography>
+                </Box>
               </Box>
 
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
                 variant="fullWidth"
-                sx={{
-                  mb: 3,
-                  "& .MuiTab-root": {
-                    textTransform: "none",
-                    fontWeight: 500,
+                sx={{ 
+                  mb: 4,
+                  position: 'relative',
+                  zIndex: 1,
+                  '& .MuiTabs-indicator': {
+                    background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                    height: 3,
+                    borderRadius: '2px',
                   },
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    py: 2,
+                    '&.Mui-selected': {
+                      color: 'primary.main',
+                    }
+                  }
                 }}
               >
                 <Tab label="Sign In" />
@@ -419,7 +611,15 @@ const LandingPage: React.FC = () => {
                     onChange={(e) =>
                       setLoginData({ ...loginData, email: e.target.value })
                     }
-                    sx={{ mb: 2 }}
+                    sx={{ 
+                      mb: 3,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      }
+                    }}
                   />
                   <TextField
                     fullWidth
@@ -432,7 +632,15 @@ const LandingPage: React.FC = () => {
                     onChange={(e) =>
                       setLoginData({ ...loginData, password: e.target.value })
                     }
-                    sx={{ mb: 3 }}
+                    sx={{ 
+                      mb: 4,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      }
+                    }}
                   />
                   <Button
                     type="submit"
@@ -440,11 +648,23 @@ const LandingPage: React.FC = () => {
                     variant="contained"
                     size="large"
                     disabled={loading}
-                    sx={{
-                      py: 1.5,
-                      textTransform: "none",
-                      fontWeight: 600,
-                      mb: 2,
+                    sx={{ 
+                      py: 2, 
+                      textTransform: 'none', 
+                      fontWeight: 600, 
+                      mb: 3,
+                      borderRadius: '16px',
+                      fontSize: '1.1rem',
+                      background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                      boxShadow: '0 8px 32px rgba(25, 118, 210, 0.3)',
+                      '&:hover': {
+                        boxShadow: '0 12px 48px rgba(25, 118, 210, 0.4)',
+                        transform: 'translateY(-2px)',
+                      },
+                      '&:disabled': {
+                        background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.5) 0%, rgba(156, 39, 176, 0.5) 100%)',
+                      },
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                   >
                     {loading ? (
@@ -474,19 +694,6 @@ const LandingPage: React.FC = () => {
                       onError={handleSocialError}
                       disabled={loading}
                     />
-                    <FacebookLoginButton
-                      onSuccess={(accessToken, email, name, profilePicture) =>
-                        handleSocialLogin(
-                          "facebook",
-                          accessToken,
-                          email,
-                          name,
-                          profilePicture,
-                        )
-                      }
-                      onError={handleSocialError}
-                      disabled={loading}
-                    />
                   </Stack>
                 </Box>
               </TabPanel>
@@ -505,7 +712,15 @@ const LandingPage: React.FC = () => {
                       setSignupData({ ...signupData, email: e.target.value })
                     }
                     helperText="We'll use this for your account"
-                    sx={{ mb: 2 }}
+                    sx={{ 
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      }
+                    }}
                   />
                   <TextField
                     fullWidth
@@ -517,7 +732,15 @@ const LandingPage: React.FC = () => {
                       setSignupData({ ...signupData, phone: e.target.value })
                     }
                     helperText="For account recovery"
-                    sx={{ mb: 2 }}
+                    sx={{ 
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      }
+                    }}
                   />
                   <TextField
                     fullWidth
@@ -531,7 +754,15 @@ const LandingPage: React.FC = () => {
                       setSignupData({ ...signupData, password: e.target.value })
                     }
                     helperText="Minimum 6 characters"
-                    sx={{ mb: 2 }}
+                    sx={{ 
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      }
+                    }}
                   />
                   <TextField
                     fullWidth
@@ -557,7 +788,15 @@ const LandingPage: React.FC = () => {
                         ? "Passwords don't match"
                         : "Re-enter your password"
                     }
-                    sx={{ mb: 3 }}
+                    sx={{ 
+                      mb: 4,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '12px',
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      }
+                    }}
                   />
                   <Button
                     type="submit"
@@ -565,11 +804,23 @@ const LandingPage: React.FC = () => {
                     variant="contained"
                     size="large"
                     disabled={loading}
-                    sx={{
-                      py: 1.5,
-                      textTransform: "none",
-                      fontWeight: 600,
-                      mb: 2,
+                    sx={{ 
+                      py: 2, 
+                      textTransform: 'none', 
+                      fontWeight: 600, 
+                      mb: 3,
+                      borderRadius: '16px',
+                      fontSize: '1.1rem',
+                      background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                      boxShadow: '0 8px 32px rgba(25, 118, 210, 0.3)',
+                      '&:hover': {
+                        boxShadow: '0 12px 48px rgba(25, 118, 210, 0.4)',
+                        transform: 'translateY(-2px)',
+                      },
+                      '&:disabled': {
+                        background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.5) 0%, rgba(156, 39, 176, 0.5) 100%)',
+                      },
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                   >
                     {loading ? (
@@ -599,19 +850,6 @@ const LandingPage: React.FC = () => {
                       onError={handleSocialError}
                       disabled={loading}
                     />
-                    <FacebookLoginButton
-                      onSuccess={(accessToken, email, name, profilePicture) =>
-                        handleSocialLogin(
-                          "facebook",
-                          accessToken,
-                          email,
-                          name,
-                          profilePicture,
-                        )
-                      }
-                      onError={handleSocialError}
-                      disabled={loading}
-                    />
                   </Stack>
                 </Box>
               </TabPanel>
@@ -623,24 +861,74 @@ const LandingPage: React.FC = () => {
       <Divider />
 
       {/* Features Section */}
-      <Box sx={{ bgcolor: "background.paper", py: 8 }}>
+      <Box sx={{ 
+        bgcolor: 'background.paper', 
+        py: { xs: 8, md: 12 },
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '200px',
+          height: '4px',
+          background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+          borderRadius: '2px',
+        }
+      }}>
         <Container maxWidth="lg">
-          <Stack spacing={6}>
-            <Box sx={{ textAlign: "center" }}>
+          <Stack spacing={8}>
+            <Box sx={{ textAlign: 'center', maxWidth: '800px', mx: 'auto' }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: 'primary.main',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: 2,
+                  fontSize: '0.875rem',
+                  mb: 3,
+                }}
+              >
+                Powerful Features
+              </Typography>
               <Typography
                 variant="h2"
                 component="h2"
-                gutterBottom
-                sx={{ fontWeight: 600, color: "text.primary", mb: 2 }}
+                sx={{ 
+                  fontWeight: 700, 
+                  color: 'text.primary', 
+                  mb: 3,
+                  fontSize: { xs: '2rem', md: '2.75rem' },
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.02em'
+                }}
               >
-                Everything you need to manage projects
+                Everything you need to{' '}
+                <Box
+                  component="span"
+                  sx={{
+                    background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  scale your business
+                </Box>
               </Typography>
               <Typography
                 variant="h6"
-                sx={{ color: "text.secondary", maxWidth: 600, mx: "auto" }}
+                sx={{ 
+                  color: 'text.secondary', 
+                  fontWeight: 400,
+                  lineHeight: 1.6,
+                  fontSize: '1.1rem'
+                }}
               >
-                Our platform provides all the tools your team needs to
-                collaborate effectively and deliver successful projects.
+                Our comprehensive platform provides all the tools your team needs to collaborate 
+                effectively and deliver exceptional results.
               </Typography>
             </Box>
 
@@ -659,32 +947,100 @@ const LandingPage: React.FC = () => {
                 <Box key={index}>
                   <Card
                     sx={{
-                      height: "100%",
-                      border: "1px solid",
-                      borderColor: "divider",
-                      boxShadow: "none",
-                      "&:hover": {
-                        boxShadow: 2,
-                        transform: "translateY(-2px)",
-                        transition: "all 0.2s ease-in-out",
+                      height: '100%',
+                      border: 'none',
+                      borderRadius: '20px',
+                      background: 'rgba(255, 255, 255, 0.8)',
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+                      position: 'relative',
+                      overflow: 'visible',
+                      '&:hover': {
+                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12)',
+                        transform: 'translateY(-8px)',
+                        '& .feature-icon': {
+                          transform: 'scale(1.1)',
+                          boxShadow: '0 8px 32px rgba(25, 118, 210, 0.3)',
+                        },
+                        '&::before': {
+                          opacity: 1,
+                        }
                       },
+                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        borderRadius: '20px',
+                        padding: '1px',
+                        background: `linear-gradient(135deg, 
+                          ${index % 3 === 0 ? 'rgba(25, 118, 210, 0.3)' : 
+                            index % 3 === 1 ? 'rgba(156, 39, 176, 0.3)' : 
+                            'rgba(76, 175, 80, 0.3)'}, 
+                          ${index % 3 === 0 ? 'rgba(156, 39, 176, 0.3)' : 
+                            index % 3 === 1 ? 'rgba(76, 175, 80, 0.3)' : 
+                            'rgba(25, 118, 210, 0.3)'})`,
+                        mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        maskComposite: 'subtract',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'subtract',
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease',
+                      }
                     }}
                   >
-                    <CardContent sx={{ p: 3 }}>
-                      <Stack spacing={2}>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          {feature.icon}
+                    <CardContent sx={{ p: 4, position: 'relative', zIndex: 1 }}>
+                      <Stack spacing={3}>
+                        <Box 
+                          className="feature-icon"
+                          sx={{ 
+                            width: 64,
+                            height: 64,
+                            borderRadius: '16px',
+                            background: `linear-gradient(135deg, 
+                              ${index % 3 === 0 ? '#1976d2' : 
+                                index % 3 === 1 ? '#9c27b0' : 
+                                '#4caf50'} 0%, 
+                              ${index % 3 === 0 ? '#9c27b0' : 
+                                index % 3 === 1 ? '#4caf50' : 
+                                '#1976d2'} 100%)`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 4px 20px rgba(25, 118, 210, 0.2)',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '& svg': {
+                              color: 'white',
+                              fontSize: 32,
+                            }
+                          }}
+                        >
+                          {React.cloneElement(feature.icon, {
+                            sx: { color: 'white', fontSize: 32 }
+                          })}
                         </Box>
-                        <Typography
-                          variant="h6"
-                          component="h3"
-                          sx={{ fontWeight: 600, color: "text.primary" }}
+                        <Typography 
+                          variant="h6" 
+                          component="h3" 
+                          sx={{ 
+                            fontWeight: 700, 
+                            color: 'text.primary',
+                            fontSize: '1.25rem',
+                            lineHeight: 1.3,
+                          }}
                         >
                           {feature.title}
                         </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.secondary", lineHeight: 1.6 }}
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            color: 'text.secondary', 
+                            lineHeight: 1.7,
+                            fontSize: '0.95rem'
+                          }}
                         >
                           {feature.description}
                         </Typography>
@@ -701,20 +1057,65 @@ const LandingPage: React.FC = () => {
       {/* Footer */}
       <Box
         sx={{
-          bgcolor: "background.default",
-          borderTop: "1px solid",
-          borderColor: "divider",
-          py: 3,
+          bgcolor: 'background.paper',
+          borderTop: '1px solid',
+          borderColor: 'rgba(0, 0, 0, 0.06)',
+          py: 6,
+          background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.02) 0%, rgba(156, 39, 176, 0.02) 100%)',
         }}
       >
         <Container maxWidth="lg">
-          <Typography
-            variant="body2"
-            sx={{ textAlign: "center", color: "text.secondary" }}
-          >
-            © 2025 Project Management Platform. Built with React and
-            Material-UI.
-          </Typography>
+          <Stack spacing={4} alignItems="center">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '6px',
+                  background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <DashboardIcon sx={{ color: 'white', fontSize: 16 }} />
+              </Box>
+              <Typography variant="h6" sx={{ 
+                fontWeight: 700, 
+                background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                ProjectFlow
+              </Typography>
+            </Box>
+            
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={4} sx={{ textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                🚀 Trusted by 10,000+ teams
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                ⭐ 4.9/5 Customer Rating
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                🔒 Enterprise Security
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                🌍 Global Support
+              </Typography>
+            </Stack>
+
+            <Divider sx={{ width: '100%', maxWidth: 400 }} />
+            
+            <Typography variant="body2" sx={{ 
+              textAlign: 'center', 
+              color: 'text.secondary',
+              fontSize: '0.875rem'
+            }}>
+              © 2025 ProjectFlow. All rights reserved. Built with ❤️ using React & Material-UI.
+            </Typography>
+          </Stack>
         </Container>
       </Box>
     </Box>
