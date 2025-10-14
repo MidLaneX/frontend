@@ -20,7 +20,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   AccountTreeRounded as EpicIcon,
-  Flag as FlagIcon,
   Comment as CommentIcon,
   BugReport as BugIcon,
   Task as TaskIcon,
@@ -252,10 +251,10 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    console.log(" Drag end result:", result);
+    console.log("🎯 Drag end result:", result);
 
     if (!result.destination) {
-      console.log(" No destination - drag cancelled");
+      console.log("❌ No destination - drag cancelled");
       return;
     }
 
@@ -267,11 +266,11 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
 
     // Check if status actually changed
     if (oldStatus === newStatus) {
-      console.log("ℹ Same status - no update needed");
+      console.log("ℹ️ Same status - no update needed");
       return;
     }
 
-    console.log(`Moving task ${taskId} from "${oldStatus}" to "${newStatus}"`);
+    console.log(`📦 Moving task ${taskId} from "${oldStatus}" to "${newStatus}"`);
 
     // Find the task to verify it exists
     const task = tasks.find((t) => Number(t.id) === taskId);
@@ -281,33 +280,13 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
       return;
     }
 
-    console.log("Found task:", {
+    console.log("✅ Found task:", {
       id: task.id,
       title: task.title,
       currentStatus: task.status,
       type: task.type,
     });
 
-    // Prevent moving epics to status columns and prevent moving non-epics to epic section
-    if (task.type === "Epic" && newStatus !== "Epic") {
-      console.log("❌ Cannot move Epic to status column");
-      setError("Epics cannot be moved to status columns");
-      return;
-    }
-
-    if (task.type !== "Epic" && newStatus === "Epic") {
-      console.log("❌ Cannot move non-Epic to Epic section");
-      setError("Only Epics can be placed in the Epic section");
-      return;
-    }
-
-    // If moving within Epic section or from Epic section, don't change status
-    if (oldStatus === "Epic" && newStatus === "Epic") {
-      console.log(" Moving within Epic section - no status change needed");
-      return;
-    }
-
-    // Regular status moves (between status columns)
     // Optimistic update - immediately update the UI
     const originalTasks = [...tasks];
     setTasks((prevTasks) =>
@@ -318,7 +297,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
 
     try {
       console.log(
-        `Calling TaskService.updateTaskStatus(${projectId}, ${taskId}, "${newStatus}", "${templateType}")`,
+        `🚀 Calling TaskService.updateTaskStatus(${projectId}, ${taskId}, "${newStatus}", "${templateType}")`,
       );
 
       const updatedTask = await TaskService.updateTaskStatus(
@@ -332,12 +311,12 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
         throw new Error("No response from server");
       }
 
-      console.log(" Task status updated successfully:", updatedTask);
+      console.log("✅ Task status updated successfully:", updatedTask);
 
       // Clear any existing errors
       setError(null);
     } catch (error) {
-      console.error(" Failed to update task status:", error);
+      console.error("❌ Failed to update task status:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setError(`Failed to update task status: ${errorMessage}`);
@@ -724,148 +703,107 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
                 }}
               >
                 {/* Epic Column */}
-                <Droppable droppableId="Epic" key="Epic">
-                  {(provided: any, snapshot: any) => (
-                    <Paper
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      elevation={0}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    minWidth: 280,
+                    maxWidth: 320,
+                    flex: "1 1 0",
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRadius: 3,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    bgcolor: "white",
+                    maxHeight: "100%",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Column Header */}
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderBottom: 1,
+                      borderColor: "divider",
+                      bgcolor: "grey.50",
+                    }}
+                  >
+                    <Box
                       sx={{
-                        minWidth: 280,
-                        maxWidth: 320,
-                        flex: "1 1 0",
                         display: "flex",
-                        flexDirection: "column",
-                        borderRadius: 3,
-                        border: "1px solid",
-                        borderColor: snapshot.isDraggingOver
-                          ? "#2196f3"
-                          : "divider",
-                        bgcolor: snapshot.isDraggingOver
-                          ? "rgba(33, 150, 243, 0.04)"
-                          : "white",
-                        transition: "all 0.2s ease",
-                        maxHeight: "100%",
-                        overflow: "hidden",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                       }}
                     >
-                      {/* Column Header */}
                       <Box
                         sx={{
-                          p: 2,
-                          borderBottom: 1,
-                          borderColor: "divider",
-                          bgcolor: snapshot.isDraggingOver
-                            ? "rgba(33, 150, 243, 0.04)"
-                            : "grey.50",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
                         }}
                       >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                          }}
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={600}
+                          color="text.primary"
                         >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight={600}
-                              color="text.primary"
-                            >
-                              EPICS
-                            </Typography>
-                          </Box>
-                          <Chip
-                            label={epics.length}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              minWidth: 24,
-                              height: 20,
-                              fontSize: "0.75rem",
-                              fontWeight: 600,
-                              borderColor: "#2196f3",
-                              color: "#1976d2",
-                            }}
-                          />
-                        </Box>
+                          EPICS
+                        </Typography>
                       </Box>
+                      <Chip
+                        label={epics.length}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          minWidth: 24,
+                          height: 20,
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          borderColor: "#2196f3",
+                          color: "#1976d2",
+                        }}
+                      />
+                    </Box>
+                  </Box>
 
-                      {/* Epic Tasks */}
+                  {/* Epic Tasks */}
+                  <Box
+                    sx={{
+                      flex: 1,
+                      p: 1.5,
+                      overflow: "auto",
+                      minHeight: 200,
+                    }}
+                  >
+                    {epics.map((epic) => (
+                      <Box key={`epic-${epic.id}`}>
+                        {renderTaskCard(epic)}
+                      </Box>
+                    ))}
+
+                    {/* Empty State */}
+                    {epics.length === 0 && (
                       <Box
                         sx={{
-                          flex: 1,
-                          p: 1.5,
-                          overflow: "auto",
-                          minHeight: 200,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 120,
+                          color: "text.secondary",
+                          textAlign: "center",
+                          border: "2px dashed",
+                          borderColor: "divider",
+                          borderRadius: 2,
+                          bgcolor: "rgba(33, 150, 243, 0.04)",
                         }}
                       >
-                        {epics.map((epic, index) => (
-                          <Draggable
-                            key={`task-${epic.id}`}
-                            draggableId={`task-${epic.id}`}
-                            index={index}
-                          >
-                            {(dragProvided: any, dragSnapshot: any) => (
-                              <Box
-                                ref={dragProvided.innerRef}
-                                {...dragProvided.draggableProps}
-                                {...dragProvided.dragHandleProps}
-                                sx={{
-                                  transform: dragSnapshot.isDragging
-                                    ? `${dragProvided.draggableProps.style?.transform} rotate(5deg)`
-                                    : dragProvided.draggableProps.style
-                                        ?.transform,
-                                  opacity: dragSnapshot.isDragging ? 0.8 : 1,
-                                  transition: dragSnapshot.isDragging
-                                    ? "none"
-                                    : "transform 0.2s ease",
-                                  cursor: dragSnapshot.isDragging
-                                    ? "grabbing"
-                                    : "grab",
-                                }}
-                              >
-                                {renderTaskCard(epic)}
-                              </Box>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-
-                        {/* Empty State */}
-                        {epics.length === 0 && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              height: 120,
-                              color: "text.secondary",
-                              textAlign: "center",
-                              border: "2px dashed",
-                              borderColor: "divider",
-                              borderRadius: 2,
-                              bgcolor: "rgba(33, 150, 243, 0.04)",
-                            }}
-                          >
-                            <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                              {snapshot.isDraggingOver
-                                ? "Drop epics here"
-                                : "No epics in this sprint"}
-                            </Typography>
-                          </Box>
-                        )}
+                        <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                          No epics in this sprint
+                        </Typography>
                       </Box>
-                    </Paper>
-                  )}
-                </Droppable>
+                    )}
+                  </Box>
+                </Paper>
 
                 {/* Status Columns */}
                 {statusColumns.map((status) => (

@@ -7,7 +7,6 @@ import {
   Alert,
   IconButton,
   Chip,
-  Tooltip,
   TextField,
   MenuItem,
   Button,
@@ -21,19 +20,15 @@ import {
   CardActions,
   Tab,
   Tabs,
-  Badge,
   LinearProgress,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Grid,
-  Divider,
 } from "@mui/material";
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Comment as CommentIcon,
   PlayArrow as StartIcon,
   Stop as StopIcon,
   CalendarMonth as CalendarIcon,
@@ -43,34 +38,19 @@ import {
   Schedule as InProgressIcon,
   PendingActions as TodoIcon,
 } from "@mui/icons-material";
-import type { Task, TaskStatus, TaskPriority, TaskType } from "@/types";
+import type { Task, TaskType } from "@/types";
 import { TaskService } from "@/services/TaskService";
 import { NotificationService } from "@/services/NotificationService";
 import { tokenManager } from "@/utils/tokenManager";
 import { SprintService } from "@/services/SprintService";
 import type { SprintDTO } from "@/types/featurevise/sprint";
+import { TaskFormDialog } from "@/components/features";
 
 interface SprintProps {
   projectId: number;
   projectName?: string;
   templateType: string;
 }
-
-const statusOptions: TaskStatus[] = [
-  "Backlog",
-  "Todo",
-  "In Progress",
-  "Review",
-  "Done",
-];
-const priorityOptions: TaskPriority[] = [
-  "Highest",
-  "High",
-  "Medium",
-  "Low",
-  "Lowest",
-];
-const typeOptions: TaskType[] = ["Story", "Bug", "Task", "Epic"];
 
 const SprintManagement: React.FC<SprintProps> = ({
   projectId,
@@ -85,20 +65,6 @@ const SprintManagement: React.FC<SprintProps> = ({
   // Task management state
   const [openTaskDialog, setOpenTaskDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
-  const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: "",
-    description: "",
-    priority: "Medium",
-    status: "Backlog",
-    type: "Task",
-    assignee: "",
-    reporter: "",
-    dueDate: "",
-    storyPoints: 3,
-    labels: [],
-    comments: [],
-    sprintId: undefined,
-  });
 
   // Sprint management state
   const [sprints, setSprints] = useState<SprintDTO[]>([]);
@@ -160,7 +126,6 @@ const SprintManagement: React.FC<SprintProps> = ({
       const res = await SprintService.getLatestSprint(projectId, templateType);
       if (res?.data) {
         setLatestSprint(res.data);
-        setNewTaskData((prev) => ({ ...prev, sprintId: res.data.id }));
       }
     } catch {
       console.error("Failed to load latest sprint.");
@@ -228,8 +193,8 @@ const SprintManagement: React.FC<SprintProps> = ({
   };
 
   // Task CRUD operations
-  const handleTaskSave = async () => {
-    if (!newTaskData.title) return;
+  const handleTaskSave = async (taskData: Partial<Task>) => {
+    if (!taskData.title) return;
 
     const currentUserName = tokenManager.getUserEmail()?.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || "System";
     const currentProjectName = projectName || `Project ${projectId}`;
@@ -238,18 +203,18 @@ const SprintManagement: React.FC<SprintProps> = ({
       const updatedTask = await TaskService.updateTask(
         projectId,
         Number(editTask.id),
-        newTaskData,
+        taskData,
         templateType,
       );
       
       // Send notification if assignee changed
-      if (updatedTask && newTaskData.assignee && editTask.assignee !== newTaskData.assignee) {
+      if (updatedTask && taskData.assignee && editTask.assignee !== taskData.assignee) {
         console.log("📧 Assignee changed, sending notification...");
         try {
           await NotificationService.sendTaskAssignmentNotification(
             updatedTask,
             currentProjectName,
-            newTaskData.assignee,
+            taskData.assignee,
             currentUserName
           );
         } catch (notifError) {
@@ -259,7 +224,7 @@ const SprintManagement: React.FC<SprintProps> = ({
     } else {
       const createdTask = await TaskService.createTask(
         projectId,
-        newTaskData as Omit<Task, "id">,
+        taskData as Omit<Task, "id">,
         templateType,
       );
       
@@ -298,24 +263,29 @@ const SprintManagement: React.FC<SprintProps> = ({
 
     setOpenTaskDialog(false);
     setEditTask(null);
-    resetTaskForm();
     fetchTasks();
   };
 
-  const handleDelete = async (taskId: number) => {
-    await TaskService.deleteTask(projectId, taskId, templateType);
-    fetchTasks();
+  const getTaskTypeColor = (type: TaskType) => {
+    switch (type) {
+      case "Epic":
+        return "#8b5a2b";
+      case "Story":
+        return "#4caf50";
+      case "Bug":
+        return "#f44336";
+      case "Task":
+        return "#2196f3";
+      default:
+        return "#2196f3";
+    }
   };
 
-  const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
-    await TaskService.updateTaskStatus(
-      projectId,
-      taskId,
-      newStatus,
-      templateType,
-    );
+  useEffect(() => {
     fetchTasks();
-  };
+    fetchSprints();
+    fetchLatestSprint();
+  }, [projectId, templateType]);
 
   // Helper functions
   const resetSprintForm = () => {
@@ -327,29 +297,6 @@ const SprintManagement: React.FC<SprintProps> = ({
       status: "planned",
     });
   };
-
-  const resetTaskForm = () => {
-    setNewTaskData({
-      title: "",
-      description: "",
-      priority: "Medium",
-      status: "Backlog",
-      type: "Task",
-      assignee: "",
-      reporter: "",
-      dueDate: "",
-      storyPoints: 3,
-      labels: [],
-      comments: [],
-      sprintId: latestSprint?.id ?? undefined,
-    });
-  };
-
-  useEffect(() => {
-    fetchTasks();
-    fetchSprints();
-    fetchLatestSprint();
-  }, [projectId, templateType]);
 
   // Helper functions for sprint task organization
   const getTasksBySprint = (sprintId: number | undefined) => {
@@ -390,148 +337,267 @@ const SprintManagement: React.FC<SprintProps> = ({
   const getSprintStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CompletedIcon sx={{ color: "#4caf50" }} />;
+        return <CompletedIcon sx={{ color: "#4caf50", fontSize: "1.2rem" }} />;
       case "active":
-        return <InProgressIcon sx={{ color: "#ff9800" }} />;
+        return <InProgressIcon sx={{ color: "#ff9800", fontSize: "1.2rem" }} />;
       case "planned":
-        return <TodoIcon sx={{ color: "#2196f3" }} />;
+        return <TodoIcon sx={{ color: "#2196f3", fontSize: "1.2rem" }} />;
       default:
-        return <TaskIcon />;
+        return <TaskIcon fontSize="small" />;
     }
   };
-
-  const getTaskTypeColor = (type: TaskType) => {
-    switch (type) {
-      case "Epic":
-        return "#8b5a2b";
-      case "Story":
-        return "#4caf50";
-      case "Bug":
-        return "#f44336";
-      case "Task":
-        return "#2196f3";
-      default:
-        return "#2196f3";
-    }
-  };
-
-  const getPriorityColor = (priority: TaskPriority) => {
-    switch (priority) {
-      case "Highest":
-        return "#d32f2f";
-      case "High":
-        return "#f57c00";
-      case "Medium":
-        return "#1976d2";
-      case "Low":
-        return "#388e3c";
-      case "Lowest":
-        return "#7b1fa2";
-      default:
-        return "#1976d2";
-    }
-  };
-
-  const filteredTasks = tasks.filter(
-    (task) =>
-      task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.assignee?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.reporter?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box
-        sx={{
-          mb: 3,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Typography variant="h4">Sprint Management - {projectName}</Typography>
-        <Stack direction="row" spacing={2}>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenSprintDialog(true)}
-          >
-            New Sprint
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenTaskDialog(true)}
-          >
-            New Task
-          </Button>
-        </Stack>
-      </Box>
-
-      {/* Tabs Navigation */}
-      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
-        <Tabs
-          value={currentTab}
-          onChange={(_, newValue) => setCurrentTab(newValue)}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%)",
+        p: 3,
+      }}
+    >
+      <Box sx={{ maxWidth: "1400px", mx: "auto" }}>
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+            p: 3.5,
+            background: "rgba(255, 255, 255, 0.7)",
+            backdropFilter: "blur(20px)",
+            borderRadius: 2.5,
+            border: "1px solid rgba(255, 255, 255, 0.8)",
+            boxShadow:
+              "0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(102, 126, 234, 0.04)",
+          }}
         >
-          <Tab label="Sprint Board" icon={<TaskIcon />} />
-          <Tab
-            label={
-              <Badge badgeContent={sprints.length} color="primary">
-                All Sprints
-              </Badge>
-            }
-            icon={<CalendarIcon />}
-          />
-        </Tabs>
-      </Box>
+          <Box>
+            <Typography
+              variant="h3"
+              sx={{
+                mb: 0.5,
+                fontWeight: 800,
+                fontSize: "2.2rem",
+                letterSpacing: "-0.02em",
+                background:
+                  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Sprint Management
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#64748b",
+                fontSize: "0.95rem",
+                fontWeight: 500,
+                letterSpacing: "0.01em",
+              }}
+            >
+              {projectName || `Project ${projectId}`}
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={2}>
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenSprintDialog(true)}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                letterSpacing: "0.02em",
+                px: 3,
+                py: 1.25,
+                color: "#667eea",
+                borderColor: "rgba(102, 126, 234, 0.3)",
+                borderRadius: 2,
+                "&:hover": {
+                  borderColor: "#667eea",
+                  background: "rgba(102, 126, 234, 0.05)",
+                },
+              }}
+            >
+              New Sprint
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenTaskDialog(true)}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                letterSpacing: "0.02em",
+                px: 3.5,
+                py: 1.25,
+                background:
+                  "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                color: "#ffffff",
+                borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.25)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                "&:hover": {
+                  background:
+                    "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                  boxShadow: "0 6px 16px rgba(16, 185, 129, 0.35)",
+                  transform: "translateY(-1px)",
+                },
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              New Task
+            </Button>
+          </Stack>
+        </Box>
 
-      {/* Active Sprint Info */}
-      {activeSprint && currentTab === 0 && (
-        <Card sx={{ mb: 3, bgcolor: "primary.50" }}>
-          <CardContent>
+        {/* Tabs Navigation */}
+        <Paper
+          sx={{
+            mb: 3,
+            background: "rgba(255, 255, 255, 0.7)",
+            backdropFilter: "blur(20px)",
+            borderRadius: 2.5,
+            border: "1px solid rgba(255, 255, 255, 0.8)",
+            boxShadow:
+              "0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(102, 126, 234, 0.04)",
+          }}
+        >
+          <Tabs
+            value={currentTab}
+            onChange={(_, newValue) => setCurrentTab(newValue)}
+            sx={{
+              "& .MuiTab-root": {
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                letterSpacing: "0.01em",
+                minHeight: 56,
+                color: "#64748b",
+                "&.Mui-selected": {
+                  color: "#667eea",
+                },
+              },
+              "& .MuiTabs-indicator": {
+                height: 3,
+                borderRadius: "3px 3px 0 0",
+                background:
+                  "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
+              },
+            }}
+          >
+            <Tab label="Sprint Board" icon={<TaskIcon />} iconPosition="start" />
+            <Tab
+              label={`All Sprints (${sprints.length})`}
+              icon={<CalendarIcon />}
+              iconPosition="start"
+            />
+          </Tabs>
+        </Paper>
+
+        {/* Active Sprint Banner - Show only on Sprint Board tab */}
+        {activeSprint && currentTab === 0 && (
+          <Paper
+            sx={{
+              mb: 3,
+              p: 3,
+              background:
+                "linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%)",
+              backdropFilter: "blur(20px)",
+              borderRadius: 2.5,
+              border: "2px solid rgba(102, 126, 234, 0.3)",
+              boxShadow: "0 4px 16px rgba(102, 126, 234, 0.15)",
+            }}
+          >
             <Stack
               direction="row"
               justifyContent="space-between"
               alignItems="center"
             >
-              <Box>
-                <Typography variant="h6">{activeSprint.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {activeSprint.startDate} - {activeSprint.endDate}
-                </Typography>
-                {activeSprint.goal && (
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    Goal: {activeSprint.goal}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {getSprintStatusIcon("active")}
+                <Box>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
+                    🚀 {activeSprint.name}
                   </Typography>
-                )}
+                  <Typography variant="body2" sx={{ color: "#64748b" }}>
+                    {new Date(activeSprint.startDate).toLocaleDateString()} -{" "}
+                    {new Date(activeSprint.endDate).toLocaleDateString()}
+                  </Typography>
+                  {activeSprint.goal && (
+                    <Typography
+                      variant="body2"
+                      sx={{ mt: 1, fontStyle: "italic", color: "#64748b" }}
+                    >
+                      🎯 {activeSprint.goal}
+                    </Typography>
+                  )}
+                </Box>
               </Box>
-              <Stack direction="row" spacing={1}>
-                <Chip
-                  label={activeSprint.status}
-                  color={
-                    activeSprint.status === "active" ? "success" : "default"
-                  }
-                />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {(() => {
+                  const progress = getSprintProgress(activeSprint.id);
+                  const storyPoints = getSprintStoryPoints(activeSprint.id);
+                  return (
+                    <Box sx={{ minWidth: 200 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mb: 0.5,
+                        }}
+                      >
+                        <Typography variant="body2" fontWeight={600}>
+                          {progress.completed}/{progress.total} tasks
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {storyPoints.completed}/{storyPoints.total} SP
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={progress.percentage}
+                        sx={{
+                          height: 8,
+                          borderRadius: 1.5,
+                          bgcolor: "rgba(255, 255, 255, 0.6)",
+                          "& .MuiLinearProgress-bar": {
+                            borderRadius: 1.5,
+                            background:
+                              progress.percentage === 100
+                                ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
+                                : "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
+                          },
+                        }}
+                      />
+                    </Box>
+                  );
+                })()}
                 <IconButton
                   onClick={() => {
                     setEditSprint(activeSprint);
                     setNewSprintData(activeSprint);
                     setOpenSprintDialog(true);
                   }}
+                  sx={{
+                    bgcolor: "rgba(255, 255, 255, 0.7)",
+                    "&:hover": { bgcolor: "rgba(255, 255, 255, 0.9)" },
+                  }}
                 >
-                  <EditIcon />
+                  <EditIcon fontSize="small" />
                 </IconButton>
-              </Stack>
+              </Box>
             </Stack>
-          </CardContent>
-        </Card>
-      )}
+          </Paper>
+        )}
 
       {/* Content based on current tab */}
       {currentTab === 0 ? (
-        // Sprint Board Tab - Professional Jira-like interface
+        // Sprint Board Tab
         <Box>
           {loading ? (
             <Box
@@ -539,113 +605,77 @@ const SprintManagement: React.FC<SprintProps> = ({
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                height: 300,
+                minHeight: 300,
+                background: "rgba(255, 255, 255, 0.7)",
+                backdropFilter: "blur(20px)",
+                borderRadius: 2.5,
+                border: "1px solid rgba(255, 255, 255, 0.8)",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.06)",
               }}
             >
-              <CircularProgress />
+              <CircularProgress sx={{ color: "#667eea" }} />
             </Box>
           ) : error ? (
-            <Alert severity="error">{error}</Alert>
+            <Alert
+              severity="error"
+              sx={{
+                background: "rgba(255, 255, 255, 0.7)",
+                backdropFilter: "blur(20px)",
+                borderRadius: 2,
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                boxShadow: "0 4px 16px rgba(239, 68, 68, 0.12)",
+              }}
+            >
+              {error}
+            </Alert>
           ) : (
             <>
               {/* Search Bar */}
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Search tasks by title, assignee, or reporter..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                sx={{ mb: 3 }}
-              />
+              <Paper
+                sx={{
+                  mb: 3,
+                  p: 2,
+                  background: "rgba(255, 255, 255, 0.7)",
+                  backdropFilter: "blur(20px)",
+                  borderRadius: 2,
+                  border: "1px solid rgba(255, 255, 255, 0.8)",
+                  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.04)",
+                }}
+              >
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search tasks by title, assignee, or reporter..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      bgcolor: "#ffffff",
+                      "& fieldset": {
+                        borderColor: "rgba(100, 116, 139, 0.2)",
+                      },
+                      "&:hover fieldset": {
+                        borderColor: "rgba(102, 126, 234, 0.3)",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "#667eea",
+                      },
+                    },
+                  }}
+                />
+              </Paper>
 
-              {/* Active Sprint Section */}
-              {activeSprint && (
-                <Card sx={{ mb: 3, border: "2px solid #4caf50" }}>
-                  <CardContent>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        mb: 2,
-                      }}
-                    >
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
-                      >
-                        {getSprintStatusIcon("active")}
-                        <Box>
-                          <Typography variant="h6" fontWeight={600}>
-                            🚀 {activeSprint.name} (Active)
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {activeSprint.startDate} - {activeSprint.endDate}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <IconButton
-                        onClick={() => {
-                          setEditSprint(activeSprint);
-                          setNewSprintData(activeSprint);
-                          setOpenSprintDialog(true);
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Box>
-
-                    {activeSprint.goal && (
-                      <Typography
-                        variant="body2"
-                        sx={{ mb: 2, fontStyle: "italic" }}
-                      >
-                        🎯 Goal: {activeSprint.goal}
-                      </Typography>
-                    )}
-
-                    {/* Active Sprint Progress */}
-                    {(() => {
-                      const progress = getSprintProgress(activeSprint.id);
-                      const storyPoints = getSprintStoryPoints(activeSprint.id);
-                      return (
-                        <Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              mb: 1,
-                            }}
-                          >
-                            <Typography variant="body2">
-                              Progress: {progress.completed}/{progress.total}{" "}
-                              tasks completed
-                            </Typography>
-                            <Typography variant="body2">
-                              {storyPoints.completed}/{storyPoints.total} story
-                              points
-                            </Typography>
-                          </Box>
-                          <LinearProgress
-                            variant="determinate"
-                            value={progress.percentage}
-                            sx={{ height: 8, borderRadius: 4 }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{ mt: 1, display: "block" }}
-                          >
-                            {progress.percentage}% Complete
-                          </Typography>
-                        </Box>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* All Sprints with Tasks */}
-              <Typography variant="h5" fontWeight={600} sx={{ mb: 2 }}>
-                Sprint Tasks Overview
+              {/* Sprint Accordion */}
+              <Typography
+                variant="h5"
+                fontWeight={700}
+                sx={{
+                  mb: 3,
+                  color: "#1e293b",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                All Sprints
               </Typography>
 
               {/* Sprints Accordion - Latest first */}
@@ -814,7 +844,6 @@ const SprintManagement: React.FC<SprintProps> = ({
                               }}
                               onClick={() => {
                                 setEditTask(task);
-                                setNewTaskData(task);
                                 setOpenTaskDialog(true);
                               }}
                             >
@@ -891,71 +920,126 @@ const SprintManagement: React.FC<SprintProps> = ({
 
                 if (unassignedTasks.length > 0) {
                   return (
-                    <Card sx={{ mt: 3, border: "1px solid #ff9800" }}>
-                      <CardContent>
-                        <Typography
-                          variant="h6"
-                          fontWeight={600}
-                          sx={{ mb: 2, color: "#f57c00" }}
-                        >
-                          📋 Unassigned Tasks ({unassignedTasks.length})
-                        </Typography>
-                        <Grid container spacing={2}>
-                          {unassignedTasks.map((task) => (
-                            <Grid item xs={12} md={6} lg={4} key={task.id}>
-                              <Card sx={{ border: "1px solid #ffcc80" }}>
-                                <CardContent sx={{ pb: 1 }}>
-                                  <Typography
-                                    variant="subtitle2"
-                                    fontWeight={600}
-                                    sx={{ mb: 1 }}
-                                  >
-                                    {task.title}
-                                  </Typography>
-                                  <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                    sx={{ mb: 2 }}
-                                  >
-                                    {task.description || "No description"}
-                                  </Typography>
+                    <Paper
+                      sx={{
+                        mt: 3,
+                        p: 3,
+                        background: "rgba(255, 255, 255, 0.7)",
+                        backdropFilter: "blur(20px)",
+                        borderRadius: 2.5,
+                        border: "2px solid rgba(255, 152, 0, 0.3)",
+                        boxShadow: "0 4px 16px rgba(255, 152, 0, 0.15)",
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        fontWeight={700}
+                        sx={{
+                          mb: 3,
+                          color: "#f57c00",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
+                      >
+                        📋 Unassigned Tasks ({unassignedTasks.length})
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gap: 2,
+                          gridTemplateColumns: {
+                            xs: "1fr",
+                            sm: "repeat(auto-fill, minmax(280px, 1fr))",
+                          },
+                        }}
+                      >
+                        {unassignedTasks.map((task) => (
+                          <Card
+                            key={task.id}
+                            sx={{
+                              border: "1px solid rgba(255, 204, 128, 0.5)",
+                              background: "rgba(255, 255, 255, 0.9)",
+                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                              "&:hover": {
+                                boxShadow: "0 4px 12px rgba(255, 152, 0, 0.2)",
+                                transform: "translateY(-2px)",
+                              },
+                            }}
+                          >
+                            <CardContent sx={{ pb: 1 }}>
+                              <Typography
+                                variant="subtitle2"
+                                fontWeight={600}
+                                sx={{ mb: 1, color: "#1e293b" }}
+                              >
+                                {task.title}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  mb: 2,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                }}
+                              >
+                                {task.description || "No description"}
+                              </Typography>
 
-                                  <Stack
-                                    direction="row"
-                                    spacing={1}
-                                    sx={{ mb: 2, flexWrap: "wrap", gap: 0.5 }}
-                                  >
-                                    <Chip label={task.type} size="small" />
-                                    <Chip label={task.priority} size="small" />
-                                    <Chip
-                                      label={task.status}
-                                      color="primary"
-                                      size="small"
-                                    />
-                                  </Stack>
-                                </CardContent>
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                sx={{ flexWrap: "wrap", gap: 0.5 }}
+                              >
+                                <Chip
+                                  label={task.type}
+                                  size="small"
+                                  sx={{
+                                    height: 22,
+                                    fontSize: "0.7rem",
+                                    bgcolor: `${getTaskTypeColor(task.type)}15`,
+                                    color: getTaskTypeColor(task.type),
+                                  }}
+                                />
+                                <Chip
+                                  label={task.priority}
+                                  size="small"
+                                  sx={{ height: 22, fontSize: "0.7rem" }}
+                                />
+                                <Chip
+                                  label={task.status}
+                                  size="small"
+                                  color="primary"
+                                  sx={{ height: 22, fontSize: "0.7rem" }}
+                                />
+                              </Stack>
+                            </CardContent>
 
-                                <CardActions sx={{ pt: 0 }}>
-                                  <Button
-                                    size="small"
-                                    onClick={() => {
-                                      setEditTask(task);
-                                      setNewTaskData({
-                                        ...task,
-                                        sprintId: latestSprint?.id,
-                                      });
-                                      setOpenTaskDialog(true);
-                                    }}
-                                  >
-                                    Assign to Sprint
-                                  </Button>
-                                </CardActions>
-                              </Card>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </CardContent>
-                    </Card>
+                            <CardActions sx={{ pt: 0, px: 2, pb: 2 }}>
+                              <Button
+                                size="small"
+                                variant="text"
+                                sx={{
+                                  textTransform: "none",
+                                  fontWeight: 600,
+                                  color: "#667eea",
+                                }}
+                                onClick={() => {
+                                  setEditTask(task);
+                                  setOpenTaskDialog(true);
+                                }}
+                              >
+                                Assign to Sprint
+                              </Button>
+                            </CardActions>
+                          </Card>
+                        ))}
+                      </Box>
+                    </Paper>
                   );
                 }
                 return null;
@@ -964,11 +1048,14 @@ const SprintManagement: React.FC<SprintProps> = ({
           )}
         </Box>
       ) : (
-        // All Sprints Tab - Simple Professional View
-        <Box sx={{ p: 3 }}>
-          {/* Simple Header */}
-          <Typography variant="h4" fontWeight={600} sx={{ mb: 3 }}>
-            Sprint Overview
+        // All Sprints Tab
+        <Box>
+          <Typography
+            variant="h5"
+            fontWeight={700}
+            sx={{ mb: 3, color: "#1e293b", letterSpacing: "-0.01em" }}
+          >
+            All Sprints Overview
           </Typography>
 
           {sprintLoading ? (
@@ -1108,7 +1195,6 @@ const SprintManagement: React.FC<SprintProps> = ({
                             }}
                             onClick={() => {
                               setEditTask(task);
-                              setNewTaskData(task);
                               setOpenTaskDialog(true);
                             }}
                           >
@@ -1272,141 +1358,26 @@ const SprintManagement: React.FC<SprintProps> = ({
         </Box>
       )}
 
-      {/* Task Dialog */}
-      <Dialog
+      </Box>
+      {/* End of maxWidth container */}
+
+      {/* Task Dialog with TaskFormDialog */}
+      <TaskFormDialog
         open={openTaskDialog}
-        onClose={() => setOpenTaskDialog(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>{editTask ? "Edit Task" : "Create Task"}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Title"
-            margin="dense"
-            value={newTaskData.title}
-            onChange={(e) =>
-              setNewTaskData({ ...newTaskData, title: e.target.value })
-            }
-          />
-          <TextField
-            fullWidth
-            label="Description"
-            margin="dense"
-            multiline
-            value={newTaskData.description}
-            onChange={(e) =>
-              setNewTaskData({ ...newTaskData, description: e.target.value })
-            }
-          />
-          <TextField
-            fullWidth
-            label="Assignee"
-            margin="dense"
-            value={newTaskData.assignee}
-            onChange={(e) =>
-              setNewTaskData({ ...newTaskData, assignee: e.target.value })
-            }
-          />
-          <TextField
-            fullWidth
-            label="Reporter"
-            margin="dense"
-            value={newTaskData.reporter}
-            onChange={(e) =>
-              setNewTaskData({ ...newTaskData, reporter: e.target.value })
-            }
-          />
-          <TextField
-            fullWidth
-            label="Due Date"
-            type="date"
-            margin="dense"
-            value={newTaskData.dueDate?.slice(0, 10) || ""}
-            onChange={(e) =>
-              setNewTaskData({ ...newTaskData, dueDate: e.target.value })
-            }
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            select
-            fullWidth
-            label="Priority"
-            margin="dense"
-            value={newTaskData.priority}
-            onChange={(e) =>
-              setNewTaskData({
-                ...newTaskData,
-                priority: e.target.value as TaskPriority,
-              })
-            }
-          >
-            {priorityOptions.map((p) => (
-              <MenuItem key={p} value={p}>
-                {p}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            fullWidth
-            label="Status"
-            margin="dense"
-            value={newTaskData.status}
-            onChange={(e) =>
-              setNewTaskData({
-                ...newTaskData,
-                status: e.target.value as TaskStatus,
-              })
-            }
-          >
-            {statusOptions.map((s) => (
-              <MenuItem key={s} value={s}>
-                {s}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            fullWidth
-            label="Type"
-            margin="dense"
-            value={newTaskData.type}
-            onChange={(e) =>
-              setNewTaskData({
-                ...newTaskData,
-                type: e.target.value as TaskType,
-              })
-            }
-          >
-            {typeOptions.map((t) => (
-              <MenuItem key={t} value={t}>
-                {t}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            fullWidth
-            label="Story Points"
-            type="number"
-            margin="dense"
-            value={newTaskData.storyPoints ?? ""}
-            onChange={(e) =>
-              setNewTaskData({
-                ...newTaskData,
-                storyPoints: Number(e.target.value),
-              })
-            }
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenTaskDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleTaskSave}>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onClose={() => {
+          setOpenTaskDialog(false);
+          setEditTask(null);
+        }}
+        onSave={handleTaskSave}
+        editTask={editTask}
+        projectId={projectId}
+        templateType={templateType}
+        defaultStatus="Backlog"
+        showSprintInfo={!!latestSprint}
+        sprintInfo={latestSprint?.id ? { id: latestSprint.id, name: latestSprint.name } : undefined}
+        title="Sprint Task"
+        subtitle={`Manage tasks in ${projectName} sprint`}
+      />
 
       {/* Sprint Dialog */}
       <Dialog

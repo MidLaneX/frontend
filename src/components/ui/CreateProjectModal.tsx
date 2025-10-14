@@ -166,49 +166,32 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     return { type: 'assigned', text: `Assigned to: ${assignment.projectName}`, color: 'warning' };
   };
 
-  const steps = ["Select Type", "Choose Template", "Project Details"];
+  const steps = ["Select Type", "Project Details"];
 
+  // Each project type has ONLY ONE template
   const projectTypes = [
     {
       type: "Software",
-      description: "For software development projects",
+      template: "scrum",
+      description: "Agile development with Scrum methodology",
       icon: SoftwareIcon,
       color: "#0052CC",
     },
     {
       type: "Business",
-      description: "For business and marketing projects",
+      template: "startup",
+      description: "Startup and business strategy projects",
       icon: BusinessIcon,
       color: "#00875A",
     },
     {
       type: "Classic",
-      description: "For traditional project management",
+      template: "traditional",
+      description: "Traditional project management approach",
       icon: ClassicIcon,
       color: "#6554C0",
     },
   ];
-
-  const templateOptions: Record<
-    string,
-    Array<{ name: string; description: string }>
-  > = {
-    Software: [
-      { name: "Scrum", description: "Agile development with sprints" },
-      { name: "Kanban", description: "Continuous flow methodology" },
-      { name: "Waterfall", description: "Sequential development phases" },
-    ],
-    Business: [
-      { name: "Lean", description: "Lean startup methodology" },
-      { name: "Six Sigma", description: "Quality improvement process" },
-      { name: "Startup", description: "Early stage business development" },
-    ],
-    Classic: [
-      { name: "Traditional", description: "Classic project management" },
-      { name: "Matrix", description: "Matrix organizational structure" },
-      { name: "Functional", description: "Functional organizational approach" },
-    ],
-  };
 
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
@@ -218,14 +201,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     setActiveStep((prevStep) => prevStep - 1);
   };
 
-  const handleTypeSelect = (type: string) => {
+  const handleTypeSelect = (type: string, template: string) => {
     setSelectedType(type as "agile" | "waterfall" | "hybrid" | "");
-    handleNext();
-  };
-
-  const handleTemplateSelect = (template: string) => {
     setSelectedTemplate(template);
-    handleNext();
+    handleNext(); // Skip template selection, go directly to project details
   };
 
   const handleCreate = () => {
@@ -273,7 +252,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       },
                     }}
                   >
-                    <CardActionArea onClick={() => handleTypeSelect(type.type)}>
+                    <CardActionArea onClick={() => handleTypeSelect(type.type, type.template)}>
                       <CardContent sx={{ p: 3 }}>
                         <Box
                           sx={{ display: "flex", alignItems: "center", gap: 2 }}
@@ -293,10 +272,23 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                               sx={{ color: type.color, fontSize: 24 }}
                             />
                           </Box>
-                          <Box>
-                            <Typography variant="h6" fontWeight={600}>
-                              {type.type}
-                            </Typography>
+                          <Box sx={{ flex: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                              <Typography variant="h6" fontWeight={600}>
+                                {type.type}
+                              </Typography>
+                              <Chip 
+                                label={type.template.toUpperCase()} 
+                                size="small"
+                                sx={{ 
+                                  height: 20,
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  bgcolor: `${type.color}15`,
+                                  color: type.color,
+                                }}
+                              />
+                            </Box>
                             <Typography variant="body2" color="text.secondary">
                               {type.description}
                             </Typography>
@@ -312,46 +304,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         );
 
       case 1:
-        return (
-          <Box>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ mb: 3, textAlign: "center" }}
-            >
-              Select a template for your {selectedType.toLowerCase()} project
-            </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {templateOptions[selectedType]?.map((template) => (
-                <Card
-                  key={template.name}
-                  sx={{
-                    border: "1px solid #DFE1E6",
-                    "&:hover": {
-                      borderColor: "#0052CC",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                    },
-                  }}
-                >
-                  <CardActionArea
-                    onClick={() => handleTemplateSelect(template.name)}
-                  >
-                    <CardContent sx={{ p: 3 }}>
-                      <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
-                        {template.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {template.description}
-                      </Typography>
-                    </CardContent>
-                  </CardActionArea>
-                </Card>
-              ))}
-            </Box>
-          </Box>
-        );
-
-      case 2:
         return (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Typography

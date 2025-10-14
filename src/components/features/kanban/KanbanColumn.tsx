@@ -1,5 +1,6 @@
 import React from "react";
 import { useDroppable } from "@dnd-kit/core";
+import { useDraggable } from "@dnd-kit/core";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
@@ -18,6 +19,29 @@ interface KanbanColumnProps {
   onTaskClick?: (task: Task) => void;
   onAddTask?: (status: string) => void;
 }
+
+interface DraggableTaskProps {
+  task: Task;
+  onClick?: () => void;
+}
+
+const DraggableTask: React.FC<DraggableTaskProps> = ({ task, onClick }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+  });
+
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? "grabbing" : "grab",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+      <TaskCard task={task} onClick={onClick} />
+    </div>
+  );
+};
 
 const getColumnConfig = (title: string) => {
   switch (title.toLowerCase()) {
@@ -258,7 +282,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 },
               }}
             >
-              <TaskCard task={task} onClick={() => onTaskClick?.(task)} />
+              <DraggableTask task={task} onClick={() => onTaskClick?.(task)} />
             </Box>
           ))
         )}

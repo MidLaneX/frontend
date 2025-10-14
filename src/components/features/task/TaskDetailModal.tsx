@@ -15,13 +15,13 @@ import Avatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-import type { Task, Comment } from "@/types";
+import type { Task, Comment, TaskType, TaskPriority, TaskStatus } from "@/types";
 
 interface TaskDetailModalProps {
   task: Task | null;
   open: boolean;
   onClose: () => void;
-  onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
+  onUpdateTask: (taskId: number, updates: Partial<Task>) => void;
 }
 
 const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
@@ -50,14 +50,14 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const handleAddComment = () => {
     if (!newComment.trim()) return;
 
-    const comment = {
-      id: Date.now().toString(),
+    const comment: Comment = {
+      id: Date.now(),
       author: "Current User",
       text: newComment,
       timestamp: new Date().toISOString(),
     };
 
-    const updatedTask = {
+    const updatedTask: Task = {
       ...editedTask,
       comments: [...editedTask.comments, comment],
     };
@@ -67,7 +67,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     setNewComment("");
   };
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: TaskType): string => {
     switch (type) {
       case "Bug":
         return "#DE350B";
@@ -82,7 +82,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: TaskPriority): string => {
     switch (priority) {
       case "Highest":
         return "#DE350B";
@@ -300,7 +300,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       onChange={(e) =>
                         setEditedTask({
                           ...editedTask,
-                          status: e.target.value as Task["status"],
+                          status: e.target.value as TaskStatus,
                         })
                       }
                     >
@@ -394,7 +394,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       onChange={(e) =>
                         setEditedTask({
                           ...editedTask,
-                          priority: e.target.value as Task["priority"],
+                          priority: e.target.value as TaskPriority,
                         })
                       }
                     >

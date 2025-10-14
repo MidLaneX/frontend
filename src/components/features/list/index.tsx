@@ -1,15 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   Button,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   FormControl,
   InputLabel,
   Select,
@@ -25,32 +19,26 @@ import {
   Paper,
   Avatar,
   Tooltip,
-  LinearProgress,
   Alert,
   CircularProgress,
   TableSortLabel,
   Checkbox,
-  Menu,
-  ListItemIcon,
-  ListItemText,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  FilterList as FilterIcon,
   ViewList as ViewListIcon,
-  MoreVert as MoreVertIcon,
   Assignment as TaskIcon,
   BugReport as BugIcon,
   AutoStories as StoryIcon,
   Category as EpicIcon,
   CalendarToday as CalendarIcon,
-  Person as PersonIcon,
   Flag as FlagIcon,
 } from "@mui/icons-material";
 import { TaskService } from "@/services/TaskService";
 import type { Task, TaskStatus, TaskPriority, TaskType } from "@/types";
+import { TaskFormDialog } from "@/components/features";
 
 interface ListProps {
   projectId: string;
@@ -106,26 +94,6 @@ const List: React.FC<ListProps> = ({
     "All",
   );
   const [typeFilter, setTypeFilter] = useState<TaskType | "All">("All");
-
-  // Menu states
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedTaskForMenu, setSelectedTaskForMenu] = useState<Task | null>(
-    null,
-  );
-
-  const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: "",
-    description: "",
-    priority: "Medium",
-    status: "Todo",
-    type: "Task",
-    assignee: "",
-    reporter: "",
-    dueDate: "",
-    storyPoints: 3,
-    labels: [],
-    comments: [],
-  });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -225,64 +193,30 @@ const List: React.FC<ListProps> = ({
     }
   };
 
-  const handleSave = async () => {
-    if (!newTaskData.title) return;
-
+  const handleSave = async (taskData: Partial<Task>) => {
     try {
       if (editTask) {
         await TaskService.updateTask(
           Number(projectId),
           Number(editTask.id),
-          newTaskData,
+          taskData,
           templateType,
         );
       } else {
         await TaskService.createTask(
           Number(projectId),
-          newTaskData as Omit<Task, "id">,
+          taskData as Omit<Task, "id">,
           templateType,
         );
       }
 
       setOpenDialog(false);
       setEditTask(null);
-      resetForm();
       fetchTasks();
     } catch (error) {
       console.error("Failed to save task:", error);
       setError("Failed to save task.");
     }
-  };
-
-  const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
-    try {
-      await TaskService.updateTaskStatus(
-        Number(projectId),
-        taskId,
-        newStatus,
-        templateType,
-      );
-      fetchTasks();
-    } catch (error) {
-      console.error("Failed to update task status:", error);
-      setError("Failed to update task status.");
-    }
-  };
-
-  const resetForm = () => {
-    setNewTaskData({
-      title: "",
-      description: "",
-      priority: "Medium",
-      status: "Todo",
-      type: "Task",
-      assignee: "",
-      reporter: "",
-      dueDate: "",
-      storyPoints: 3,
-      labels: [],
-      comments: [],
-    });
   };
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -691,19 +625,6 @@ const List: React.FC<ListProps> = ({
                           size="small"
                           onClick={() => {
                             setEditTask(task);
-                            setNewTaskData({
-                              title: task.title,
-                              description: task.description,
-                              priority: task.priority,
-                              status: task.status,
-                              type: task.type,
-                              assignee: task.assignee,
-                              reporter: task.reporter,
-                              dueDate: task.dueDate,
-                              storyPoints: task.storyPoints,
-                              labels: task.labels,
-                              comments: task.comments,
-                            });
                             setOpenDialog(true);
                           }}
                         >
@@ -727,161 +648,20 @@ const List: React.FC<ListProps> = ({
       </Box>
 
       {/* Create/Edit Task Dialog */}
-      <Dialog
+      <TaskFormDialog
         open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
-          },
+        onClose={() => {
+          setOpenDialog(false);
+          setEditTask(null);
         }}
-      >
-        <DialogTitle sx={{ pb: 1 }}>
-          {editTask ? "Edit Task" : "Create New Task"}
-        </DialogTitle>
-
-        <DialogContent sx={{ pt: 2 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="Title"
-              fullWidth
-              value={newTaskData.title}
-              onChange={(e) =>
-                setNewTaskData({ ...newTaskData, title: e.target.value })
-              }
-            />
-
-            <TextField
-              label="Description"
-              fullWidth
-              multiline
-              rows={3}
-              value={newTaskData.description}
-              onChange={(e) =>
-                setNewTaskData({ ...newTaskData, description: e.target.value })
-              }
-            />
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Type</InputLabel>
-                <Select
-                  value={newTaskData.type}
-                  label="Type"
-                  onChange={(e) =>
-                    setNewTaskData({
-                      ...newTaskData,
-                      type: e.target.value as TaskType,
-                    })
-                  }
-                >
-                  {typeOptions.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  value={newTaskData.priority}
-                  label="Priority"
-                  onChange={(e) =>
-                    setNewTaskData({
-                      ...newTaskData,
-                      priority: e.target.value as TaskPriority,
-                    })
-                  }
-                >
-                  {priorityOptions.map((priority) => (
-                    <MenuItem key={priority} value={priority}>
-                      {priority}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={newTaskData.status}
-                  label="Status"
-                  onChange={(e) =>
-                    setNewTaskData({
-                      ...newTaskData,
-                      status: e.target.value as TaskStatus,
-                    })
-                  }
-                >
-                  {statusOptions.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <TextField
-                label="Story Points"
-                type="number"
-                fullWidth
-                value={newTaskData.storyPoints}
-                onChange={(e) =>
-                  setNewTaskData({
-                    ...newTaskData,
-                    storyPoints: Number(e.target.value),
-                  })
-                }
-              />
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                label="Assignee"
-                fullWidth
-                value={newTaskData.assignee}
-                onChange={(e) =>
-                  setNewTaskData({ ...newTaskData, assignee: e.target.value })
-                }
-              />
-
-              <TextField
-                label="Reporter"
-                fullWidth
-                value={newTaskData.reporter}
-                onChange={(e) =>
-                  setNewTaskData({ ...newTaskData, reporter: e.target.value })
-                }
-              />
-            </Box>
-
-            <TextField
-              label="Due Date"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={newTaskData.dueDate}
-              onChange={(e) =>
-                setNewTaskData({ ...newTaskData, dueDate: e.target.value })
-              }
-            />
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3, pt: 1 }}>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave}>
-            {editTask ? "Update" : "Create"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSave={handleSave}
+        editTask={editTask}
+        projectId={Number(projectId)}
+        templateType={templateType || "traditional"}
+        defaultStatus="Todo"
+        title="List Task"
+        subtitle={`Manage tasks in ${projectName} project`}
+      />
     </Box>
   );
 };
