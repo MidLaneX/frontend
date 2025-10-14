@@ -105,73 +105,62 @@ const Navbar: React.FC = () => {
   return (
     <AppBar 
       position="fixed" 
+      elevation={0}
       sx={{ 
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        bgcolor: '#0052CC',
-        boxShadow: '0 4px 20px rgba(0,82,204,0.25)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        bgcolor: 'background.paper',
+        color: 'text.primary',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
         backdropFilter: 'blur(20px)',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-          pointerEvents: 'none'
-        }
+        boxShadow: '0 2px 20px rgba(0, 0, 0, 0.08)',
       }}
     >
       <Toolbar sx={{ minHeight: '68px !important', px: { xs: 2, md: 4 } }}>
         {/* Logo and Brand */}
         <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 2, md: 6 } }}>
-          <Paper 
-            elevation={0}
-            sx={{ 
-              width: 42, 
-              height: 42, 
-              bgcolor: 'white', 
-              borderRadius: 2, 
-              display: 'flex', 
-              alignItems: 'center', 
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
               mr: 2,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-              border: '1px solid rgba(255,255,255,0.2)'
+              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
             }}
           >
             <Typography sx={{ 
-              color: '#0052CC', 
+              color: 'white', 
               fontWeight: 900, 
-              fontSize: 20,
-              background: 'linear-gradient(135deg, #0052CC 0%, #0747A6 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
+              fontSize: 18,
             }}>
-              M
+              P
             </Typography>
-          </Paper>
+          </Box>
           <Typography 
             variant="h6" 
             component={Link} 
-            to="/" 
+            to="/dashboard" 
             sx={{ 
               textDecoration: 'none',
-              color: 'white',
-              fontWeight: 900,
-              fontSize: '22px',
-              letterSpacing: '-0.8px',
-              textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              color: 'text.primary',
+              fontWeight: 800,
+              fontSize: '20px',
+              letterSpacing: '-0.5px',
+              background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
               '&:hover': {
-                textShadow: '0 4px 8px rgba(0,0,0,0.3)'
+                transform: 'scale(1.02)',
               },
               transition: 'all 0.3s ease'
             }}
           >
-            MidLaneX
+            ProjectFlow
           </Typography>
         </Box>
         
@@ -301,22 +290,22 @@ const Navbar: React.FC = () => {
               endIcon={<KeyboardArrowDownIcon sx={{ ml: 0.5 }} />}
               startIcon={<AddIcon />}
               sx={{
-                bgcolor: '#00875A',
+                background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
                 color: 'white',
                 textTransform: 'none',
                 fontWeight: 700,
                 fontSize: '14px',
-                px: 2.5,
-                py: 1,
-                borderRadius: 2,
-                boxShadow: '0 3px 8px rgba(0,135,90,0.4)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                px: 3,
+                py: 1.25,
+                borderRadius: 3,
+                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                border: 'none',
                 '&:hover': {
-                  bgcolor: '#006644',
+                  background: 'linear-gradient(135deg, #1565c0 0%, #7b1fa2 100%)',
                   transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 16px rgba(0,135,90,0.5)'
+                  boxShadow: '0 8px 24px rgba(25, 118, 210, 0.4)'
                 },
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
               Create
@@ -324,41 +313,47 @@ const Navbar: React.FC = () => {
           </Tooltip>
 
           {/* Apps Menu */}
-          <Tooltip title="Atlassian products" arrow>
+          <Tooltip title="App menu" arrow>
             <IconButton 
-              color="inherit" 
               onClick={handleAppsClick}
               sx={{ 
                 p: 1.5,
                 borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                bgcolor: 'action.hover',
+                border: '1px solid',
+                borderColor: 'divider',
+                color: 'text.secondary',
                 '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.15)',
+                  bgcolor: 'action.selected',
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
                   transform: 'scale(1.05)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
                 },
                 transition: 'all 0.3s ease'
               }}
             >
-              <AppsIcon sx={{ fontSize: 22 }} />
+              <AppsIcon sx={{ fontSize: 20 }} />
             </IconButton>
           </Tooltip>
           
           {/* Notifications */}
           <Tooltip title="Notifications" arrow>
             <IconButton 
-              color="inherit" 
               onClick={handleNotificationsClick}
               sx={{ 
                 p: 1.5,
                 borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                bgcolor: 'action.hover',
+                border: '1px solid',
+                borderColor: 'divider',
+                color: 'text.secondary',
                 '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.15)',
+                  bgcolor: 'action.selected',
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
                   transform: 'scale(1.05)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
                 },
                 transition: 'all 0.3s ease'
               }}
@@ -368,13 +363,15 @@ const Navbar: React.FC = () => {
                 color="error" 
                 sx={{ 
                   '& .MuiBadge-badge': { 
-                    fontSize: '0.75rem',
+                    fontSize: '0.7rem',
                     fontWeight: 700,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    boxShadow: '0 2px 8px rgba(244, 67, 54, 0.3)',
+                    border: '2px solid',
+                    borderColor: 'background.paper',
                   } 
                 }}
               >
-                <NotificationsIcon sx={{ fontSize: 22 }} />
+                <NotificationsIcon sx={{ fontSize: 20 }} />
               </Badge>
             </IconButton>
           </Tooltip>
@@ -382,21 +379,24 @@ const Navbar: React.FC = () => {
           {/* Help */}
           <Tooltip title="Help and support" arrow>
             <IconButton 
-              color="inherit" 
               sx={{ 
                 p: 1.5,
                 borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                bgcolor: 'action.hover',
+                border: '1px solid',
+                borderColor: 'divider',
+                color: 'text.secondary',
                 '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.15)',
+                  bgcolor: 'action.selected',
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
                   transform: 'scale(1.05)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
                 },
                 transition: 'all 0.3s ease'
               }}
             >
-              <HelpOutlineIcon sx={{ fontSize: 22 }} />
+              <HelpOutlineIcon sx={{ fontSize: 20 }} />
             </IconButton>
           </Tooltip>
           
@@ -407,16 +407,17 @@ const Navbar: React.FC = () => {
                 sx={{ 
                   width: 38, 
                   height: 38, 
-                  bgcolor: '#FF5722',
+                  background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
                   fontWeight: 700,
                   fontSize: '16px',
-                  boxShadow: '0 4px 12px rgba(255,87,34,0.4)',
-                  border: '2px solid rgba(255,255,255,0.2)',
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                  border: '2px solid',
+                  borderColor: 'background.paper',
                   '&:hover': {
                     transform: 'scale(1.08)',
-                    boxShadow: '0 6px 20px rgba(255,87,34,0.6)'
+                    boxShadow: '0 8px 24px rgba(25, 118, 210, 0.4)'
                   },
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
                 {getUserInitials()}
