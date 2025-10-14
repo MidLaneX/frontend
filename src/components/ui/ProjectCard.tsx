@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -16,6 +16,7 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Skeleton,
 } from "@mui/material";
 import type { Project } from "@/types";
 import {
@@ -34,6 +35,7 @@ import { Link } from "react-router-dom";
 import AssignTeamModal from "../features/AssignTeamModal";
 import UpdateProjectModal from "../features/UpdateProjectModal";
 import DeleteProjectDialog from "../features/DeleteProjectDialog";
+import { teamsApi } from "@/api/endpoints/teams";
 
 interface ProjectCardProps {
   project: Project;
@@ -56,6 +58,46 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const [assignTeamModalOpen, setAssignTeamModalOpen] = useState(false);
   const [updateProjectModalOpen, setUpdateProjectModalOpen] = useState(false);
   const [deleteProjectDialogOpen, setDeleteProjectDialogOpen] = useState(false);
+  const [teamName, setTeamName] = useState<string>("");
+  const [loadingTeamName, setLoadingTeamName] = useState(false);
+
+  // Fetch team name when component mounts or assignedTeamId changes
+  useEffect(() => {
+    const fetchTeamName = async () => {
+      if (!project.assignedTeamId) {
+        setTeamName("");
+        return;
+      }
+
+      setLoadingTeamName(true);
+      try {
+        // Get orgId from localStorage
+        const storedOrgId = localStorage.getItem("orgId");
+        if (!storedOrgId) {
+          setTeamName(`Team #${project.assignedTeamId}`);
+          return;
+        }
+
+        const teams = await teamsApi.getTeams(storedOrgId);
+        const team = teams.find(
+          (t) => String(t.id) === String(project.assignedTeamId)
+        );
+
+        if (team && team.team_name) {
+          setTeamName(team.team_name);
+        } else {
+          setTeamName(`Team #${project.assignedTeamId}`);
+        }
+      } catch (error) {
+        console.warn("Failed to fetch team name:", error);
+        setTeamName(`Team #${project.assignedTeamId}`);
+      } finally {
+        setLoadingTeamName(false);
+      }
+    };
+
+    fetchTeamName();
+  }, [project.assignedTeamId]);
   const getProjectProgress = (project: Project) => {
     if (!project.tasks || project.tasks.length === 0) return 0;
     const completed = project.tasks.filter(
@@ -104,9 +146,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         membersCount: teamMembers.length,
         primaryTeam: {
           id: project.assignedTeamId!,
-          name: `Team ${project.assignedTeamId}`,
+          name: teamName || `Team #${project.assignedTeamId}`,
         },
-        displayText: `Team ${project.assignedTeamId}`,
+        displayText: teamName || `Team #${project.assignedTeamId}`,
         teamId: project.assignedTeamId,
       };
     }
@@ -387,20 +429,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               {teamInfo.hasTeams ? (
                 <>
                   <GroupIcon sx={{ fontSize: 16, color: "#00875A" }} />
-                  <Typography variant="body2" fontWeight={500} color="#00875A">
-                    {teamInfo.displayText}
-                  </Typography>
-                  {teamInfo.teamId && (
-                    <Chip
-                      label={`ID: ${teamInfo.teamId}`}
-                      size="small"
-                      sx={{
-                        height: 20,
-                        fontSize: "0.7rem",
-                        backgroundColor: "#E3FCEF",
-                        color: "#00875A",
-                      }}
-                    />
+                  {loadingTeamName ? (
+                    <Skeleton width={120} height={20} />
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      fontWeight={500}
+                      color="#00875A"
+                    >
+                      {teamInfo.displayText}
+                    </Typography>
                   )}
                   {teamInfo.teamsCount > 1 && (
                     <Chip

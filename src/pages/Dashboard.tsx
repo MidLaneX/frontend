@@ -595,6 +595,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           onClose={() => setIsCreateModalOpen(false)}
           onCreateProject={handleCreateProject}
           loading={loading}
+          orgId={orgId}
         />
       </Box>
     </Box>

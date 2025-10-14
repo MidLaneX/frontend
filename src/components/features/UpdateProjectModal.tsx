@@ -10,10 +10,6 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import type { Project } from "../../types";
@@ -37,8 +33,6 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
-    type: "",
-    createdBy: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,8 +42,6 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
     if (project) {
       setFormData({
         name: project.name || "",
-        type: project.type || "Software",
-        createdBy: project.createdBy?.toString() || "",
       });
     }
   }, [project]);
@@ -64,11 +56,9 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
       const userId =
         user?.userId || parseInt(localStorage.getItem("userId") || "1");
 
-      // Prepare update data matching your backend API
+      // Prepare update data - only name can be updated
       const updateData: Partial<ProjectDTO> = {
         name: formData.name,
-        type: formData.type,
-        createdBy: formData.createdBy,
       };
 
       console.log("Updating project with data:", updateData);
@@ -94,8 +84,6 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
   const handleClose = () => {
     setFormData({
       name: "",
-      type: "",
-      createdBy: "",
     });
     setError(null);
     onClose();
@@ -155,33 +143,23 @@ const UpdateProjectModal: React.FC<UpdateProjectModalProps> = ({
               disabled={loading}
             />
 
-            {/* Project Type */}
-            <FormControl fullWidth disabled={loading}>
-              <InputLabel>Project Type</InputLabel>
-              <Select
-                value={formData.type}
-                label="Project Type"
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, type: e.target.value }))
-                }
-              >
-                <MenuItem value="Software">Software</MenuItem>
-                <MenuItem value="Business">Business</MenuItem>
-                <MenuItem value="Marketing">Marketing</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Created By */}
+            {/* Project Type - Read Only */}
             <TextField
               fullWidth
-              label="Created By"
-              value={formData.createdBy}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, createdBy: e.target.value }))
-              }
+              label="Project Type"
+              value={project.type || "Software"}
               variant="outlined"
-              disabled={loading}
-              helperText="Who created or owns this project"
+              disabled
+              helperText="Project type cannot be changed after creation"
+              InputProps={{
+                readOnly: true,
+              }}
+              sx={{
+                "& .MuiInputBase-input.Mui-disabled": {
+                  WebkitTextFillColor: "#5E6C84",
+                  color: "#5E6C84",
+                },
+              }}
             />
 
             {/* Project Info */}

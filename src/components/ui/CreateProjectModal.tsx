@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -15,6 +15,15 @@ import {
   Step,
   StepLabel,
   IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  FormHelperText,
+  Chip,
+  Alert,
+  AlertTitle,
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -22,13 +31,25 @@ import {
   Code as SoftwareIcon,
   Dashboard as ClassicIcon,
   Work as ProjectIcon,
+  Warning as WarningIcon,
+  SwapHoriz as SwapIcon,
 } from "@mui/icons-material";
+import { teamsApi } from "@/api/endpoints/teams";
+import { ProjectService } from "@/services/ProjectService";
+import type { Team } from "@/types/api/organizations";
+
+interface TeamAssignment {
+  teamId: string;
+  projectId: number;
+  projectName: string;
+}
 
 interface CreateProjectModalProps {
   open: boolean;
   onClose: () => void;
   onCreateProject: (projectData: any) => void;
   loading: boolean;
+  orgId: number;
 }
 
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
@@ -36,16 +57,114 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onClose,
   onCreateProject,
   loading,
+  orgId,
 }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [selectedType, setSelectedType] = useState("");
+  const [selectedType, setSelectedType] = useState<
+    "agile" | "waterfall" | "hybrid" | ""
+  >("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [projectData, setProjectData] = useState({
     name: "",
     description: "",
     teamId: "",
-    createdBy: "",
   });
+  
+  // Teams state and fetching
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loadingTeams, setLoadingTeams] = useState(false);
+  const [teamsError, setTeamsError] = useState<string | null>(null);
+  
+  // Team assignments tracking
+  const [teamAssignments, setTeamAssignments] = useState<Map<string, TeamAssignment>>(new Map());
+  const [showReassignWarning, setShowReassignWarning] = useState(false);
+  const [selectedTeamInfo, setSelectedTeamInfo] = useState<TeamAssignment | null>(null);
+
+  // Fetch teams when modal opens
+  useEffect(() => {
+    if (open && orgId) {
+      fetchTeams();
+      fetchTeamAssignments();
+    }
+  }, [open, orgId]);
+
+  const fetchTeams = async () => {
+    setLoadingTeams(true);
+    setTeamsError(null);
+    try {
+      const data = await teamsApi.getTeams(String(orgId));
+      setTeams(data);
+    } catch (error) {
+      console.error("Failed to fetch teams:", error);
+      setTeamsError("Failed to load teams");
+    } finally {
+      setLoadingTeams(false);
+    }
+  };
+
+  const fetchTeamAssignments = async () => {
+    try {
+      const userId = parseInt(localStorage.getItem("userId") || "5");
+      
+      // Fetch all projects to check team assignments
+      const projects = await ProjectService.getAllProjects(userId, orgId, "scrum");
+      
+      const assignments = new Map<string, TeamAssignment>();
+      
+      // Check each project for assigned team
+      await Promise.all(
+        projects.map(async (project) => {
+          try {
+            const assignedTeamId = await ProjectService.getAssignedTeam(
+              Number(project.id),
+              project.templateType
+            );
+            
+            if (assignedTeamId) {
+              assignments.set(String(assignedTeamId), {
+                teamId: String(assignedTeamId),
+                projectId: Number(project.id),
+                projectName: project.name,
+              });
+            }
+          } catch (error) {
+            // Ignore errors for individual projects
+          }
+        })
+      );
+      
+      setTeamAssignments(assignments);
+    } catch (error) {
+      console.error("Failed to fetch team assignments:", error);
+    }
+  };
+
+  const handleTeamChange = (teamId: string) => {
+    setProjectData((prev) => ({
+      ...prev,
+      teamId: teamId,
+    }));
+    
+    // Check if this team is already assigned to another project
+    if (teamId && teamAssignments.has(teamId)) {
+      const assignment = teamAssignments.get(teamId);
+      if (assignment) {
+        setShowReassignWarning(true);
+        setSelectedTeamInfo(assignment);
+      }
+    } else {
+      setShowReassignWarning(false);
+      setSelectedTeamInfo(null);
+    }
+  };
+
+  const getTeamAssignmentStatus = (teamId: string) => {
+    const assignment = teamAssignments.get(teamId);
+    if (!assignment) return null;
+    
+    // If assigned to a project, show that project name
+    return { type: 'assigned', text: `Assigned to: ${assignment.projectName}`, color: 'warning' };
+  };
 
   const steps = ["Select Type", "Choose Template", "Project Details"];
 
@@ -100,7 +219,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   };
 
   const handleTypeSelect = (type: string) => {
-    setSelectedType(type);
+    setSelectedType(type as "agile" | "waterfall" | "hybrid" | "");
     handleNext();
   };
 
@@ -122,7 +241,9 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     setActiveStep(0);
     setSelectedType("");
     setSelectedTemplate("");
-    setProjectData({ name: "", description: "", teamId: "", createdBy: "" });
+    setProjectData({ name: "", description: "", teamId: "" });
+    setShowReassignWarning(false);
+    setSelectedTeamInfo(null);
     onClose();
   };
 
@@ -262,30 +383,139 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               multiline
               rows={3}
             />
-            <TextField
-              label="Team ID (Optional)"
-              type="number"
-              value={projectData.teamId}
-              onChange={(e) =>
-                setProjectData((prev) => ({ ...prev, teamId: e.target.value }))
-              }
-              fullWidth
-              helperText="Enter the ID of the team to assign to this project (leave empty to assign later)"
-              InputProps={{
-                inputProps: { min: 1 },
-              }}
-            />
-            <TextField
-              label="Created By"
-              value={projectData.createdBy}
-              onChange={(e) =>
-                setProjectData((prev) => ({
-                  ...prev,
-                  createdBy: e.target.value,
-                }))
-              }
-              fullWidth
-            />
+            
+            {/* Reassignment Warning - Modern Design */}
+            {showReassignWarning && selectedTeamInfo && (
+              <Alert 
+                severity="warning" 
+                icon={<SwapIcon />}
+                sx={{ 
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'warning.main',
+                  '& .MuiAlert-icon': {
+                    fontSize: 28,
+                  }
+                }}
+              >
+                <AlertTitle sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SwapIcon sx={{ fontSize: 20 }} />
+                  Team Reassignment Notice
+                </AlertTitle>
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    This team is currently assigned to:
+                  </Typography>
+                  <Chip
+                    label={selectedTeamInfo.projectName}
+                    color="warning"
+                    variant="outlined"
+                    size="small"
+                    sx={{ 
+                      fontWeight: 600,
+                      mb: 1
+                    }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Creating this project with this team will automatically remove the team from <strong>{selectedTeamInfo.projectName}</strong>.
+                  </Typography>
+                </Box>
+              </Alert>
+            )}
+            
+            {/* Team Selection Dropdown */}
+            <FormControl fullWidth>
+              <InputLabel id="team-select-label">
+                Select Team (Optional)
+              </InputLabel>
+              <Select
+                labelId="team-select-label"
+                value={projectData.teamId}
+                onChange={(e) => handleTeamChange(e.target.value)}
+                label="Select Team (Optional)"
+                disabled={loadingTeams}
+              >
+                <MenuItem value="">
+                  <em>None (assign later)</em>
+                </MenuItem>
+                {teams.map((team) => {
+                  const assignmentStatus = getTeamAssignmentStatus(team.id);
+                  const isAssigned = assignmentStatus?.type === 'assigned';
+                  
+                  return (
+                    <MenuItem 
+                      key={team.id} 
+                      value={team.id}
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        py: 1.5,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        '&:last-child': {
+                          borderBottom: 'none',
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Typography variant="body1" sx={{ fontWeight: 500, flex: 1 }}>
+                          {team.team_name}
+                        </Typography>
+                        {isAssigned && (
+                          <Chip
+                            icon={<WarningIcon />}
+                            label="Assigned"
+                            size="small"
+                            color="warning"
+                            sx={{ 
+                              height: 24,
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                        {team.memberCount && (
+                          <Typography variant="caption" color="text.secondary">
+                            {team.memberCount} {team.memberCount === 1 ? 'member' : 'members'}
+                          </Typography>
+                        )}
+                        {isAssigned && assignmentStatus && (
+                          <>
+                            <Typography variant="caption" color="text.secondary">•</Typography>
+                            <Typography 
+                              variant="caption" 
+                              color="warning.main"
+                              sx={{ fontWeight: 500 }}
+                            >
+                              {assignmentStatus.text}
+                            </Typography>
+                          </>
+                        )}
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+              {loadingTeams && (
+                <FormHelperText>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <CircularProgress size={16} />
+                    Loading teams...
+                  </Box>
+                </FormHelperText>
+              )}
+              {teamsError && (
+                <FormHelperText error>{teamsError}</FormHelperText>
+              )}
+              {!loadingTeams && !teamsError && (
+                <FormHelperText>
+                  Select a team to assign to this project
+                </FormHelperText>
+              )}
+            </FormControl>
           </Box>
         );
 
