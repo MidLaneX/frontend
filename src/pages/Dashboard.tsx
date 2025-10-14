@@ -448,7 +448,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "#FAFBFC",
+        background: "linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%)",
         p: 3,
       }}
     >
@@ -460,18 +460,39 @@ const Dashboard: React.FC<DashboardProps> = ({
             justifyContent: "space-between",
             alignItems: "center",
             mb: 4,
+            p: 3.5,
+            background: "rgba(255, 255, 255, 0.7)",
+            backdropFilter: "blur(20px)",
+            borderRadius: 2.5,
+            border: "1px solid rgba(255, 255, 255, 0.8)",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(102, 126, 234, 0.04)",
           }}
         >
           <Box>
             <Typography
-              variant="h4"
-              fontWeight={700}
-              color="text.primary"
-              sx={{ mb: 1 }}
+              variant="h3"
+              sx={{ 
+                mb: 0.5,
+                fontWeight: 800,
+                fontSize: "2.2rem",
+                letterSpacing: "-0.02em",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
               Projects
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: "#64748b",
+                fontSize: "0.95rem",
+                fontWeight: 500,
+                letterSpacing: "0.01em",
+              }}
+            >
               Manage and organize your projects
             </Typography>
           </Box>
@@ -482,8 +503,21 @@ const Dashboard: React.FC<DashboardProps> = ({
             sx={{
               textTransform: "none",
               fontWeight: 600,
-              px: 3,
+              fontSize: "0.95rem",
+              letterSpacing: "0.02em",
+              px: 3.5,
               py: 1.5,
+              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+              color: "#ffffff",
+              borderRadius: 2,
+              boxShadow: "0 4px 12px rgba(16, 185, 129, 0.25)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                boxShadow: "0 6px 16px rgba(16, 185, 129, 0.35)",
+                transform: "translateY(-1px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
             Create Project
@@ -498,15 +532,37 @@ const Dashboard: React.FC<DashboardProps> = ({
               justifyContent: "center",
               alignItems: "center",
               minHeight: "200px",
+              background: "rgba(255, 255, 255, 0.7)",
+              backdropFilter: "blur(20px)",
+              borderRadius: 2.5,
+              border: "1px solid rgba(255, 255, 255, 0.8)",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.06)",
             }}
           >
-            <CircularProgress />
+            <CircularProgress 
+              sx={{ 
+                color: "#667eea",
+              }} 
+            />
           </Box>
         )}
 
         {/* Error State */}
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 3,
+              background: "rgba(255, 255, 255, 0.7)",
+              backdropFilter: "blur(20px)",
+              borderRadius: 2,
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              boxShadow: "0 4px 16px rgba(239, 68, 68, 0.12)",
+              fontWeight: 500,
+              fontSize: "0.92rem",
+              letterSpacing: "0.01em",
+            }}
+          >
             {error}
           </Alert>
         )}
@@ -574,7 +630,45 @@ const Dashboard: React.FC<DashboardProps> = ({
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <Paper
-                    sx={{ p: 2, display: "flex", justifyContent: "center" }}
+                    sx={{ 
+                      p: 3, 
+                      display: "flex", 
+                      justifyContent: "center",
+                      background: "rgba(255, 255, 255, 0.7)",
+                      backdropFilter: "blur(20px)",
+                      borderRadius: 2.5,
+                      border: "1px solid rgba(255, 255, 255, 0.8)",
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(102, 126, 234, 0.04)",
+                      "& .MuiPagination-ul": {
+                        gap: 1,
+                        "& .MuiPaginationItem-root": {
+                          fontWeight: 600,
+                          fontSize: "0.92rem",
+                          letterSpacing: "0.01em",
+                          borderRadius: 1.5,
+                          minWidth: "38px",
+                          height: "38px",
+                          color: "#64748b",
+                          border: "1px solid rgba(100, 116, 139, 0.15)",
+                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          "&.Mui-selected": {
+                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            color: "#ffffff",
+                            border: "1px solid transparent",
+                            boxShadow: "0 4px 12px rgba(102, 126, 234, 0.25)",
+                            fontWeight: 700,
+                          },
+                          "&:hover": {
+                            background: "rgba(102, 126, 234, 0.08)",
+                            borderColor: "rgba(102, 126, 234, 0.3)",
+                            transform: "translateY(-1px)",
+                          },
+                          "&.Mui-selected:hover": {
+                            background: "linear-gradient(135deg, #5568d3 0%, #6a3f8c 100%)",
+                          },
+                        },
+                      },
+                    }}
                   >
                     <Pagination
                       count={totalPages}

@@ -46,8 +46,11 @@ const ProjectControls: React.FC<ProjectControlsProps> = ({
       sx={{
         p: 3,
         mb: 3,
-        borderRadius: 2,
-        border: "1px solid #DFE1E6",
+        background: "rgba(255, 255, 255, 0.7)",
+        backdropFilter: "blur(20px)",
+        borderRadius: 2.5,
+        border: "1px solid rgba(255, 255, 255, 0.8)",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.06)",
       }}
     >
       <Box
@@ -61,10 +64,30 @@ const ProjectControls: React.FC<ProjectControlsProps> = ({
       >
         {/* Left section - Title and count */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Typography variant="h6" fontWeight={600} color="text.primary">
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              letterSpacing: "0.01em",
+              color: "#1e293b",
+            }}
+          >
             Projects
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: "#64748b",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              px: 1.5,
+              py: 0.5,
+              background: "rgba(102, 126, 234, 0.1)",
+              borderRadius: 1,
+              border: "1px solid rgba(102, 126, 234, 0.2)",
+            }}
+          >
             {projectCount} {projectCount === 1 ? "project" : "projects"}
           </Typography>
         </Box>
@@ -84,11 +107,26 @@ const ProjectControls: React.FC<ProjectControlsProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             size="small"
-            sx={{ minWidth: 200 }}
+            sx={{ 
+              minWidth: 200,
+              "& .MuiOutlinedInput-root": {
+                background: "rgba(255, 255, 255, 0.9)",
+                borderRadius: 1.5,
+                fontWeight: 500,
+                fontSize: "0.9rem",
+                "&:hover fieldset": {
+                  borderColor: "rgba(102, 126, 234, 0.4)",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#667eea",
+                  borderWidth: "2px",
+                },
+              },
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+                  <SearchIcon sx={{ color: "#667eea", fontSize: 20 }} />
                 </InputAdornment>
               ),
             }}
@@ -96,30 +134,56 @@ const ProjectControls: React.FC<ProjectControlsProps> = ({
 
           {/* Filter by type */}
           <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Type</InputLabel>
+            <InputLabel sx={{ fontWeight: 600, fontSize: "0.9rem" }}>Type</InputLabel>
             <Select
               value={filterType}
               label="Type"
               onChange={(e) => onFilterChange(e.target.value)}
+              sx={{
+                background: "rgba(255, 255, 255, 0.9)",
+                borderRadius: 1.5,
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgba(102, 126, 234, 0.4)",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#667eea",
+                  borderWidth: "2px",
+                },
+              }}
             >
-              <MenuItem value="all">All Types</MenuItem>
-              <MenuItem value="software">Software</MenuItem>
-              <MenuItem value="business">Business</MenuItem>
-              <MenuItem value="classic">Classic</MenuItem>
+              <MenuItem value="all" sx={{ fontWeight: 500 }}>All Types</MenuItem>
+              <MenuItem value="software" sx={{ fontWeight: 500 }}>Software</MenuItem>
+              <MenuItem value="business" sx={{ fontWeight: 500 }}>Business</MenuItem>
+              <MenuItem value="classic" sx={{ fontWeight: 500 }}>Classic</MenuItem>
             </Select>
           </FormControl>
 
           {/* Sort by */}
           <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Sort by</InputLabel>
+            <InputLabel sx={{ fontWeight: 600, fontSize: "0.9rem" }}>Sort by</InputLabel>
             <Select
               value={sortBy}
               label="Sort by"
               onChange={(e) => onSortChange(e.target.value)}
+              sx={{
+                background: "rgba(255, 255, 255, 0.9)",
+                borderRadius: 1.5,
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgba(102, 126, 234, 0.4)",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#667eea",
+                  borderWidth: "2px",
+                },
+              }}
             >
-              <MenuItem value="name">Name</MenuItem>
-              <MenuItem value="progress">Progress</MenuItem>
-              <MenuItem value="date">Date</MenuItem>
+              <MenuItem value="name" sx={{ fontWeight: 500 }}>Name</MenuItem>
+              <MenuItem value="progress" sx={{ fontWeight: 500 }}>Progress</MenuItem>
+              <MenuItem value="date" sx={{ fontWeight: 500 }}>Date</MenuItem>
             </Select>
           </FormControl>
 
@@ -129,6 +193,25 @@ const ProjectControls: React.FC<ProjectControlsProps> = ({
             exclusive
             onChange={(_, newMode) => newMode && onViewModeChange(newMode)}
             size="small"
+            sx={{
+              background: "rgba(255, 255, 255, 0.9)",
+              borderRadius: 1.5,
+              "& .MuiToggleButton-root": {
+                borderColor: "rgba(102, 126, 234, 0.2)",
+                color: "#64748b",
+                fontWeight: 600,
+                "&.Mui-selected": {
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  color: "#ffffff",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #5568d3 0%, #6a3f8c 100%)",
+                  },
+                },
+                "&:hover": {
+                  background: "rgba(102, 126, 234, 0.08)",
+                },
+              },
+            }}
           >
             <ToggleButton value="grid" aria-label="grid view">
               <GridViewIcon />

@@ -99,11 +99,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     fetchTeamName();
   }, [project.assignedTeamId]);
   const getProjectProgress = (project: Project) => {
-    if (!project.tasks || project.tasks.length === 0) return 0;
+    // Safety check: ensure tasks array exists and has items
+    if (!project.tasks || !Array.isArray(project.tasks) || project.tasks.length === 0) {
+      return 0;
+    }
+    
+    // Count completed tasks (status === "Done")
     const completed = project.tasks.filter(
-      (task) => task.status === "Done",
+      (task) => task.status === "Done"
     ).length;
-    return Math.round((completed / project.tasks.length) * 100);
+    
+    // Calculate percentage
+    const percentage = Math.round((completed / project.tasks.length) * 100);
+    
+    return percentage;
   };
 
   const getProjectStatus = (project: Project) => {
@@ -230,16 +239,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     <Card
       sx={{
         height: "100%",
-        borderRadius: 3,
-        border: "1px solid #E1E4E8",
-        backgroundColor: "#FAFBFC",
+        borderRadius: 2.5,
+        background: "rgba(255, 255, 255, 0.7)",
+        backdropFilter: "blur(20px)",
+        border: "1px solid rgba(255, 255, 255, 0.8)",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.06)",
         "&:hover": {
-          boxShadow: "0 8px 25px rgba(0,0,0,0.15)",
+          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(102, 126, 234, 0.15)",
           transform: "translateY(-4px)",
-          borderColor: "#CCE0FF",
-          backgroundColor: "#FFFFFF",
+          border: "1px solid rgba(102, 126, 234, 0.3)",
         },
-        transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         overflow: "hidden",
         position: "relative",
         "&::before": {
@@ -250,8 +260,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           right: 0,
           height: 4,
           background: teamInfo.hasTeams
-            ? "linear-gradient(90deg, #00875A 0%, #36B37E 100%)"
-            : "linear-gradient(90deg, #DFE1E6 0%, #B3BAC5 100%)",
+            ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
+            : "linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%)",
           zIndex: 1,
         },
       }}
@@ -284,12 +294,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             <Box sx={{ flex: 1, mr: 2 }}>
               <Typography
                 variant="h6"
-                fontWeight={600}
                 sx={{
                   mb: 1,
                   lineHeight: 1.3,
-                  color: "#172B4D",
-                  fontSize: "1.1rem",
+                  color: "#1e293b",
+                  fontSize: "1.15rem",
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
                 }}
               >
                 {project.name}
@@ -301,10 +312,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                   sx={{
                     fontSize: "0.7rem",
                     height: 22,
-                    fontWeight: 500,
-                    backgroundColor: "#E6F3FF",
-                    color: "#0052CC",
-                    border: "1px solid #CCE0FF",
+                    fontWeight: 600,
+                    background: "linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)",
+                    color: "#667eea",
+                    border: "1px solid rgba(102, 126, 234, 0.25)",
                   }}
                 />
                 <Chip
@@ -313,10 +324,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                   sx={{
                     fontSize: "0.7rem",
                     height: 22,
-                    fontWeight: 500,
-                    backgroundColor: "#F4F5F7",
-                    color: "#5E6C84",
-                    border: "1px solid #DFE1E6",
+                    fontWeight: 600,
+                    background: "rgba(100, 116, 139, 0.1)",
+                    color: "#64748b",
+                    border: "1px solid rgba(100, 116, 139, 0.2)",
                   }}
                 />
               </Box>
@@ -353,37 +364,61 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </Box>
           </Box>
 
-          {/* Progress */}
-          <Box sx={{ mb: 3 }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 1,
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                Progress
-              </Typography>
-              <Typography variant="body2" fontWeight={500}>
-                {progress}%
-              </Typography>
-            </Box>
-            <LinearProgress
-              variant="determinate"
-              value={progress}
-              sx={{
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: "#F4F5F7",
-                "& .MuiLinearProgress-bar": {
-                  borderRadius: 3,
-                  backgroundColor: progress === 100 ? "#00875A" : "#0052CC",
+          {/* Progress - Only show if project has tasks */}
+          {project.tasks && project.tasks.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 1,
+                }}
+              >
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: "#64748b",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    letterSpacing: "0.02em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Progress
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
+                    color: progress === 100 ? "#10b981" : "#667eea",
+                  }}
+                >
+                  {progress}%
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={progress}
+                sx={{
+                  height: 8,
+                  borderRadius: 1.5,
+                  background: "rgba(255, 255, 255, 0.9)",
+                  border: "1px solid rgba(100, 116, 139, 0.15)",
+                  "& .MuiLinearProgress-bar": {
+                    borderRadius: 1.5,
+                    background: progress === 100 
+                    ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
+                    : "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
+                  boxShadow: progress > 0 
+                    ? `0 2px 8px ${progress === 100 ? "rgba(16, 185, 129, 0.3)" : "rgba(102, 126, 234, 0.3)"}`
+                    : "none",
                 },
               }}
             />
-          </Box>
+            </Box>
+          )}
 
           {/* Timeline */}
           <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
