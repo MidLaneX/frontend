@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import Box from '@mui/material/Box'
-import { Navbar, Sidebar, ChatSidebar } from "@/components/layout";
+import { Navbar, Sidebar } from "@/components/layout";
 import ModernDashboard from "@/pages/ModernDashboard";
 import Dashboard from "@/pages/Dashboard";
 import Project from "@/pages/Project";
@@ -56,7 +56,7 @@ function AppContent() {
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
       <Navbar />
       <Sidebar />
-      <ChatSidebar />
+     
       <Box
         component="main"
         sx={{

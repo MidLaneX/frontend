@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { AxiosResponse } from "axios";
 
-const NOTIFICATION_BASE_URL = "http://localhost:8084/api/v1/notifications";
+const NOTIFICATION_BASE_URL = "https://midlanex.duckdns.org/api/v1/notifications";
 
 // Create axios instance similar to projectsApiClient
 export const notificationsApiClient = axios.create({
@@ -23,7 +23,7 @@ notificationsApiClient.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error("❌ Notification request setup failed:", error);
+    console.error("Notification request setup failed:", error);
     return Promise.reject(error);
   }
 );
@@ -31,14 +31,14 @@ notificationsApiClient.interceptors.request.use(
 // Response interceptor for logging
 notificationsApiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log("✅ Notification API Response:", {
+    console.log(" Notification API Response:", {
       status: response.status,
       data: response.data,
     });
     return response;
   },
   (error) => {
-    console.error("❌ Notification API Error:", {
+    console.error(" Notification API Error:", {
       message: error.message,
       code: error.code,
       response: error.response?.data,

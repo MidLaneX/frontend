@@ -87,22 +87,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   
   // User profile state can be added here when needed
 
-  // Don't render if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   // Fetch projects when filters change
   useEffect(() => {
     const fetchProjects = async () => {
@@ -178,10 +162,10 @@ const Dashboard: React.FC<DashboardProps> = ({
       }
     };
     fetchProjects();
-  }, [userId, orgId, orgIdProp, isAuthenticated]);
+  }, [userId, orgIdProp, isAuthenticated, orgId]);
 
   // Create project handler
-  const handleCreateProject = async (projectData: any) => {
+  const handleCreateProject = async (projectData: Partial<Project> & { teamId?: string }) => {
     setLoading(true);
     setError(null);
 
@@ -212,13 +196,13 @@ const Dashboard: React.FC<DashboardProps> = ({
       const createProjectPayload: CreateProjectDTO = {
         id: null,
         orgId: currentOrgId,
-        name: projectData.name,
+        name: projectData.name || "Untitled Project",
         type: projectData.type || "Software", // Use consistent casing with frontend
         templateType: projectData.templateType || "scrum",
         features: projectData.features || ["Login", "Dashboard", "Analytics"],
         createdAt: now,
         updatedAt: now,
-        createdBy: projectData.createdBy || user?.email || "Unknown User",
+        createdBy: String(projectData.createdBy || user?.email || "Unknown User"),
       };
 
       // Debug logging to ensure type is properly set
@@ -284,11 +268,12 @@ const Dashboard: React.FC<DashboardProps> = ({
         setOrgId(currentOrgId);
         localStorage.setItem("orgId", String(currentOrgId));
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error creating project:", err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
       const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
+        error.response?.data?.message ||
+        error.message ||
         "Failed to create project. Please try again.";
       setError(errorMessage);
     } finally {
@@ -396,7 +381,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       switch (sortBy) {
         case "name":
           return a.name.localeCompare(b.name);
-        case "progress":
+        case "progress": {
           // Simple progress calculation
           const aProgress = a.tasks
             ? (a.tasks.filter((task) => task.status === "Done").length /
@@ -409,7 +394,8 @@ const Dashboard: React.FC<DashboardProps> = ({
               100
             : 0;
           return bProgress - aProgress;
-        case "date":
+        }
+        case "date": {
           const aDate = a.timeline?.start
             ? new Date(a.timeline.start).getTime()
             : 0;
@@ -417,6 +403,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             ? new Date(b.timeline.start).getTime()
             : 0;
           return bDate - aDate;
+        }
         default:
           return 0;
       }
@@ -440,6 +427,22 @@ const Dashboard: React.FC<DashboardProps> = ({
   const handleSortChange = (sort: string) => {
     setSortBy(sort as "name" | "progress" | "date");
   };
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box

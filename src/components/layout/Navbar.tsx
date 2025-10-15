@@ -14,14 +14,13 @@ import {
   Chip,
   Tooltip
 } from '@mui/material'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import SettingsIcon from '@mui/icons-material/Settings'
 import LogoutIcon from '@mui/icons-material/Logout'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import WorkIcon from '@mui/icons-material/Work'
-import FilterListIcon from '@mui/icons-material/FilterList'
 import FolderIcon from '@mui/icons-material/Folder'
 import AddIcon from '@mui/icons-material/Add'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
@@ -29,7 +28,6 @@ import QuickSearch from '@/components/ui/QuickSearch'
 import { useAuth } from '@/context/AuthContext'
 
 const Navbar: React.FC = () => {
-  const location = useLocation()
   const { logout, userProfile, fetchUserProfile, user } = useAuth()
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null)
   const [notificationsAnchor, setNotificationsAnchor] = useState<null | HTMLElement>(null)
@@ -64,10 +62,6 @@ const Navbar: React.FC = () => {
       fetchUserProfile();
     }
   }, [user, userProfile, fetchUserProfile]);
-
-  const isActiveRoute = (path: string) => {
-    return location.pathname === path;
-  };
 
   // Function to get initials from user name
   const getUserInitials = () => {

@@ -177,7 +177,10 @@ const Backlog: React.FC<BacklogProps> = ({
           }
         }
       } else {
-        console.log("➕ Creating new task");
+        console.log("➕ Creating new task", {
+          assigneeSent: taskData.assignee,
+          reporterSent: taskData.reporter,
+        });
         
         // Create new task
         const createdTask = await TaskService.createTask(
@@ -186,12 +189,18 @@ const Backlog: React.FC<BacklogProps> = ({
           templateType,
         );
 
-        console.log("✅ Task created:", createdTask);
+        console.log("✅ Task created, received from backend:", {
+          taskId: createdTask?.id,
+          assigneeReceived: createdTask?.assignee,
+          reporterReceived: createdTask?.reporter,
+          assigneeIsEmail: createdTask?.assignee?.includes('@'),
+          reporterIsEmail: createdTask?.reporter?.includes('@'),
+        });
 
         // Send notifications to assignee and reporter
         if (createdTask) {
           if (createdTask.assignee) {
-            console.log("� Sending notification to assignee...");
+            console.log("📧 Sending notification to assignee:", createdTask.assignee);
             await NotificationService.sendTaskAssignmentNotification(
               createdTask,
               currentProjectName,

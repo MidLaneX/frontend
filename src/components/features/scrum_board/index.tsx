@@ -130,16 +130,6 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
     fetchTeamMembers();
   }, [projectId, templateType]);
 
-  // Update form default sprintId when latest sprint is loaded
-  useEffect(() => {
-    if (latestSprint && !editTask) {
-      setNewTaskData(prev => ({
-        ...prev,
-        sprintId: latestSprint.id
-      }));
-    }
-  }, [latestSprint, editTask]);
-
   // Show only tasks from the latest sprint
   const sprintTasks = useMemo(() => {
     if (!latestSprint) return tasks; // If no sprint, show all tasks
@@ -197,11 +187,13 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
           sprintId: sprintId,
         } as Omit<Task, "id">;
 
-        console.log("Creating task with sprint assignment:", {
+        console.log("🔍 Creating task with sprint assignment:", {
           taskTitle: taskWithSprint.title,
           sprintId: taskWithSprint.sprintId,
           sprintName: latestSprint?.name || "No sprint",
           templateType,
+          assigneeSent: taskWithSprint.assignee,
+          reporterSent: taskWithSprint.reporter,
         });
 
         const createdTask = await TaskService.createTask(
@@ -214,6 +206,14 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
           setError("Failed to create task. Please try again.");
           return;
         }
+
+        console.log("✅ Task created, received from backend:", {
+          taskId: createdTask.id,
+          assigneeReceived: createdTask.assignee,
+          reporterReceived: createdTask.reporter,
+          assigneeIsEmail: createdTask.assignee?.includes('@'),
+          reporterIsEmail: createdTask.reporter?.includes('@'),
+        });
 
         // Send notification to assignee when task is created
         if (createdTask.assignee) {
