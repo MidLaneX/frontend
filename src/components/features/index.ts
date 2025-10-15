@@ -8,7 +8,6 @@ export * from "./sprint";
 export * from "./backlog";
 export * from "./timeLine";
 
-
 // Modal components
 
 export { default as CreateProjectModal } from "./CreateProjectModal";
