@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import Box from '@mui/material/Box'
 import { Navbar, Sidebar, ChatSidebar } from "@/components/layout";
-import WelcomePage from "@/pages/WelcomePage";
+import ModernDashboard from "@/pages/ModernDashboard";
 import Dashboard from "@/pages/Dashboard";
 import Project from "@/pages/Project";
 import OrganizationPage from "@/pages/Organization";
@@ -72,10 +72,17 @@ function AppContent() {
         }}
       >
         <Routes>
-          <Route path="/" element={<Navigate to="/organizations" replace />} />
-          <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route
             path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <ModernDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/legacy-dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
@@ -139,7 +146,7 @@ function AppContent() {
             }
           />
 
-          <Route path="*" element={<Navigate to="/organizations" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Box>
     </Box>

@@ -12,13 +12,11 @@ import {
   Badge,
   Divider,
   Chip,
-  Tooltip,
-  Paper
+  Tooltip
 } from '@mui/material'
 import { Link, useLocation } from 'react-router-dom'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
-import AppsIcon from '@mui/icons-material/Apps'
 import SettingsIcon from '@mui/icons-material/Settings'
 import LogoutIcon from '@mui/icons-material/Logout'
 import DashboardIcon from '@mui/icons-material/Dashboard'
@@ -34,16 +32,11 @@ const Navbar: React.FC = () => {
   const location = useLocation()
   const { logout, userProfile, fetchUserProfile, user } = useAuth()
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null)
-  const [appsMenuAnchor, setAppsMenuAnchor] = useState<null | HTMLElement>(null)
   const [notificationsAnchor, setNotificationsAnchor] = useState<null | HTMLElement>(null)
   const [createMenuAnchor, setCreateMenuAnchor] = useState<null | HTMLElement>(null)
 
   const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
     setProfileMenuAnchor(event.currentTarget)
-  }
-
-  const handleAppsClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAppsMenuAnchor(event.currentTarget)
   }
 
   const handleNotificationsClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -56,7 +49,6 @@ const Navbar: React.FC = () => {
 
   const handleCloseMenus = () => {
     setProfileMenuAnchor(null)
-    setAppsMenuAnchor(null)
     setNotificationsAnchor(null)
     setCreateMenuAnchor(null)
   }
@@ -105,73 +97,62 @@ const Navbar: React.FC = () => {
   return (
     <AppBar 
       position="fixed" 
+      elevation={0}
       sx={{ 
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        bgcolor: '#0052CC',
-        boxShadow: '0 4px 20px rgba(0,82,204,0.25)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        bgcolor: 'background.paper',
+        color: 'text.primary',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
         backdropFilter: 'blur(20px)',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-          pointerEvents: 'none'
-        }
+        boxShadow: '0 2px 20px rgba(0, 0, 0, 0.08)',
       }}
     >
       <Toolbar sx={{ minHeight: '68px !important', px: { xs: 2, md: 4 } }}>
         {/* Logo and Brand */}
         <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 2, md: 6 } }}>
-          <Paper 
-            elevation={0}
-            sx={{ 
-              width: 42, 
-              height: 42, 
-              bgcolor: 'white', 
-              borderRadius: 2, 
-              display: 'flex', 
-              alignItems: 'center', 
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
               mr: 2,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-              border: '1px solid rgba(255,255,255,0.2)'
+              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
             }}
           >
             <Typography sx={{ 
-              color: '#0052CC', 
+              color: 'white', 
               fontWeight: 900, 
-              fontSize: 20,
-              background: 'linear-gradient(135deg, #0052CC 0%, #0747A6 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
+              fontSize: 18,
             }}>
-              M
+              P
             </Typography>
-          </Paper>
+          </Box>
           <Typography 
             variant="h6" 
             component={Link} 
-            to="/" 
+            to="/dashboard" 
             sx={{ 
               textDecoration: 'none',
-              color: 'white',
-              fontWeight: 900,
-              fontSize: '22px',
-              letterSpacing: '-0.8px',
-              textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              color: 'text.primary',
+              fontWeight: 800,
+              fontSize: '20px',
+              letterSpacing: '-0.5px',
+              background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
               '&:hover': {
-                textShadow: '0 4px 8px rgba(0,0,0,0.3)'
+                transform: 'scale(1.02)',
               },
               transition: 'all 0.3s ease'
             }}
           >
-            MidLaneX
+            ProjectFlow
           </Typography>
         </Box>
         
@@ -292,7 +273,7 @@ const Navbar: React.FC = () => {
         </Box>
         
         {/* Right Side Actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* Create Button with Dropdown */}
           <Tooltip title="Create new item" arrow>
             <Button
@@ -301,64 +282,45 @@ const Navbar: React.FC = () => {
               endIcon={<KeyboardArrowDownIcon sx={{ ml: 0.5 }} />}
               startIcon={<AddIcon />}
               sx={{
-                bgcolor: '#00875A',
+                background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
                 color: 'white',
                 textTransform: 'none',
                 fontWeight: 700,
                 fontSize: '14px',
-                px: 2.5,
-                py: 1,
-                borderRadius: 2,
-                boxShadow: '0 3px 8px rgba(0,135,90,0.4)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                px: 3,
+                py: 1.25,
+                borderRadius: 3,
+                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                border: 'none',
                 '&:hover': {
-                  bgcolor: '#006644',
+                  background: 'linear-gradient(135deg, #1565c0 0%, #7b1fa2 100%)',
                   transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 16px rgba(0,135,90,0.5)'
+                  boxShadow: '0 8px 24px rgba(25, 118, 210, 0.4)'
                 },
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
               Create
             </Button>
           </Tooltip>
 
-          {/* Apps Menu */}
-          <Tooltip title="Atlassian products" arrow>
-            <IconButton 
-              color="inherit" 
-              onClick={handleAppsClick}
-              sx={{ 
-                p: 1.5,
-                borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.15)',
-                  transform: 'scale(1.05)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                },
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <AppsIcon sx={{ fontSize: 22 }} />
-            </IconButton>
-          </Tooltip>
-          
           {/* Notifications */}
           <Tooltip title="Notifications" arrow>
             <IconButton 
-              color="inherit" 
               onClick={handleNotificationsClick}
               sx={{ 
                 p: 1.5,
                 borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                bgcolor: 'action.hover',
+                border: '1px solid',
+                borderColor: 'divider',
+                color: 'text.secondary',
                 '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.15)',
+                  bgcolor: 'action.selected',
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
                   transform: 'scale(1.05)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
                 },
                 transition: 'all 0.3s ease'
               }}
@@ -368,35 +330,42 @@ const Navbar: React.FC = () => {
                 color="error" 
                 sx={{ 
                   '& .MuiBadge-badge': { 
-                    fontSize: '0.75rem',
+                    fontSize: '0.7rem',
                     fontWeight: 700,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    boxShadow: '0 2px 8px rgba(244, 67, 54, 0.3)',
+                    border: '2px solid',
+                    borderColor: 'background.paper',
                   } 
                 }}
               >
-                <NotificationsIcon sx={{ fontSize: 22 }} />
+                <NotificationsIcon sx={{ fontSize: 20 }} />
               </Badge>
             </IconButton>
           </Tooltip>
-          
+
           {/* Help */}
           <Tooltip title="Help and support" arrow>
             <IconButton 
-              color="inherit" 
+              component={Link}
+              to="/help"
               sx={{ 
                 p: 1.5,
                 borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                bgcolor: 'action.hover',
+                border: '1px solid',
+                borderColor: 'divider',
+                color: 'text.secondary',
                 '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.15)',
+                  bgcolor: 'action.selected',
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
                   transform: 'scale(1.05)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
                 },
                 transition: 'all 0.3s ease'
               }}
             >
-              <HelpOutlineIcon sx={{ fontSize: 22 }} />
+              <HelpOutlineIcon sx={{ fontSize: 20 }} />
             </IconButton>
           </Tooltip>
           
@@ -407,16 +376,17 @@ const Navbar: React.FC = () => {
                 sx={{ 
                   width: 38, 
                   height: 38, 
-                  bgcolor: '#FF5722',
+                  background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
                   fontWeight: 700,
                   fontSize: '16px',
-                  boxShadow: '0 4px 12px rgba(255,87,34,0.4)',
-                  border: '2px solid rgba(255,255,255,0.2)',
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                  border: '2px solid',
+                  borderColor: 'background.paper',
                   '&:hover': {
                     transform: 'scale(1.08)',
-                    boxShadow: '0 6px 20px rgba(255,87,34,0.6)'
+                    boxShadow: '0 8px 24px rgba(25, 118, 210, 0.4)'
                   },
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
                 {getUserInitials()}
@@ -464,7 +434,12 @@ const Navbar: React.FC = () => {
               Choose what you'd like to create
             </Typography>
           </Box>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 2.5 }}>
+          <MenuItem 
+            onClick={handleCloseMenus}
+            component={Link}
+            to="/organizations"
+            sx={{ py: 2, px: 2.5 }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
               <Box sx={{ 
                 bgcolor: '#E3FCEF', 
@@ -487,7 +462,12 @@ const Navbar: React.FC = () => {
               </Box>
             </Box>
           </MenuItem>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 2.5 }}>
+          <MenuItem 
+            onClick={handleCloseMenus}
+            component={Link}
+            to="/organizations"
+            sx={{ py: 2, px: 2.5 }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
               <Box sx={{ 
                 bgcolor: '#DEEBFF', 
@@ -498,19 +478,24 @@ const Navbar: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <WorkIcon sx={{ color: '#0052CC', fontSize: 20 }} />
+                <WorkIcon sx={{ color: '#1976d2', fontSize: 20 }} />
               </Box>
               <Box sx={{ flexGrow: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  Issue
+                  Team
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#5E6C84' }}>
-                  Track a task, bug, or feature
+                  Create a new team
                 </Typography>
               </Box>
             </Box>
           </MenuItem>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 2.5 }}>
+          <MenuItem 
+            onClick={handleCloseMenus}
+            component={Link}
+            to="/organizations"
+            sx={{ py: 2, px: 2.5 }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
               <Box sx={{ 
                 bgcolor: '#FFF4E6', 
@@ -521,118 +506,14 @@ const Navbar: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <DashboardIcon sx={{ color: '#FF8B00', fontSize: 20 }} />
+                <DashboardIcon sx={{ color: '#9c27b0', fontSize: 20 }} />
               </Box>
               <Box sx={{ flexGrow: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  Board
+                  Organization
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#5E6C84' }}>
-                  Visualize and advance work
-                </Typography>
-              </Box>
-            </Box>
-          </MenuItem>
-        </Menu>
-
-        {/* Apps Menu */}
-        <Menu
-          anchorEl={appsMenuAnchor}
-          open={Boolean(appsMenuAnchor)}
-          onClose={handleCloseMenus}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          PaperProps={{
-            sx: {
-              mt: 1,
-              minWidth: 260,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-              borderRadius: 3,
-              border: '1px solid rgba(0,0,0,0.08)'
-            }
-          }}
-        >
-          <Box sx={{ p: 2, borderBottom: '1px solid #DFE1E6' }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#172B4D' }}>
-              Atlassian products
-            </Typography>
-          </Box>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <Box sx={{ 
-                bgcolor: '#0052CC', 
-                borderRadius: 1.5, 
-                p: 1, 
-                mr: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Typography sx={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>M</Typography>
-              </Box>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  MidLineX
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#5E6C84' }}>
-                  Project management
-                </Typography>
-              </Box>
-              <Chip 
-                label="Current" 
-                size="small" 
-                sx={{ bgcolor: '#E3FCEF', color: '#00875A', fontWeight: 600, fontSize: '10px' }} 
-              />
-            </Box>
-          </MenuItem>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <Box sx={{ 
-                bgcolor: '#172B4D', 
-                borderRadius: 1.5, 
-                p: 1, 
-                mr: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Typography sx={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>C</Typography>
-              </Box>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  Confluence
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#5E6C84' }}>
-                  Team workspace
-                </Typography>
-              </Box>
-            </Box>
-          </MenuItem>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <Box sx={{ 
-                bgcolor: '#0052CC', 
-                borderRadius: 1.5, 
-                p: 1, 
-                mr: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Typography sx={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>B</Typography>
-              </Box>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  Bitbucket
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#5E6C84' }}>
-                  Git repository
+                  Create a new organization
                 </Typography>
               </Box>
             </Box>
@@ -658,9 +539,10 @@ const Navbar: React.FC = () => {
               minWidth: 380,
               maxWidth: 420,
               maxHeight: 480,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
               borderRadius: 3,
-              border: '1px solid rgba(0,0,0,0.08)',
+              border: '1px solid',
+              borderColor: 'divider',
               '&::-webkit-scrollbar': {
                 display: 'none'
               },
@@ -669,57 +551,62 @@ const Navbar: React.FC = () => {
             }
           }}
         >
-          <Box sx={{ p: 3, borderBottom: '1px solid #DFE1E6' }}>
+          <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '18px', color: '#172B4D' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '18px', color: 'text.primary' }}>
                 Notifications
               </Typography>
               <Chip 
                 label="3 new" 
                 size="small" 
-                sx={{ bgcolor: '#DE350B', color: 'white', fontWeight: 600, fontSize: '11px' }} 
+                sx={{ 
+                  bgcolor: 'error.main', 
+                  color: 'white', 
+                  fontWeight: 600, 
+                  fontSize: '11px' 
+                }} 
               />
             </Box>
           </Box>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2.5, px: 3, alignItems: 'flex-start', borderBottom: '1px solid #F4F5F7' }}>
+          <MenuItem onClick={handleCloseMenus} sx={{ py: 2.5, px: 3, alignItems: 'flex-start', borderBottom: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ width: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                <Avatar sx={{ bgcolor: '#0052CC', mr: 2, width: 36, height: 36, fontSize: '14px' }}>
+                <Avatar sx={{ bgcolor: 'primary.main', mr: 2, width: 36, height: 36, fontSize: '14px' }}>
                   JM
                 </Avatar>
                 <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: '#172B4D' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.primary' }}>
                     Task assigned to you
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '13px', lineHeight: 1.4 }}>
-                    <strong>John Miller</strong> assigned <strong>ECP-123: Fix login bug</strong> to you
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '13px', lineHeight: 1.4 }}>
+                    <strong>John Miller</strong> assigned <strong>PROJ-123: Fix dashboard bug</strong> to you
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#8993A4', fontSize: '11px', mt: 1, display: 'block' }}>
+                  <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '11px', mt: 1, display: 'block' }}>
                     2 hours ago
                   </Typography>
                 </Box>
                 <Chip 
                   label="New" 
                   size="small" 
-                  sx={{ bgcolor: '#00875A', color: 'white', fontSize: '10px', fontWeight: 600 }} 
+                  sx={{ bgcolor: 'success.main', color: 'white', fontSize: '10px', fontWeight: 600 }} 
                 />
               </Box>
             </Box>
           </MenuItem>
-          <MenuItem onClick={handleCloseMenus} sx={{ py: 2.5, px: 3, alignItems: 'flex-start', borderBottom: '1px solid #F4F5F7' }}>
+          <MenuItem onClick={handleCloseMenus} sx={{ py: 2.5, px: 3, alignItems: 'flex-start', borderBottom: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ width: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                <Avatar sx={{ bgcolor: '#00875A', mr: 2, width: 36, height: 36, fontSize: '14px' }}>
+                <Avatar sx={{ bgcolor: 'success.main', mr: 2, width: 36, height: 36, fontSize: '14px' }}>
                   ✓
                 </Avatar>
                 <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: '#172B4D' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.primary' }}>
                     Sprint completed successfully
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '13px', lineHeight: 1.4 }}>
-                    <strong>Sprint 23</strong> has been completed with 18/20 issues resolved
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '13px', lineHeight: 1.4 }}>
+                    <strong>Sprint 23</strong> has been completed with 18/20 tasks resolved
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#8993A4', fontSize: '11px', mt: 1, display: 'block' }}>
+                  <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '11px', mt: 1, display: 'block' }}>
                     1 day ago
                   </Typography>
                 </Box>
@@ -729,31 +616,31 @@ const Navbar: React.FC = () => {
           <MenuItem onClick={handleCloseMenus} sx={{ py: 2.5, px: 3, alignItems: 'flex-start' }}>
             <Box sx={{ width: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                <Avatar sx={{ bgcolor: '#FF5722', mr: 2, width: 36, height: 36, fontSize: '14px' }}>
+                <Avatar sx={{ bgcolor: 'warning.main', mr: 2, width: 36, height: 36, fontSize: '14px' }}>
                   !
                 </Avatar>
                 <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: '#172B4D' }}>
-                    Code review required
+                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: 'text.primary' }}>
+                    Review required
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '13px', lineHeight: 1.4 }}>
-                    Pull request <strong>#456</strong> is waiting for your review
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '13px', lineHeight: 1.4 }}>
+                    Project <strong>E-Commerce Platform</strong> is waiting for your review
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#8993A4', fontSize: '11px', mt: 1, display: 'block' }}>
+                  <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '11px', mt: 1, display: 'block' }}>
                     3 days ago
                   </Typography>
                 </Box>
               </Box>
             </Box>
           </MenuItem>
-          <Box sx={{ p: 2, borderTop: '1px solid #DFE1E6', textAlign: 'center' }}>
+          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
             <Button 
               size="small" 
               sx={{ 
                 textTransform: 'none', 
                 fontWeight: 600, 
-                color: '#0052CC',
-                '&:hover': { bgcolor: '#F4F5F7' }
+                color: 'primary.main',
+                '&:hover': { bgcolor: 'action.hover' }
               }}
             >
               View all notifications

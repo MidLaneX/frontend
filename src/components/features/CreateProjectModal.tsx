@@ -42,13 +42,17 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ open, onClose, 
     const project: Omit<Project, 'id' | 'tasks'> = {
       name: formData.name,
       key: formData.key.toUpperCase(),
-      description: formData.description,
       type: formData.type,
+      templateType: 'scrum', // Default template type
+      features: [], // Initialize empty features array
       timeline: {
         start: formData.startDate,
         end: formData.endDate
       },
-      teamMembers: formData.teamMembers.map(name => ({ name, role: 'Team Member' }))
+      teamMembers: formData.teamMembers.map(m => ({
+        name: m,
+        role: 'Member' // Default role since we only have names
+      }))
     };
 
     // Debug logging to verify type is captured

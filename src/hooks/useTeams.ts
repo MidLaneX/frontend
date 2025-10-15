@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export interface Team {
+interface MockTeam {
   id: number;
   name: string;
   description?: string;
@@ -9,7 +9,7 @@ export interface Team {
 
 // Mock teams data - in a real app, this would come from an API
 // Using team IDs that match backend (1, 2, 3, etc.)
-const mockTeams: Team[] = [
+const mockTeams: MockTeam[] = [
   { id: 1, name: 'Development Team Alpha', description: 'Frontend & Backend developers', memberCount: 8 },
   { id: 2, name: 'Development Team Beta', description: 'Mobile app developers', memberCount: 6 },
   { id: 3, name: 'Design Team', description: 'UI/UX designers and researchers', memberCount: 4 },
@@ -19,7 +19,7 @@ const mockTeams: Team[] = [
 ];
 
 export const useTeams = () => {
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<MockTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +45,7 @@ export const useTeams = () => {
     fetchTeams();
   }, []);
 
-  const getTeamById = (id: number): Team | undefined => {
+  const getTeamById = (id: number): MockTeam | undefined => {
     return teams.find(team => team.id === id);
   };
 

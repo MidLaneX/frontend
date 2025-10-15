@@ -13,19 +13,26 @@ export const useTasks = (projectId: string) => {
   useEffect(() => {
     if (!projectId) return;
     
-    try {
-      const projectTasks = TaskService.getTasksByProjectId(projectId);
-      setTasks(projectTasks);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
+    const loadTasks = async () => {
+      try {
+        setLoading(true);
+        const projectIdNum = parseInt(projectId, 10);
+        const projectTasks = await TaskService.getTasksByProjectId(projectIdNum);
+        setTasks(projectTasks);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load tasks');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTasks();
   }, [projectId]);
 
-  const createTask = (taskData: Omit<Task, 'id' | 'comments'>) => {
+  const createTask = async (taskData: Omit<Task, 'id'>) => {
     try {
-      const newTask = TaskService.createTask(projectId, taskData);
+      const projectIdNum = parseInt(projectId, 10);
+      const newTask = await TaskService.createTask(projectIdNum, taskData);
       if (newTask) {
         setTasks(prev => [...prev, newTask]);
       }
@@ -36,12 +43,14 @@ export const useTasks = (projectId: string) => {
     }
   };
 
-  const updateTask = (taskId: string, updates: Partial<Task>) => {
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
-      const updatedTask = TaskService.updateTask(projectId, taskId, updates);
+      const projectIdNum = parseInt(projectId, 10);
+      const taskIdNum = parseInt(taskId, 10);
+      const updatedTask = await TaskService.updateTask(projectIdNum, taskIdNum, updates);
       if (updatedTask) {
         setTasks(prev => 
-          prev.map(t => t.id === taskId ? updatedTask : t)
+          prev.map(t => t.id === taskIdNum ? updatedTask : t)
         );
       }
       return updatedTask;
@@ -51,12 +60,14 @@ export const useTasks = (projectId: string) => {
     }
   };
 
-  const updateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
+  const updateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
     try {
-      const updatedTask = TaskService.updateTaskStatus(projectId, taskId, newStatus);
+      const projectIdNum = parseInt(projectId, 10);
+      const taskIdNum = parseInt(taskId, 10);
+      const updatedTask = await TaskService.updateTaskStatus(projectIdNum, taskIdNum, newStatus);
       if (updatedTask) {
         setTasks(prev => 
-          prev.map(t => t.id === taskId ? updatedTask : t)
+          prev.map(t => t.id === taskIdNum ? updatedTask : t)
         );
       }
       return updatedTask;
@@ -66,11 +77,13 @@ export const useTasks = (projectId: string) => {
     }
   };
 
-  const deleteTask = (taskId: string) => {
+  const deleteTask = async (taskId: string) => {
     try {
-      const success = TaskService.deleteTask(projectId, taskId);
+      const projectIdNum = parseInt(projectId, 10);
+      const taskIdNum = parseInt(taskId, 10);
+      const success = await TaskService.deleteTask(projectIdNum, taskIdNum);
       if (success) {
-        setTasks(prev => prev.filter(t => t.id !== taskId));
+        setTasks(prev => prev.filter(t => t.id !== taskIdNum));
       }
       return success;
     } catch (err) {
@@ -79,26 +92,42 @@ export const useTasks = (projectId: string) => {
     }
   };
 
-  const searchTasks = (query: string) => {
+  const searchTasks = async (query: string) => {
     try {
-      return TaskService.searchTasks(projectId, query);
+      const projectIdNum = parseInt(projectId, 10);
+      return await TaskService.searchTasks(projectIdNum, query);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to search tasks');
       return [];
     }
   };
 
-  const filterTasks = (filters: {
+  const filterTasks = async (filters: {
     assignee?: string[];
     priority?: string[];
     type?: string[];
     status?: string[];
   }) => {
     try {
-      return TaskService.filterTasks(projectId, filters);
+      const projectIdNum = parseInt(projectId, 10);
+      return await TaskService.filterTasks(projectIdNum, filters);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to filter tasks');
       return [];
+    }
+  };
+
+  const refetch = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const projectIdNum = parseInt(projectId, 10);
+      const projectTasks = await TaskService.getTasksByProjectId(projectIdNum);
+      setTasks(projectTasks);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load tasks');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,17 +141,6 @@ export const useTasks = (projectId: string) => {
     deleteTask,
     searchTasks,
     filterTasks,
-    refetch: () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const projectTasks = TaskService.getTasksByProjectId(projectId);
-        setTasks(projectTasks);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load tasks');
-      } finally {
-        setLoading(false);
-      }
-    }
+    refetch
   };
 };

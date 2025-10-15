@@ -70,6 +70,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     storyPoints: 3,
     labels: [],
     comments: [],
+    sprintId: 0, // Will be updated when latestSprint is loaded
   });
 
   const fetchTasks = async () => {
@@ -99,6 +100,16 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     fetchLatestSprint();
   }, [projectId, templateType]);
 
+  // Update form default sprintId when latest sprint is loaded
+  useEffect(() => {
+    if (latestSprint && !editTask) {
+      setNewTaskData(prev => ({
+        ...prev,
+        sprintId: latestSprint.id
+      }));
+    }
+  }, [latestSprint, editTask]);
+
   // Show only tasks from the latest sprint
   const sprintTasks = useMemo(() => {
     if (!latestSprint) return tasks; // If no sprint, show all tasks
@@ -124,16 +135,43 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
   const handleSave = async () => {
     if (!newTaskData.title) return;
 
-    if (editTask) {
-      await TaskService.updateTask(projectId, Number(editTask.id), newTaskData, templateType);
-    } else {
-      await TaskService.createTask(projectId, newTaskData as Omit<Task, 'id'>, templateType);
-    }
+    try {
+      if (editTask) {
+        await TaskService.updateTask(projectId, Number(editTask.id), newTaskData, templateType);
+      } else {
+        // For new tasks in scrum board, automatically assign to latest sprint
+        const sprintId = latestSprint?.id || 0;
+        const taskWithSprint = {
+          ...newTaskData,
+          sprintId: sprintId,
+        } as Omit<Task, 'id'>;
+        
+        console.log('Creating task with sprint assignment:', {
+          taskTitle: taskWithSprint.title,
+          sprintId: taskWithSprint.sprintId,
+          sprintName: latestSprint?.name || 'No sprint',
+          templateType
+        });
+        
+        const createdTask = await TaskService.createTask(projectId, taskWithSprint, templateType);
+        
+        if (!createdTask) {
+          setError('Failed to create task. Please try again.');
+          return;
+        }
+        
+        // Clear any existing errors on successful creation
+        setError(null);
+      }
 
-    setOpenDialog(false);
-    setEditTask(null);
-    resetForm();
-    fetchTasks();
+      setOpenDialog(false);
+      setEditTask(null);
+      resetForm();
+      fetchTasks();
+    } catch (error) {
+      console.error('Error saving task:', error);
+      setError('Failed to save task. Please try again.');
+    }
   };
 
   const handleDragEnd = async (result: DropResult) => {
@@ -235,6 +273,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
       storyPoints: 3,
       labels: [],
       comments: [],
+      sprintId: latestSprint?.id || 0, // Default to latest sprint for new tasks
     });
   };
 
@@ -260,17 +299,7 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
     }
   };
 
-  const getStatusIcon = (status: TaskStatus | string) => {
-    switch (status) {
-      case 'Backlog': return '';
-      case 'Todo': return '';
-      case 'In Progress': return '';
-      case 'Review': return '';
-      case 'Done': return '';
-      case 'Epic': return '';
-      default: return '';
-    }
-  };
+
 
   const getPriorityColor = (priority: TaskPriority) => {
     switch (priority) {
@@ -797,9 +826,45 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({ projectId, projectName, templat
           <Typography variant="h6" fontWeight={600}>
             {editTask ? 'Edit Issue' : 'Create Issue'}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             {editTask ? 'Update issue details' : 'Add a new issue to the sprint'}
           </Typography>
+          {!editTask && latestSprint && (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1, 
+              p: 1.5, 
+              bgcolor: 'primary.50', 
+              border: '1px solid', 
+              borderColor: 'primary.200',
+              borderRadius: 2,
+              mt: 1
+            }}>
+              <SprintIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+              <Typography variant="caption" color="primary.main" fontWeight={500}>
+                This issue will be assigned to: <strong>{latestSprint.name}</strong>
+              </Typography>
+            </Box>
+          )}
+          {!editTask && !latestSprint && (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1, 
+              p: 1.5, 
+              bgcolor: 'warning.50', 
+              border: '1px solid', 
+              borderColor: 'warning.200',
+              borderRadius: 2,
+              mt: 1
+            }}>
+              <SprintIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+              <Typography variant="caption" color="warning.main" fontWeight={500}>
+                No active sprint found. Issue will be created without sprint assignment.
+              </Typography>
+            </Box>
+          )}
         </DialogTitle>
         <DialogContent sx={{ pt: '12px !important' }}>
           <TextField
