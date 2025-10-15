@@ -10,7 +10,7 @@
     "test": "echo \"No tests yet\"",
     "build": "tsc --noEmit || true && vite build",
     "build:ci": "pnpm run type-check && pnpm run lint && pnpm run build",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings=9999",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "lint:ci": "eslint . --ext .ts,.tsx --max-warnings=50",
     "lint:deploy": "eslint . --ext .ts,.tsx --config .eslintrc.deploy.cjs --max-warnings=200",
