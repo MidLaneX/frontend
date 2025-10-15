@@ -6,7 +6,7 @@ export * from "./estimation";
 export * from "./scrum_board";
 export * from "./sprint";
 export * from "./backlog";
-export * from "./timeline";
+export { default as TimeLine } from "./timeline";
 
 // Modal components
 export { default as CreateIssueModal } from "./CreateIssueModal";
