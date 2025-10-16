@@ -28,4 +28,4 @@ export interface Comment {
 
 export type TaskStatus = "Backlog" | "Todo" | "In Progress" | "Review" | "Done";
 export type TaskPriority = "Highest" | "High" | "Medium" | "Low" | "Lowest";
-export type TaskType = "Story" | "Bug" | "Task" | "Epic";
+export type TaskType = "Story" | "Bug" | "Task" | "Epic" | "Issue" | "Approval" | "Other";

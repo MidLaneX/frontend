@@ -35,6 +35,9 @@ import {
   Category as EpicIcon,
   CalendarToday as CalendarIcon,
   Flag as FlagIcon,
+  Error as IssueIcon,
+  CheckCircle as ApprovalIcon,
+  MoreHoriz as OtherIcon,
 } from "@mui/icons-material";
 import { TaskService } from "@/services/TaskService";
 import type { Task, TaskStatus, TaskPriority, TaskType } from "@/types";
@@ -60,7 +63,7 @@ const priorityOptions: TaskPriority[] = [
   "Low",
   "Lowest",
 ];
-const typeOptions: TaskType[] = ["Story", "Bug", "Task", "Epic"];
+const typeOptions: TaskType[] = ["Story", "Bug", "Task", "Epic", "Issue", "Approval", "Other"];
 
 type SortField =
   | "title"
@@ -249,6 +252,12 @@ const List: React.FC<ListProps> = ({
         return <BugIcon sx={{ color: "#f44336", fontSize: 18 }} />;
       case "Task":
         return <TaskIcon sx={{ color: "#2196f3", fontSize: 18 }} />;
+      case "Issue":
+        return <IssueIcon sx={{ color: "#ff9800", fontSize: 18 }} />;
+      case "Approval":
+        return <ApprovalIcon sx={{ color: "#9c27b0", fontSize: 18 }} />;
+      case "Other":
+        return <OtherIcon sx={{ color: "#607d8b", fontSize: 18 }} />;
       default:
         return <TaskIcon sx={{ color: "#2196f3", fontSize: 18 }} />;
     }

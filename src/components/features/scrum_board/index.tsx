@@ -25,6 +25,9 @@ import {
   Task as TaskIcon,
   Star as StoryIcon,
   Timeline as SprintIcon,
+  Error as IssueIcon,
+  CheckCircle as ApprovalIcon,
+  MoreHoriz as OtherIcon,
 } from "@mui/icons-material";
 import {
   DragDropContext,
@@ -346,6 +349,12 @@ const ScrumBoard: React.FC<ScrumBoardProps> = ({
         return <BugIcon sx={{ color: "#f44336" }} />;
       case "Task":
         return <TaskIcon sx={{ color: "#2196f3" }} />;
+      case "Issue":
+        return <IssueIcon sx={{ color: "#ff9800" }} />;
+      case "Approval":
+        return <ApprovalIcon sx={{ color: "#9c27b0" }} />;
+      case "Other":
+        return <OtherIcon sx={{ color: "#607d8b" }} />;
       default:
         return <TaskIcon sx={{ color: "#2196f3" }} />;
     }

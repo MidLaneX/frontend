@@ -23,6 +23,9 @@ import {
   Star as StoryIcon,
   Timeline as SprintIcon,
   Person as PersonIcon,
+  Error as IssueIcon,
+  CheckCircle as ApprovalIcon,
+  MoreHoriz as OtherIcon,
 } from "@mui/icons-material";
 import type { Task, TaskStatus, TaskPriority, TaskType } from "@/types";
 import type { TeamMemberDetail } from "@/types/api/organizations";
@@ -63,7 +66,7 @@ const priorityOptions: TaskPriority[] = [
   "Low",
   "Lowest",
 ];
-const typeOptions: TaskType[] = ["Story", "Bug", "Task", "Epic"];
+const typeOptions: TaskType[] = ["Story", "Bug", "Task", "Epic", "Issue", "Approval", "Other"];
 
 const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   open,
@@ -237,6 +240,12 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
         return <BugIcon sx={{ color: "#f44336" }} />;
       case "Task":
         return <TaskIcon sx={{ color: "#2196f3" }} />;
+      case "Issue":
+        return <IssueIcon sx={{ color: "#ff9800" }} />;
+      case "Approval":
+        return <ApprovalIcon sx={{ color: "#9c27b0" }} />;
+      case "Other":
+        return <OtherIcon sx={{ color: "#607d8b" }} />;
       default:
         return <TaskIcon sx={{ color: "#2196f3" }} />;
     }
