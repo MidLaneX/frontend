@@ -22,6 +22,7 @@ import {
   Help as HelpIcon,
 } from '@mui/icons-material';
 import { useAuth } from '@/context/AuthContext';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 
 const drawerWidth = 280;
 
@@ -34,6 +35,8 @@ interface NavigationItem {
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { userProfile, user } = useAuth();
+  const { getCurrentPlanData } = useSubscriptionLimits();
+  const currentPlanData = getCurrentPlanData();
 
   const navigationItems: NavigationItem[] = [
     { name: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -348,10 +351,10 @@ const Sidebar: React.FC = () => {
             </Typography>
           </Box>
           <Chip 
-            label="Pro" 
+            label={currentPlanData.name} 
             size="small" 
             sx={{ 
-              bgcolor: 'success.main',
+              bgcolor: currentPlanData.color,
               color: 'white',
               fontSize: '0.65rem',
               fontWeight: 700,
