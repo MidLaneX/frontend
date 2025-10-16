@@ -12,7 +12,9 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
-import type { Project } from "@/types";
+import type { Project, Task } from "@/types";
+import { DeadlineNotificationIcon } from "@/components/ui";
+import { TaskService } from "@/services/TaskService";
 
 interface ErrorBoundaryProps {
   fallback: React.ReactNode;
@@ -86,6 +88,10 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({
 
   const navigate = useNavigate();
   const features = project.features || [];
+  
+  // State for tasks to track deadlines
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   console.log(" DynamicProjectNavigation Debug:", {
     project,
@@ -107,6 +113,55 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({
 
   // Initialize activeTab with empty string, will be set by useEffect
   const [activeTab, setActiveTab] = useState<string>("");
+
+  // Fetch tasks for deadline tracking
+  useEffect(() => {
+    if (!project.id) {
+      console.log("⚠️ No project ID, skipping task fetch for deadlines");
+      return;
+    }
+
+    const fetchTasks = async () => {
+      setLoadingTasks(true);
+      try {
+        const numericProjectId = typeof project.id === "string" ? parseInt(project.id) : project.id;
+        if (numericProjectId == null || isNaN(numericProjectId)) {
+          console.warn("Invalid project ID for fetching tasks:", project.id);
+          setTasks([]);
+          setLoadingTasks(false);
+          return;
+        }
+        console.log("📥 Fetching tasks for deadline tracking, projectId:", numericProjectId);
+        
+        const fetchedTasks = await TaskService.getTasksByProjectId(numericProjectId);
+        
+        console.log("📥 Tasks fetched for deadline tracking:", {
+          count: fetchedTasks.length,
+          tasksWithDueDate: fetchedTasks.filter((t: Task) => t.dueDate).length,
+          tasks: fetchedTasks.map((t: Task) => ({
+            id: t.id,
+            title: t.title,
+            dueDate: t.dueDate,
+            status: t.status,
+            assignee: t.assignee,
+          })),
+        });
+        
+        setTasks(fetchedTasks);
+      } catch (error) {
+        console.error("❌ Failed to fetch tasks for deadline tracking:", error);
+        setTasks([]);
+      } finally {
+        setLoadingTasks(false);
+      }
+    };
+
+    fetchTasks();
+    
+    // Refresh tasks every 5 minutes
+    const interval = setInterval(fetchTasks, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [project.id]);
 
   // Sync activeTab with URL param and navigate if needed
   useEffect(() => {
@@ -249,7 +304,7 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({
 
   return (
     <Box>
-      {/* Modern Tabs Navigation */}
+      {/* Modern Tabs Navigation with Deadline Notification */}
       <Box 
         sx={{ 
           bgcolor: "white",
@@ -261,48 +316,69 @@ const DynamicProjectNavigation: React.FC<DynamicProjectNavigationProps> = ({
         }}
       >
         <Container maxWidth="xl">
-          <Tabs
-            value={
-              activeTab && normalizedFeatures.some((f) => f.path === activeTab)
-                ? activeTab
-                : normalizedFeatures[0]?.path || false
-            }
-            onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            aria-label="Project Features Navigation"
-            sx={{
-              '& .MuiTab-root': {
-                textTransform: "capitalize",
-                fontSize: "0.95rem",
-                fontWeight: 500,
-                minHeight: 56,
-                color: theme.palette.text.secondary,
-                transition: "all 0.2s ease",
-                '&:hover': {
-                  color: theme.palette.primary.main,
-                  bgcolor: alpha(theme.palette.primary.main, 0.05),
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Tabs
+              value={
+                activeTab && normalizedFeatures.some((f) => f.path === activeTab)
+                  ? activeTab
+                  : normalizedFeatures[0]?.path || false
+              }
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              aria-label="Project Features Navigation"
+              sx={{
+                flex: 1,
+                '& .MuiTab-root': {
+                  textTransform: "capitalize",
+                  fontSize: "0.95rem",
+                  fontWeight: 500,
+                  minHeight: 56,
+                  color: theme.palette.text.secondary,
+                  transition: "all 0.2s ease",
+                  '&:hover': {
+                    color: theme.palette.primary.main,
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                  },
+                  '&.Mui-selected': {
+                    color: theme.palette.primary.main,
+                    fontWeight: 600,
+                  },
                 },
-                '&.Mui-selected': {
-                  color: theme.palette.primary.main,
-                  fontWeight: 600,
+                '& .MuiTabs-indicator': {
+                  height: 3,
+                  borderRadius: "3px 3px 0 0",
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 },
-              },
-              '& .MuiTabs-indicator': {
-                height: 3,
-                borderRadius: "3px 3px 0 0",
-                background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-              },
-            }}
-          >
-            {normalizedFeatures.map((feature) => (
-              <Tab
-                key={feature.path}
-                value={feature.path}
-                label={feature.name.replace(/_/g, " ")}
+              }}
+            >
+              {normalizedFeatures.map((feature) => (
+                <Tab
+                  key={feature.path}
+                  value={feature.path}
+                  label={feature.name.replace(/_/g, " ")}
+                />
+              ))}
+            </Tabs>
+            
+            {/* Deadline Notification Icon */}
+            <Box sx={{ px: 2 }}>
+              <DeadlineNotificationIcon 
+                tasks={tasks}
+                onTaskClick={(task) => {
+                  // Navigate to backlog feature with task highlighted
+                  const backlogFeature = normalizedFeatures.find(f => 
+                    f.path === "backlog" || f.path === "scrum_board"
+                  );
+                  if (backlogFeature && projectId && templateType) {
+                    navigate(
+                      `/projects/${projectId}/${templateType}/${backlogFeature.path}?taskId=${task.id}`
+                    );
+                  }
+                }}
               />
-            ))}
-          </Tabs>
+            </Box>
+          </Box>
         </Container>
       </Box>
 
