@@ -1,8 +1,8 @@
 import axios from "axios";
 import type { AxiosResponse } from "axios";
 
+// const NOTIFICATION_BASE_URL = "https://midlanex.duckdns.org/api/v1/notifications";
 const NOTIFICATION_BASE_URL = "https://midlanex.duckdns.org/api/v1/notifications";
-
 // Create axios instance similar to projectsApiClient
 export const notificationsApiClient = axios.create({
   baseURL: NOTIFICATION_BASE_URL,
