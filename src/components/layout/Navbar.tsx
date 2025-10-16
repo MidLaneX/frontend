@@ -27,10 +27,14 @@ import AddIcon from '@mui/icons-material/Add'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import QuickSearch from '@/components/ui/QuickSearch'
 import { useAuth } from '@/context/AuthContext'
+import { useSubscription } from '@/context/SubscriptionContext'
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits'
 
 const Navbar: React.FC = () => {
   const location = useLocation()
   const { logout, userProfile, fetchUserProfile, user } = useAuth()
+  const { currentPlan } = useSubscription()
+  const { getCurrentPlanData } = useSubscriptionLimits()
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null)
   const [notificationsAnchor, setNotificationsAnchor] = useState<null | HTMLElement>(null)
   const [createMenuAnchor, setCreateMenuAnchor] = useState<null | HTMLElement>(null)
@@ -692,10 +696,10 @@ const Navbar: React.FC = () => {
                   {userProfile?.email || user?.email || 'user@example.com'}
                 </Typography>
                 <Chip 
-                  label="Premium" 
+                  label={getCurrentPlanData().name} 
                   size="small" 
                   sx={{ 
-                    bgcolor: '#FFAB00', 
+                    bgcolor: getCurrentPlanData().color, 
                     color: 'white', 
                     fontSize: '10px', 
                     fontWeight: 600,

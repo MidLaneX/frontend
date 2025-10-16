@@ -16,8 +16,10 @@ import Help from "@/pages/Help";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { SubscriptionProvider } from "@/context/SubscriptionContext";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { theme } from "@/config/theme";
+import PostLoginPlanSelector from "@/components/features/PostLoginPlanSelector";
 import "./App.css";
 
 function AppContent() {
@@ -71,6 +73,7 @@ function AppContent() {
           margin: 0,
         }}
       >
+        <PostLoginPlanSelector />
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route
@@ -159,7 +162,9 @@ function App() {
       <CssBaseline />
       <BrowserRouter>
         <AuthProvider>
-          <AppContent />
+          <SubscriptionProvider>
+            <AppContent />
+          </SubscriptionProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
