@@ -135,42 +135,42 @@
 //         </Box>
 //       </DialogTitle>
 
-//       <DialogContent sx={{ p: 3 }}>
-//         <Box sx={{ display: "flex", gap: 3 }}>
-//           {/* Main Content */}
-//           <Box sx={{ flex: 1 }}>
-//             {/* Issue Type & Project */}
-//             <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-//               <FormControl sx={{ minWidth: 120 }}>
-//                 <InputLabel>Issue Type</InputLabel>
-//                 <Select
-//                   value={formData.type}
-//                   label="Issue Type"
-//                   onChange={(e) =>
-//                     setFormData((prev) => ({
-//                       ...prev,
-//                       type: e.target.value as Task["type"],
-//                     }))
-//                   }
-//                 >
-//                   <MenuItem value="Task">Task</MenuItem>
-//                   <MenuItem value="Story">Story</MenuItem>
-//                   <MenuItem value="Bug">Bug</MenuItem>
-//                   <MenuItem value="Epic">Epic</MenuItem>
-//                   <MenuItem value="Issue">Issue</MenuItem>
-//                   <MenuItem value="Approval">Approval</MenuItem>
-//                   <MenuItem value="Other">Other</MenuItem>
-//                 </Select>
-//               </FormControl>
-//               <Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
-//                 <Typography variant="body2" sx={{ color: "#5E6C84" }}>
-//                   Project:{" "}
-//                   <strong>
-//                     {project.name} ({project.key})
-//                   </strong>
-//                 </Typography>
-//               </Box>
-//             </Box>
+      <DialogContent sx={{ p: 3 }}>
+        <Box sx={{ display: "flex", gap: 3 }}>
+          {/* Main Content */}
+          <Box sx={{ flex: 1 }}>
+            {/* Issue Type & Project */}
+            <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+              <FormControl sx={{ minWidth: 120 }}>
+                <InputLabel>Issue Type</InputLabel>
+                <Select
+                  value={formData.type}
+                  label="Issue Type"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      type: e.target.value as Task["type"],
+                    }))
+                  }
+                >
+                  <MenuItem value="Task">Task</MenuItem>
+                  <MenuItem value="Story">Story</MenuItem>
+                  <MenuItem value="Bug">Bug</MenuItem>
+                  <MenuItem value="Epic">Epic</MenuItem>
+                  <MenuItem value="Issue">Issue</MenuItem>
+                  <MenuItem value="Approval">Approval</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
+              <Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
+                <Typography variant="body2" sx={{ color: "#5E6C84" }}>
+                  Project:{" "}
+                  <strong>
+                    {project.name} ({project.key})
+                  </strong>
+                </Typography>
+              </Box>
+            </Box>
 
 //             {/* Summary */}
 //             <TextField
