@@ -457,7 +457,7 @@ const About: React.FC = () => {
           </Typography>
           
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
-            {['React', 'TypeScript', 'Material-UI', 'Node.js', 'MongoDB', 'AWS', 'Docker', 'Kubernetes'].map((tech) => (
+            {['React', 'TypeScript', 'Material-UI', 'Node.js', 'Postgres', 'Google Cloud', 'Docker'].map((tech) => (
               <Chip
                 key={tech}
                 label={tech}

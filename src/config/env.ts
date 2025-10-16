@@ -1,23 +1,24 @@
 // Environment variables and configuration
 export const ENV = {
-  NODE_ENV: import.meta.env.MODE || 'development',
+  NODE_ENV: import.meta.env.MODE || "development",
   PROD: import.meta.env.PROD,
   DEV: import.meta.env.DEV,
-  
+
   // API Configuration for API gateway
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
-  PROJECTS_SERVICE_URL: import.meta.env.VITE_PROJECTS_SERVICE_URL || 'http://localhost:8083/api',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://midlanex.duckdns.org/api',
+  // API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+
+  // PROJECTS_SERVICE_URL: import.meta.env.VITE_PROJECTS_SERVICE_URL || 'http://localhost:8083/api',
 
   // Social Authentication
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
-  FACEBOOK_APP_ID: import.meta.env.VITE_FACEBOOK_APP_ID || '',
   
   // App Configuration
-  APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
-  
+  APP_VERSION: import.meta.env.VITE_APP_VERSION || "1.0.0",
+
   // Feature Flags
-  ENABLE_ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
-  ENABLE_DEBUG: import.meta.env.VITE_ENABLE_DEBUG === 'true',
+  ENABLE_ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS === "true",
+  ENABLE_DEBUG: import.meta.env.VITE_ENABLE_DEBUG === "true",
 } as const;
 
 // Development helpers

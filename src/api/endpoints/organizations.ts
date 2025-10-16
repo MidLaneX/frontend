@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { tokenManager } from '../../utils/tokenManager';
+import { ENV } from '../../config/env';
 import type {
   Organization,
   CreateOrganizationRequest,
@@ -9,7 +10,7 @@ import type {
 
 // Create a dedicated API client for organizations service
 const organizationsApiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: ENV.API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

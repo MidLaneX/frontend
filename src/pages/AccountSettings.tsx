@@ -34,7 +34,6 @@ import {
   Check as CheckIcon,
   Shield as ShieldIcon,
   Key as KeyIcon,
-  Payment as PaymentIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
   Palette as PaletteIcon,
@@ -42,6 +41,7 @@ import {
 } from '@mui/icons-material'
 import { UserService } from '@/services/UserService'
 import { useAuth } from '@/context/AuthContext'
+import SubscriptionCard from '@/components/features/SubscriptionCard'
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -685,111 +685,8 @@ const AccountSettings: React.FC = () => {
         {/* Billing Tab */}
         <TabPanel value={tabValue} index={3}>
           <Box sx={{ px: 3 }}>
-            {/* Current Plan */}
-            <Paper sx={{ p: 3, mb: 3, borderRadius: 2, border: '1px solid #DFE1E6' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <PaymentIcon sx={{ color: '#0052CC', mr: 2 }} />
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  Current Plan
-                </Typography>
-                <Chip 
-                  label="Freemium"
-                  size="small"
-                  sx={{ ml: 2, bgcolor: '#0052CC', color: 'white', fontWeight: 600 }}
-                />
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#172B4D', mb: 1 }}>
-                    Free<Typography component="span" variant="body1" sx={{ color: '#5E6C84' }}> Forever</Typography>
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#5E6C84', mb: 2 }}>
-                    Enjoy our core features at no cost
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip label="Core Features" size="small" sx={{ bgcolor: '#E3FCEF', color: '#00875A' }} />
-                    <Chip label="Basic Projects" size="small" sx={{ bgcolor: '#E7F3FF', color: '#0052CC' }} />
-                    <Chip label="Community Support" size="small" sx={{ bgcolor: '#FFF7E6', color: '#FF8B00' }} />
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#FFAB00', '&:hover': { bgcolor: '#FF8B00' } }}>
-                    Upgrade Soon
-                  </Button>
-                </Box>
-              </Box>
-              
-              {/* Premium Coming Soon Alert */}
-              <Alert 
-                severity="info" 
-                sx={{ 
-                  bgcolor: '#E7F3FF', 
-                  border: '1px solid #B3D4FF',
-                  '& .MuiAlert-icon': { color: '#0052CC' }
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                  🚀 Premium Plan Coming Soon!
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#5E6C84' }}>
-                  We're working on advanced features including unlimited projects, advanced analytics, 
-                  AI-powered insights, priority support, and much more. Stay tuned!
-                </Typography>
-              </Alert>
-            </Paper>
-
-            {/* Payment Method */}
-            <Paper sx={{ p: 3, mb: 3, borderRadius: 2, border: '1px solid #DFE1E6' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <CreditCardIcon sx={{ color: '#5E6C84', mr: 2 }} />
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  Payment Method
-                </Typography>
-              </Box>
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                flexDirection: 'column',
-                py: 4,
-                bgcolor: '#F4F5F7',
-                borderRadius: 2
-              }}>
-                <CreditCardIcon sx={{ color: '#B3BAC5', fontSize: 48, mb: 2 }} />
-                <Typography variant="body1" sx={{ fontWeight: 600, color: '#5E6C84', mb: 1 }}>
-                  No Payment Method Required
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#8993A4', textAlign: 'center' }}>
-                  You're currently on our free plan. Add a payment method when premium features become available.
-                </Typography>
-              </Box>
-            </Paper>
-
-            {/* Account Activity */}
-            <Paper sx={{ p: 3, borderRadius: 2, border: '1px solid #DFE1E6' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                  Account Activity
-                </Typography>
-              </Box>
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                flexDirection: 'column',
-                py: 4,
-                bgcolor: '#F4F5F7',
-                borderRadius: 2
-              }}>
-                <ScheduleIcon sx={{ color: '#B3BAC5', fontSize: 48, mb: 2 }} />
-                <Typography variant="body1" sx={{ fontWeight: 600, color: '#5E6C84', mb: 1 }}>
-                  No Billing History
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#8993A4', textAlign: 'center' }}>
-                  You're enjoying our free plan! Billing history will appear here when you upgrade to premium.
-                </Typography>
-              </Box>
-            </Paper>
+            {/* Subscription Card */}
+            <SubscriptionCard />
           </Box>
         </TabPanel>
       </Card>
