@@ -157,6 +157,9 @@ const CreateIssueModal: React.FC<CreateIssueModalProps> = ({
                   <MenuItem value="Story">Story</MenuItem>
                   <MenuItem value="Bug">Bug</MenuItem>
                   <MenuItem value="Epic">Epic</MenuItem>
+                  <MenuItem value="Issue">Issue</MenuItem>
+                  <MenuItem value="Approval">Approval</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
                 </Select>
               </FormControl>
               <Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>

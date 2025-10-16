@@ -44,6 +44,9 @@ import {
   Warning as WarningIcon,
   Schedule as ScheduleIcon,
   Person as PersonIcon,
+  Error as IssueIcon,
+  CheckCircle as ApprovalIcon,
+  MoreHoriz as OtherIcon,
 } from "@mui/icons-material";
 import Velocity from "./velocity";
 import ShareProjectDialog from "./ShareProjectDialog";
@@ -106,6 +109,9 @@ const TYPE_ICONS: Record<TaskType, React.ReactNode> = {
   Bug: <BugIcon />,
   Story: <StoryIcon />,
   Epic: <EpicIcon />,
+  Issue: <IssueIcon />,
+  Approval: <ApprovalIcon />,
+  Other: <OtherIcon />,
 };
 
 const Estimation: React.FC<EstimationProps> = ({
@@ -202,6 +208,9 @@ const Estimation: React.FC<EstimationProps> = ({
       Bug: 0,
       Task: 0,
       Epic: 0,
+      Issue: 0,
+      Approval: 0,
+      Other: 0,
     };
 
     tasks.forEach((task) => {

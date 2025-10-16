@@ -3,15 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   IconButton,
   Alert,
   CircularProgress,
@@ -28,9 +19,13 @@ import {
   BugReport as BugIcon,
   AutoStories as StoryIcon,
   Category as EpicIcon,
+  Error as IssueIcon,
+  CheckCircle as ApprovalIcon,
+  MoreHoriz as OtherIcon,
 } from "@mui/icons-material";
 import { TaskService } from "@/services/TaskService";
-import type { Task, TaskStatus, TaskPriority, TaskType } from "@/types";
+import { TaskFormDialog } from "@/components/features";
+import type { Task, TaskPriority, TaskType } from "@/types";
 
 interface CalendarProps {
   projectId: string;
@@ -38,21 +33,6 @@ interface CalendarProps {
   templateType?: string;
 }
 
-const statusOptions: TaskStatus[] = [
-  "Backlog",
-  "Todo",
-  "In Progress",
-  "Review",
-  "Done",
-];
-const priorityOptions: TaskPriority[] = [
-  "Highest",
-  "High",
-  "Medium",
-  "Low",
-  "Lowest",
-];
-const typeOptions: TaskType[] = ["Story", "Bug", "Task", "Epic"];
 
 const Calendar: React.FC<CalendarProps> = ({
   projectId,
@@ -66,20 +46,6 @@ const Calendar: React.FC<CalendarProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
-
-  const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: "",
-    description: "",
-    priority: "Medium",
-    status: "Todo",
-    type: "Task",
-    assignee: "",
-    reporter: "",
-    dueDate: "",
-    storyPoints: 3,
-    labels: [],
-    comments: [],
-  });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -102,58 +68,29 @@ const Calendar: React.FC<CalendarProps> = ({
     fetchTasks();
   }, [projectId, templateType]);
 
-  useEffect(() => {
-    if (selectedDate) {
-      setNewTaskData((prev) => ({
-        ...prev,
-        dueDate: selectedDate.toISOString().split("T")[0],
-      }));
-    }
-  }, [selectedDate]);
-
-  const handleSave = async () => {
-    if (!newTaskData.title) return;
-
+  const handleTaskSave = async (taskData: Partial<Task>) => {
     try {
       if (editTask) {
         await TaskService.updateTask(
           Number(projectId),
           Number(editTask.id),
-          newTaskData,
+          taskData,
           templateType,
         );
       } else {
         await TaskService.createTask(
           Number(projectId),
-          newTaskData as Omit<Task, "id">,
+          taskData as Omit<Task, "id">,
           templateType,
         );
       }
-
       setOpenDialog(false);
       setEditTask(null);
-      resetForm();
       fetchTasks();
     } catch (error) {
       console.error("Failed to save task:", error);
       setError("Failed to save task.");
     }
-  };
-
-  const resetForm = () => {
-    setNewTaskData({
-      title: "",
-      description: "",
-      priority: "Medium",
-      status: "Todo",
-      type: "Task",
-      assignee: "",
-      reporter: "",
-      dueDate: selectedDate ? selectedDate.toISOString().split("T")[0] : "",
-      storyPoints: 3,
-      labels: [],
-      comments: [],
-    });
   };
 
   const getTaskIcon = (type: TaskType) => {
@@ -166,6 +103,12 @@ const Calendar: React.FC<CalendarProps> = ({
         return <BugIcon sx={{ fontSize: 12, color: "#f44336" }} />;
       case "Task":
         return <TaskIcon sx={{ fontSize: 12, color: "#2196f3" }} />;
+      case "Issue":
+        return <IssueIcon sx={{ fontSize: 12, color: "#ff9800" }} />;
+      case "Approval":
+        return <ApprovalIcon sx={{ fontSize: 12, color: "#9c27b0" }} />;
+      case "Other":
+        return <OtherIcon sx={{ fontSize: 12, color: "#607d8b" }} />;
       default:
         return <TaskIcon sx={{ fontSize: 12, color: "#2196f3" }} />;
     }
@@ -231,29 +174,37 @@ const Calendar: React.FC<CalendarProps> = ({
     const dayTasks = isCurrentMonth ? getTasksForDate(date) : [];
     const isCurrentDay = isToday(date) && isCurrentMonth;
     const isSelectedDay = isSelected(date) && isCurrentMonth;
+    
+    // Check if any task is due (deadline highlighting)
+    const hasDeadline = dayTasks.some(task => task.status !== "Done");
+    const isPastDeadline = date < today && hasDeadline;
 
     return (
       <Box
         sx={{
           minHeight: 140,
           border: "1px solid #e0e0e0",
-          bgcolor: isCurrentDay
-            ? "#e3f2fd"
-            : isCurrentMonth
-              ? "white"
-              : "#f5f5f5",
+          bgcolor: isPastDeadline
+            ? "#ffebee" // Light red for past deadlines
+            : isCurrentDay
+              ? "#e8eaf6" // Light indigo for today
+              : isCurrentMonth
+                ? "white"
+                : "#f5f5f5",
           cursor: isCurrentMonth ? "pointer" : "default",
           p: 1,
           borderColor: isSelectedDay
-            ? "#1976d2"
-            : isCurrentDay
-              ? "#2196f3"
-              : "#e0e0e0",
-          borderWidth: isSelectedDay || isCurrentDay ? 2 : 1,
+            ? "#5e35b1" // Deep purple for selected
+            : isPastDeadline
+              ? "#e57373" // Red for overdue
+              : isCurrentDay
+                ? "#3f51b5" // Indigo for today
+                : "#e0e0e0",
+          borderWidth: isSelectedDay || isCurrentDay || isPastDeadline ? 2 : 1,
           "&:hover": isCurrentMonth
             ? {
-                bgcolor: "#f0f7ff",
-                borderColor: "#1976d2",
+                bgcolor: "#ede7f6", // Light purple on hover
+                borderColor: "#5e35b1",
               }
             : {},
           position: "relative",
@@ -295,19 +246,6 @@ const Calendar: React.FC<CalendarProps> = ({
               onClick={(e) => {
                 e.stopPropagation();
                 setEditTask(task);
-                setNewTaskData({
-                  title: task.title,
-                  description: task.description,
-                  priority: task.priority,
-                  status: task.status,
-                  type: task.type,
-                  assignee: task.assignee,
-                  reporter: task.reporter,
-                  dueDate: task.dueDate,
-                  storyPoints: task.storyPoints,
-                  labels: task.labels,
-                  comments: task.comments,
-                });
                 setOpenDialog(true);
               }}
               sx={{
@@ -369,7 +307,12 @@ const Calendar: React.FC<CalendarProps> = ({
 
     return (
       <Box
-        sx={{ bgcolor: "white", border: "2px solid #1976d2", borderRadius: 1 }}
+        sx={{ 
+          bgcolor: "white", 
+          border: "2px solid #5e35b1", // Deep purple border
+          borderRadius: 1,
+          boxShadow: "0 4px 6px rgba(94, 53, 177, 0.1)"
+        }}
       >
         {/* Week day headers */}
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
@@ -379,9 +322,9 @@ const Calendar: React.FC<CalendarProps> = ({
               sx={{
                 p: 2,
                 textAlign: "center",
-                bgcolor: "#1976d2",
+                background: "linear-gradient(135deg, #5e35b1 0%, #3f51b5 100%)", // Purple to indigo gradient
                 color: "white",
-                borderRight: "1px solid white",
+                borderRight: "1px solid rgba(255,255,255,0.2)",
                 "&:last-child": { borderRight: "none" },
               }}
             >
@@ -525,8 +468,17 @@ const Calendar: React.FC<CalendarProps> = ({
 
       {/* Selected Date Info */}
       {selectedDate && (
-        <Paper sx={{ mx: 3, mb: 3, p: 2, bgcolor: "primary.50" }}>
-          <Typography variant="subtitle1" fontWeight={600} color="primary.main">
+        <Paper 
+          sx={{ 
+            mx: 3, 
+            mb: 3, 
+            p: 2, 
+            background: "linear-gradient(135deg, #ede7f6 0%, #e8eaf6 100%)", // Light purple to light indigo
+            border: "1px solid #b39ddb",
+            boxShadow: "0 2px 4px rgba(94, 53, 177, 0.1)"
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight={600} sx={{ color: "#5e35b1" }}>
             Selected:{" "}
             {selectedDate.toLocaleDateString("en-US", {
               weekday: "long",
@@ -541,154 +493,18 @@ const Calendar: React.FC<CalendarProps> = ({
         </Paper>
       )}
 
-      {/* Create/Edit Task Dialog */}
-      <Dialog
+      {/* Task Form Dialog */}
+      <TaskFormDialog
         open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>{editTask ? "Edit Task" : "Create New Task"}</DialogTitle>
-
-        <DialogContent sx={{ pt: 2 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="Task Title"
-              fullWidth
-              value={newTaskData.title}
-              onChange={(e) =>
-                setNewTaskData({ ...newTaskData, title: e.target.value })
-              }
-            />
-
-            <TextField
-              label="Description"
-              fullWidth
-              multiline
-              rows={3}
-              value={newTaskData.description}
-              onChange={(e) =>
-                setNewTaskData({ ...newTaskData, description: e.target.value })
-              }
-            />
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Type</InputLabel>
-                <Select
-                  value={newTaskData.type}
-                  label="Type"
-                  onChange={(e) =>
-                    setNewTaskData({
-                      ...newTaskData,
-                      type: e.target.value as TaskType,
-                    })
-                  }
-                >
-                  {typeOptions.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  value={newTaskData.priority}
-                  label="Priority"
-                  onChange={(e) =>
-                    setNewTaskData({
-                      ...newTaskData,
-                      priority: e.target.value as TaskPriority,
-                    })
-                  }
-                >
-                  {priorityOptions.map((priority) => (
-                    <MenuItem key={priority} value={priority}>
-                      {priority}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={newTaskData.status}
-                  label="Status"
-                  onChange={(e) =>
-                    setNewTaskData({
-                      ...newTaskData,
-                      status: e.target.value as TaskStatus,
-                    })
-                  }
-                >
-                  {statusOptions.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <TextField
-                label="Story Points"
-                type="number"
-                fullWidth
-                value={newTaskData.storyPoints}
-                onChange={(e) =>
-                  setNewTaskData({
-                    ...newTaskData,
-                    storyPoints: Number(e.target.value),
-                  })
-                }
-              />
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                label="Assignee"
-                fullWidth
-                value={newTaskData.assignee}
-                onChange={(e) =>
-                  setNewTaskData({ ...newTaskData, assignee: e.target.value })
-                }
-              />
-
-              <TextField
-                label="Reporter"
-                fullWidth
-                value={newTaskData.reporter}
-                onChange={(e) =>
-                  setNewTaskData({ ...newTaskData, reporter: e.target.value })
-                }
-              />
-            </Box>
-
-            <TextField
-              label="Due Date"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={newTaskData.dueDate}
-              onChange={(e) =>
-                setNewTaskData({ ...newTaskData, dueDate: e.target.value })
-              }
-            />
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave}>
-            {editTask ? "Update" : "Create"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onClose={() => {
+          setOpenDialog(false);
+          setEditTask(null);
+        }}
+        onSave={handleTaskSave}
+        editTask={editTask}
+        projectId={Number(projectId)}
+        templateType={templateType}
+      />
     </Box>
   );
 };
