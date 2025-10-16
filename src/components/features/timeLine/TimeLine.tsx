@@ -63,13 +63,13 @@ const formatDate = (date: Date, format: "short" | "month" | "week") => {
   }
 };
 
-interface TimelinePageProps {
-  projectId: string;
+interface TimelineProps {
+  projectId: number;
   projectName?: string;
-  templateType?: string;
+  templateType: string;
 }
 
-const TimeLine: React.FC<TimelinePageProps> = ({
+const Timeline: React.FC<TimelineProps> = ({
   projectId,
   templateType = "scrum",
 }) => {
@@ -80,8 +80,7 @@ const TimeLine: React.FC<TimelinePageProps> = ({
     async function fetchSprints() {
       setLoading(true);
       try {
-        const numericProjectId = parseInt(projectId, 10);
-        const response = await SprintService.getAllSprints(numericProjectId, templateType);
+        const response = await SprintService.getAllSprints(projectId, templateType);
         setSprints(response.data);
       } catch (error) {
         console.error("Failed to fetch sprints", error);
@@ -397,4 +396,4 @@ const TimeLine: React.FC<TimelinePageProps> = ({
   );
 };
 
-export default TimeLine;
+export default Timeline;
