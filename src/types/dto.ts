@@ -12,7 +12,6 @@ export interface ProjectDTO {
   createdBy: string;
 }
 
-
 // Create project request DTO - matches your backend requirement
 export interface CreateProjectDTO {
   id?: number | null;
@@ -28,7 +27,6 @@ export interface CreateProjectDTO {
 
 export interface UserProjectRequestDTO {
   userId: number;
-
 }
 
 export interface UserProjectDTO {

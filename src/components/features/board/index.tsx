@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
+import React, { useState, useEffect } from "react";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  type DropResult,
+} from "@hello-pangea/dnd";
 import {
   Box,
   Card,
@@ -7,14 +12,6 @@ import {
   Typography,
   Button,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Chip,
   IconButton,
   Avatar,
@@ -24,7 +21,7 @@ import {
   Paper,
   Badge,
   LinearProgress,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -36,9 +33,15 @@ import {
   Person as PersonIcon,
   Flag as FlagIcon,
   ViewWeek as BoardIcon,
-} from '@mui/icons-material';
-import { TaskService } from '@/services/TaskService';
-import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
+  Error as IssueIcon,
+  CheckCircle as ApprovalIcon,
+  MoreHoriz as OtherIcon,
+} from "@mui/icons-material";
+import { TaskService } from "@/services/TaskService";
+import { NotificationService } from "@/services/NotificationService";
+import { tokenManager } from "@/utils/tokenManager";
+import { TaskFormDialog } from "@/components/features";
+import type { Task, TaskStatus, TaskPriority, TaskType } from "@/types";
 
 interface BoardProps {
   projectId: string;
@@ -46,43 +49,42 @@ interface BoardProps {
   templateType?: string;
 }
 
-const statusColumns: TaskStatus[] = ['Todo', 'In Progress', 'Done'];
-const priorityOptions: TaskPriority[] = ['Highest', 'High', 'Medium', 'Low', 'Lowest'];
-const typeOptions: TaskType[] = ['Story', 'Bug', 'Task', 'Epic'];
+const statusColumns: TaskStatus[] = ["Todo", "In Progress", "Done"];
+const priorityOptions: TaskPriority[] = [
+  "Highest",
+  "High",
+  "Medium",
+  "Low",
+  "Lowest",
+];
+const typeOptions: TaskType[] = ["Story", "Bug", "Task", "Epic", "Issue", "Approval", "Other"];
 
-const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 'traditional' }) => {
+const Board: React.FC<BoardProps> = ({
+  projectId,
+  projectName,
+  templateType = "traditional",
+}) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
 
-  const [newTaskData, setNewTaskData] = useState<Partial<Task>>({
-    title: '',
-    description: '',
-    priority: 'Medium',
-    status: 'Todo',
-    type: 'Task',
-    assignee: '',
-    reporter: '',
-    dueDate: '',
-    storyPoints: 3,
-    labels: [],
-    comments: [],
-  });
-
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const data = await TaskService.getTasksByProjectId(Number(projectId), templateType);
+      const data = await TaskService.getTasksByProjectId(
+        Number(projectId),
+        templateType,
+      );
       setTasks(data || []);
       setError(null);
     } catch (err) {
-      console.error('Failed to load tasks:', err);
-      setError('Failed to load tasks.');
+      console.error("Failed to load tasks:", err);
+      setError("Failed to load tasks.");
     } finally {
       setLoading(false);
     }
@@ -93,151 +95,241 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
   }, [projectId, templateType]);
 
   const handleDragEnd = async (result: DropResult) => {
-    console.log('Drag end result:', result);
-    
+    console.log("Drag end result:", result);
+
     if (!result.destination) {
-      console.log('No destination - drag cancelled');
+      console.log("No destination - drag cancelled");
       return;
     }
 
     const { draggableId, destination, source } = result;
     // Extract actual task ID from draggableId (remove 'task-' prefix)
-    const taskId = Number(draggableId.replace('task-', ''));
+    const taskId = Number(draggableId.replace("task-", ""));
     const newStatus = destination.droppableId;
     const oldStatus = source.droppableId;
 
     // Check if status actually changed
     if (oldStatus === newStatus) {
-      console.log('Same status - no update needed');
+      console.log("Same status - no update needed");
       return;
     }
 
     console.log(`Moving task ${taskId} from "${oldStatus}" to "${newStatus}"`);
 
     // Find the task to verify it exists
-    const task = tasks.find(t => Number(t.id) === taskId);
+    const task = tasks.find((t) => Number(t.id) === taskId);
     if (!task) {
-      console.error('Task not found:', taskId);
+      console.error("Task not found:", taskId);
       setError(`Task ${taskId} not found`);
       return;
     }
 
-    console.log('Found task:', { id: task.id, title: task.title, currentStatus: task.status, type: task.type });
+    // Prevent moving Epic tasks
+    if (task.type === "Epic") {
+      setError("Epic tasks cannot be moved between columns. They are read-only.");
+      return;
+    }
+
+    // Prevent moving tasks into Epic column
+    if (newStatus === "Epic") {
+      setError("Tasks cannot be moved into the Epic column. Only Epic-type tasks are displayed there.");
+      return;
+    }
+
+    console.log("Found task:", {
+      id: task.id,
+      title: task.title,
+      currentStatus: task.status,
+      type: task.type,
+    });
 
     // Optimistic update - immediately update the UI
     const originalTasks = [...tasks];
-    setTasks(prevTasks => 
-      prevTasks.map(t => 
-        Number(t.id) === taskId 
-          ? { ...t, status: newStatus as TaskStatus }
-          : t
-      )
+    setTasks((prevTasks) =>
+      prevTasks.map((t) =>
+        Number(t.id) === taskId ? { ...t, status: newStatus as TaskStatus } : t,
+      ),
     );
 
     try {
-      console.log(`Calling TaskService.updateTaskStatus(${projectId}, ${taskId}, "${newStatus}", "${templateType}")`);
-      
-      const updatedTask = await TaskService.updateTaskStatus(Number(projectId), taskId, newStatus as TaskStatus, templateType);
-      
+      console.log(
+        `Calling TaskService.updateTaskStatus(${projectId}, ${taskId}, "${newStatus}", "${templateType}")`,
+      );
+
+      const updatedTask = await TaskService.updateTaskStatus(
+        Number(projectId),
+        taskId,
+        newStatus as TaskStatus,
+        templateType,
+      );
+
       if (!updatedTask) {
-        throw new Error('No response from server');
+        throw new Error("No response from server");
       }
-      
-      console.log('Task status updated successfully:', updatedTask);
-      
+
+      console.log("Task status updated successfully:", updatedTask);
+
       // Clear any existing errors
       setError(null);
-      
     } catch (error) {
-      console.error('Failed to update task status:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error("Failed to update task status:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       setError(`Failed to update task status: ${errorMessage}`);
-      
+
       // Revert optimistic update on error
       setTasks(originalTasks);
     }
   };
 
-  const handleSave = async () => {
-    if (!newTaskData.title) return;
-
+  const handleSave = async (taskData: Partial<Task>) => {
     try {
+      const currentUserName = tokenManager.getUserEmail()?.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || "System";
+      const currentProjectName = projectName || `Project ${projectId}`;
+      
       if (editTask) {
-        await TaskService.updateTask(Number(projectId), Number(editTask.id), newTaskData, templateType);
+        const updatedTask = await TaskService.updateTask(
+          Number(projectId),
+          Number(editTask.id),
+          taskData,
+          templateType,
+        );
+        
+        // Send notification if assignee changed
+        if (updatedTask && taskData.assignee && editTask.assignee !== taskData.assignee) {
+          console.log("📧 Assignee changed, sending notification...");
+          try {
+            await NotificationService.sendTaskAssignmentNotification(
+              updatedTask,
+              currentProjectName,
+              taskData.assignee,
+              currentUserName
+            );
+          } catch (notifError) {
+            console.error("Failed to send notification:", notifError);
+          }
+        }
       } else {
-        await TaskService.createTask(Number(projectId), newTaskData as Omit<Task, 'id'>, templateType);
+        const createdTask = await TaskService.createTask(
+          Number(projectId),
+          taskData as Omit<Task, "id">,
+          templateType,
+        );
+        
+        // Send notification to assignee when task is created
+        if (createdTask && createdTask.assignee) {
+          console.log("📧 Sending notification to assignee:", createdTask.assignee);
+          try {
+            await NotificationService.sendTaskAssignmentNotification(
+              createdTask,
+              currentProjectName,
+              createdTask.assignee,
+              currentUserName
+            );
+            console.log("✅ Assignee notification sent successfully");
+          } catch (notifError) {
+            console.error("❌ Failed to send notification:", notifError);
+          }
+        }
+        
+        // Send notification to reporter if set
+        if (createdTask && createdTask.reporter) {
+          console.log("📧 Sending notification to reporter:", createdTask.reporter);
+          try {
+            await NotificationService.sendReporterNotification(
+              createdTask,
+              currentProjectName,
+              createdTask.reporter,
+              currentUserName
+            );
+            console.log("✅ Reporter notification sent successfully");
+          } catch (notifError) {
+            console.error("❌ Failed to send reporter notification:", notifError);
+          }
+        }
       }
 
       setOpenDialog(false);
       setEditTask(null);
-      resetForm();
       fetchTasks();
     } catch (error) {
-      console.error('Failed to save task:', error);
-      setError('Failed to save task.');
+      console.error("Failed to save task:", error);
+      setError("Failed to save task.");
     }
-  };
-
-  const resetForm = () => {
-    setNewTaskData({
-      title: '',
-      description: '',
-      priority: 'Medium',
-      status: 'Todo',
-      type: 'Task',
-      assignee: '',
-      reporter: '',
-      dueDate: '',
-      storyPoints: 3,
-      labels: [],
-      comments: [],
-    });
   };
 
   const getTaskIcon = (type: TaskType) => {
     switch (type) {
-      case 'Epic': return <EpicIcon sx={{ color: '#8b5a2b', fontSize: 18 }} />;
-      case 'Story': return <StoryIcon sx={{ color: '#4caf50', fontSize: 18 }} />;
-      case 'Bug': return <BugIcon sx={{ color: '#f44336', fontSize: 18 }} />;
-      case 'Task': return <TaskIcon sx={{ color: '#2196f3', fontSize: 18 }} />;
-      default: return <TaskIcon sx={{ color: '#2196f3', fontSize: 18 }} />;
+      case "Epic":
+        return <EpicIcon sx={{ color: "#8b5a2b", fontSize: 18 }} />;
+      case "Story":
+        return <StoryIcon sx={{ color: "#4caf50", fontSize: 18 }} />;
+      case "Bug":
+        return <BugIcon sx={{ color: "#f44336", fontSize: 18 }} />;
+      case "Task":
+        return <TaskIcon sx={{ color: "#2196f3", fontSize: 18 }} />;
+      case "Issue":
+        return <IssueIcon sx={{ color: "#ff9800", fontSize: 18 }} />;
+      case "Approval":
+        return <ApprovalIcon sx={{ color: "#9c27b0", fontSize: 18 }} />;
+      case "Other":
+        return <OtherIcon sx={{ color: "#607d8b", fontSize: 18 }} />;
+      default:
+        return <TaskIcon sx={{ color: "#2196f3", fontSize: 18 }} />;
     }
   };
 
   const getPriorityColor = (priority: TaskPriority) => {
     switch (priority) {
-      case 'Highest': return '#d32f2f';
-      case 'High': return '#f57c00';
-      case 'Medium': return '#1976d2';
-      case 'Low': return '#388e3c';
-      case 'Lowest': return '#7b1fa2';
-      default: return '#1976d2';
+      case "Highest":
+        return "#d32f2f";
+      case "High":
+        return "#f57c00";
+      case "Medium":
+        return "#1976d2";
+      case "Low":
+        return "#388e3c";
+      case "Lowest":
+        return "#7b1fa2";
+      default:
+        return "#1976d2";
     }
   };
 
   const getColumnColor = (status: TaskStatus) => {
     switch (status) {
-      case 'Todo': return { bg: '#e3f2fd', border: '#2196f3', text: '#1565c0' };
-      case 'In Progress': return { bg: '#fff3e0', border: '#ff9800', text: '#e65100' };
-      case 'Done': return { bg: '#e8f5e8', border: '#4caf50', text: '#2e7d32' };
-      default: return { bg: '#f5f5f5', border: '#9e9e9e', text: '#424242' };
+      case "Todo":
+        return { bg: "#e3f2fd", border: "#2196f3", text: "#1565c0" };
+      case "In Progress":
+        return { bg: "#fff3e0", border: "#ff9800", text: "#e65100" };
+      case "Done":
+        return { bg: "#e8f5e8", border: "#4caf50", text: "#2e7d32" };
+      default:
+        return { bg: "#f5f5f5", border: "#9e9e9e", text: "#424242" };
     }
   };
 
   const getTasksByStatus = (status: TaskStatus) => {
-    return tasks.filter(task => {
+    return tasks.filter((task) => {
       const matchesStatus = task.status === status;
-      const matchesSearch = 
+      const matchesSearch =
         task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.assignee?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      return matchesStatus && matchesSearch;
+
+      // Exclude Epic tasks from regular columns
+      const isNotEpic = task.type !== "Epic";
+
+      return matchesStatus && matchesSearch && isNotEpic;
     });
   };
 
   const renderTaskCard = (task: Task, index: number) => (
-    <Draggable key={`task-${task.id}`} draggableId={`task-${task.id}`} index={index}>
+    <Draggable
+      key={`task-${task.id}`}
+      draggableId={`task-${task.id}`}
+      index={index}
+    >
       {(provided, snapshot) => (
         <Card
           ref={provided.innerRef}
@@ -247,32 +339,46 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
           sx={{
             mb: 2,
             borderRadius: 2,
-            border: '1px solid',
-            borderColor: snapshot.isDragging ? 'primary.main' : 'divider',
-            transition: 'all 0.2s ease-in-out',
-            transform: snapshot.isDragging ? 'rotate(3deg)' : 'none',
-            cursor: 'grab',
-            '&:hover': {
-              transform: snapshot.isDragging ? 'rotate(3deg)' : 'translateY(-1px)',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-              borderColor: 'primary.main',
+            border: "1px solid",
+            borderColor: snapshot.isDragging ? "primary.main" : "divider",
+            transition: "all 0.2s ease-in-out",
+            transform: snapshot.isDragging ? "rotate(3deg)" : "none",
+            cursor: "grab",
+            "&:hover": {
+              transform: snapshot.isDragging
+                ? "rotate(3deg)"
+                : "translateY(-1px)",
+              boxShadow: "0 8px 25px rgba(0,0,0,0.15)",
+              borderColor: "primary.main",
             },
-            '&:active': {
-              cursor: 'grabbing',
+            "&:active": {
+              cursor: "grabbing",
             },
-            background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(250,252,255,1) 100%)',
+            background:
+              "linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(250,252,255,1) 100%)",
           }}
         >
-          <CardContent sx={{ p: 2, pb: '16px !important' }}>
+          <CardContent sx={{ p: 2, pb: "16px !important" }}>
             {/* Header with type and priority */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 1,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 {getTaskIcon(task.type)}
-                <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  fontWeight={500}
+                >
                   {task.type}
                 </Typography>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Chip
                   icon={<FlagIcon sx={{ fontSize: 12 }} />}
                   label={task.priority}
@@ -285,24 +391,11 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
                     border: `1px solid ${getPriorityColor(task.priority)}50`,
                   }}
                 />
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditTask(task);
-                    setNewTaskData({
-                      title: task.title,
-                      description: task.description,
-                      priority: task.priority,
-                      status: task.status,
-                      type: task.type,
-                      assignee: task.assignee,
-                      reporter: task.reporter,
-                      dueDate: task.dueDate,
-                      storyPoints: task.storyPoints,
-                      labels: task.labels,
-                      comments: task.comments,
-                    });
                     setOpenDialog(true);
                   }}
                 >
@@ -312,21 +405,25 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
             </Box>
 
             {/* Title */}
-            <Typography variant="body1" fontWeight={600} sx={{ mb: 1, lineHeight: 1.3 }}>
+            <Typography
+              variant="body1"
+              fontWeight={600}
+              sx={{ mb: 1, lineHeight: 1.3 }}
+            >
               {task.title}
             </Typography>
 
             {/* Description */}
             {task.description && (
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
-                sx={{ 
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
                   mb: 2,
-                  display: '-webkit-box',
+                  display: "-webkit-box",
                   WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
                 }}
               >
                 {task.description}
@@ -334,8 +431,14 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
             )}
 
             {/* Footer with assignee, due date, and story points */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 {task.assignee ? (
                   <Tooltip title={`Assigned to ${task.assignee}`}>
                     <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
@@ -344,23 +447,32 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
                   </Tooltip>
                 ) : (
                   <Tooltip title="Unassigned">
-                    <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: 'grey.300' }}>
+                    <Avatar
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        fontSize: 12,
+                        bgcolor: "grey.300",
+                      }}
+                    >
                       <PersonIcon sx={{ fontSize: 14 }} />
                     </Avatar>
                   </Tooltip>
                 )}
-                
+
                 {task.dueDate && (
-                  <Tooltip title={`Due: ${new Date(task.dueDate).toLocaleDateString()}`}>
+                  <Tooltip
+                    title={`Due: ${new Date(task.dueDate).toLocaleDateString()}`}
+                  >
                     <Chip
                       icon={<CalendarIcon sx={{ fontSize: 12 }} />}
                       label={new Date(task.dueDate).toLocaleDateString()}
                       size="small"
                       variant="outlined"
-                      sx={{ 
-                        height: 20, 
+                      sx={{
+                        height: 20,
                         fontSize: 10,
-                        '& .MuiChip-icon': { marginLeft: '4px' }
+                        "& .MuiChip-icon": { marginLeft: "4px" },
                       }}
                     />
                   </Tooltip>
@@ -376,10 +488,10 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
                     minWidth: 28,
                     fontSize: 10,
                     fontWeight: 600,
-                    bgcolor: 'primary.50',
-                    color: 'primary.main',
-                    border: '1px solid',
-                    borderColor: 'primary.200',
+                    bgcolor: "primary.50",
+                    color: "primary.main",
+                    border: "1px solid",
+                    borderColor: "primary.200",
                   }}
                 />
               )}
@@ -390,18 +502,228 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
     </Draggable>
   );
 
-  const renderColumn = (status: TaskStatus) => {
-    const columnTasks = getTasksByStatus(status);
-    const columnColor = getColumnColor(status);
-    
+  // Render Epic Column (Non-Movable)
+  const renderEpicColumn = () => {
+    const epicTasks = tasks.filter((task) => task.type === "Epic");
+    const columnColor = { 
+      bg: "#fef3e7", 
+      border: "#8b5a2b", 
+      text: "#5d4037" 
+    };
+
     return (
-      <Box key={status} sx={{ flex: 1, minWidth: 300 }}>
+      <Box key="Epic" sx={{ flex: 1, minWidth: 350 }}>
         <Paper
           elevation={1}
           sx={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            bgcolor: columnColor.bg,
+            border: `2px solid ${columnColor.border}`,
+            borderRadius: 2,
+            opacity: 0.95,
+          }}
+        >
+          {/* Column Header */}
+          <Box
+            sx={{
+              p: 2,
+              minHeight: 88,
+              borderBottom: `2px solid ${columnColor.border}`,
+              bgcolor: `${columnColor.border}20`,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <EpicIcon sx={{ color: columnColor.border }} />
+                <Typography
+                  variant="h6"
+                  fontWeight={600}
+                  sx={{ color: columnColor.text }}
+                >
+                  Epics (Read-Only)
+                </Typography>
+              </Box>
+              <Badge
+                badgeContent={epicTasks.length}
+                sx={{
+                  "& .MuiBadge-badge": {
+                    bgcolor: columnColor.border,
+                    color: "white",
+                  },
+                }}
+              >
+                <Box />
+              </Badge>
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+              Epic tasks cannot be moved or edited here
+            </Typography>
+          </Box>
+
+          {/* Non-Droppable Area */}
+          <Box
+            sx={{
+              flex: 1,
+              p: 2,
+              minHeight: 200,
+              overflowY: "auto",
+            }}
+          >
+            {epicTasks.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                  color: "text.secondary",
+                }}
+              >
+                <Typography variant="body2">No Epics</Typography>
+              </Box>
+            ) : (
+              epicTasks.map((task) => (
+                <Card
+                  key={task.id}
+                  sx={{
+                    mb: 2,
+                    cursor: "not-allowed",
+                    opacity: 0.85,
+                    border: `1px solid ${columnColor.border}40`,
+                    "&:hover": {
+                      boxShadow: 2,
+                      opacity: 1,
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                    {/* Task Header */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                          {getTaskIcon(task.type)}
+                          <Typography variant="caption" color="text.secondary">
+                            {task.type}
+                          </Typography>
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          sx={{ color: "text.primary", mb: 1 }}
+                        >
+                          {task.title}
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setEditTask(task);
+                          setOpenDialog(true);
+                        }}
+                        sx={{ ml: 1 }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+
+                    {/* Task Details */}
+                    {task.description && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          mb: 1,
+                        }}
+                      >
+                        {task.description}
+                      </Typography>
+                    )}
+
+                    {/* Task Footer */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 1,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                        <Chip
+                          label={task.status}
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: 10,
+                            bgcolor: "grey.200",
+                            color: "text.secondary",
+                          }}
+                        />
+                        <Chip
+                          label={task.priority}
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: 10,
+                            bgcolor: getPriorityColor(task.priority),
+                            color: "white",
+                          }}
+                        />
+                      </Box>
+
+                      {task.assignee && (
+                        <Tooltip title={task.assignee}>
+                          <Avatar sx={{ width: 24, height: 24, fontSize: 11 }}>
+                            {task.assignee[0]?.toUpperCase()}
+                          </Avatar>
+                        </Tooltip>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </Box>
+        </Paper>
+      </Box>
+    );
+  };
+
+  const renderColumn = (status: TaskStatus) => {
+    const columnTasks = getTasksByStatus(status);
+    const columnColor = getColumnColor(status);
+
+    return (
+      <Box key={status} sx={{ flex: 1, minWidth: 350 }}>
+        <Paper
+          elevation={1}
+          sx={{
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
             bgcolor: columnColor.bg,
             border: `2px solid ${columnColor.border}20`,
             borderRadius: 2,
@@ -411,47 +733,61 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
           <Box
             sx={{
               p: 2,
+              minHeight: 88,
               borderBottom: `2px solid ${columnColor.border}30`,
               bgcolor: `${columnColor.border}10`,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography 
-                variant="h6" 
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography
+                variant="h6"
                 fontWeight={600}
                 sx={{ color: columnColor.text }}
               >
                 {status}
               </Typography>
-              <Badge 
-                badgeContent={columnTasks.length} 
+              <Badge
+                badgeContent={columnTasks.length}
                 color="primary"
                 sx={{
-                  '& .MuiBadge-badge': {
+                  "& .MuiBadge-badge": {
                     bgcolor: columnColor.border,
-                    color: 'white',
-                  }
+                    color: "white",
+                  },
                 }}
               >
                 <Box />
               </Badge>
             </Box>
-            
-            {status === 'Done' && columnTasks.length > 0 && (
+
+            {status === "Done" && columnTasks.length > 0 && (
               <Box sx={{ mt: 1 }}>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={100} 
-                  sx={{ 
-                    height: 4, 
+                <LinearProgress
+                  variant="determinate"
+                  value={100}
+                  sx={{
+                    height: 4,
                     borderRadius: 2,
                     bgcolor: `${columnColor.border}30`,
-                    '& .MuiLinearProgress-bar': {
+                    "& .MuiLinearProgress-bar": {
                       bgcolor: columnColor.border,
-                    }
-                  }} 
+                    },
+                  }}
                 />
-                <Typography variant="caption" color={columnColor.text} sx={{ mt: 0.5, display: 'block' }}>
+                <Typography
+                  variant="caption"
+                  color={columnColor.text}
+                  sx={{ mt: 0.5, display: "block" }}
+                >
                   {columnTasks.length} completed
                 </Typography>
               </Box>
@@ -468,29 +804,30 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
                   flex: 1,
                   p: 2,
                   minHeight: 200,
-                  bgcolor: snapshot.isDraggingOver ? `${columnColor.border}20` : 'transparent',
-                  transition: 'background-color 0.2s ease',
-                  borderRadius: '0 0 8px 8px',
+                  bgcolor: snapshot.isDraggingOver
+                    ? `${columnColor.border}20`
+                    : "transparent",
+                  transition: "background-color 0.2s ease",
+                  borderRadius: "0 0 8px 8px",
                 }}
               >
                 {columnTasks.map((task, index) => renderTaskCard(task, index))}
                 {provided.placeholder}
-                
+
                 {/* Add Task Button */}
                 <Button
                   fullWidth
                   variant="outlined"
                   startIcon={<AddIcon />}
                   onClick={() => {
-                    setNewTaskData({ ...newTaskData, status });
                     setOpenDialog(true);
                   }}
                   sx={{
                     mt: 2,
-                    borderStyle: 'dashed',
+                    borderStyle: "dashed",
                     borderColor: `${columnColor.border}50`,
                     color: columnColor.text,
-                    '&:hover': {
+                    "&:hover": {
                       borderColor: columnColor.border,
                       bgcolor: `${columnColor.border}10`,
                     },
@@ -508,7 +845,14 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
+        }}
+      >
         <CircularProgress />
         <Typography sx={{ ml: 2 }}>Loading board...</Typography>
       </Box>
@@ -517,23 +861,30 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#fafbfc' }}>
+      <Box
+        sx={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "#fafbfc",
+        }}
+      >
         {/* Header */}
         <Box
           sx={{
             px: 3,
             py: 2,
             borderBottom: 1,
-            borderColor: 'divider',
-            bgcolor: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            borderColor: "divider",
+            bgcolor: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <BoardIcon sx={{ color: 'primary.main' }} />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <BoardIcon sx={{ color: "primary.main" }} />
             <Typography variant="h5" fontWeight={600}>
               Task Board
             </Typography>
@@ -550,9 +901,9 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
             sx={{
               borderRadius: 3,
               px: 3,
-              textTransform: 'none',
+              textTransform: "none",
               fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
             }}
           >
             Create Task
@@ -566,7 +917,14 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
         )}
 
         {/* Search and Filters */}
-        <Box sx={{ p: 3, bgcolor: 'white', borderBottom: 1, borderColor: 'divider' }}>
+        <Box
+          sx={{
+            p: 3,
+            bgcolor: "white",
+            borderBottom: 1,
+            borderColor: "divider",
+          }}
+        >
           <TextField
             fullWidth
             size="small"
@@ -578,130 +936,29 @@ const Board: React.FC<BoardProps> = ({ projectId, projectName, templateType = 't
         </Box>
 
         {/* Board Columns */}
-        <Box sx={{ flex: 1, display: 'flex', gap: 3, p: 3, overflow: 'auto' }}>
-          {statusColumns.map(status => renderColumn(status))}
+        <Box sx={{ flex: 1, display: "flex", gap: 3, p: 3, overflow: "auto" }}>
+          {/* Epic Column (Non-Movable) */}
+          {renderEpicColumn()}
+          
+          {/* Regular Status Columns */}
+          {statusColumns.map((status) => renderColumn(status))}
         </Box>
 
-        {/* Create/Edit Task Dialog */}
-        <Dialog 
-          open={openDialog} 
-          onClose={() => setOpenDialog(false)} 
-          fullWidth 
-          maxWidth="sm"
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-            }
+        {/* Task Form Dialog */}
+        <TaskFormDialog
+          open={openDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            setEditTask(null);
           }}
-        >
-          <DialogTitle sx={{ pb: 1 }}>
-            {editTask ? 'Edit Task' : 'Create New Task'}
-          </DialogTitle>
-          
-          <DialogContent sx={{ pt: 2 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField
-                label="Title"
-                fullWidth
-                value={newTaskData.title}
-                onChange={(e) => setNewTaskData({ ...newTaskData, title: e.target.value })}
-              />
-              
-              <TextField
-                label="Description"
-                fullWidth
-                multiline
-                rows={3}
-                value={newTaskData.description}
-                onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
-              />
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Type</InputLabel>
-                  <Select
-                    value={newTaskData.type}
-                    label="Type"
-                    onChange={(e) => setNewTaskData({ ...newTaskData, type: e.target.value as TaskType })}
-                  >
-                    {typeOptions.map(type => (
-                      <MenuItem key={type} value={type}>{type}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
-                <FormControl fullWidth>
-                  <InputLabel>Priority</InputLabel>
-                  <Select
-                    value={newTaskData.priority}
-                    label="Priority"
-                    onChange={(e) => setNewTaskData({ ...newTaskData, priority: e.target.value as TaskPriority })}
-                  >
-                    {priorityOptions.map(priority => (
-                      <MenuItem key={priority} value={priority}>{priority}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={newTaskData.status}
-                    label="Status"
-                    onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value as TaskStatus })}
-                  >
-                    {statusColumns.map(status => (
-                      <MenuItem key={status} value={status}>{status}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
-                <TextField
-                  label="Story Points"
-                  type="number"
-                  fullWidth
-                  value={newTaskData.storyPoints}
-                  onChange={(e) => setNewTaskData({ ...newTaskData, storyPoints: Number(e.target.value) })}
-                />
-              </Box>
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="Assignee"
-                  fullWidth
-                  value={newTaskData.assignee}
-                  onChange={(e) => setNewTaskData({ ...newTaskData, assignee: e.target.value })}
-                />
-                
-                <TextField
-                  label="Reporter"
-                  fullWidth
-                  value={newTaskData.reporter}
-                  onChange={(e) => setNewTaskData({ ...newTaskData, reporter: e.target.value })}
-                />
-              </Box>
-              
-              <TextField
-                label="Due Date"
-                type="date"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={newTaskData.dueDate}
-                onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value })}
-              />
-            </Box>
-          </DialogContent>
-          
-          <DialogActions sx={{ p: 3, pt: 1 }}>
-            <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button variant="contained" onClick={handleSave}>
-              {editTask ? 'Update' : 'Create'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onSave={handleSave}
+          editTask={editTask}
+          projectId={Number(projectId)}
+          templateType={templateType || "kanban"}
+          defaultStatus="Todo"
+          title="Board Task"
+          subtitle={`Add or edit tasks for your ${projectName || "project"} board`}
+        />
       </Box>
     </DragDropContext>
   );

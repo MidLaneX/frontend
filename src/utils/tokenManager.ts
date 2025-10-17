@@ -1,5 +1,5 @@
-import { authApi } from '../api/endpoints/auth';
-import type { AuthResponse, RefreshTokenResponse } from '../api/endpoints/auth';
+import { authApi } from "../api/endpoints/auth";
+import type { AuthResponse, RefreshTokenResponse } from "../api/endpoints/auth";
 
 interface TokenData {
   accessToken: string;
@@ -12,7 +12,7 @@ interface TokenData {
   expiresAt: number;
 }
 
-const TOKEN_STORAGE_KEY = 'auth_tokens';
+const TOKEN_STORAGE_KEY = "auth_tokens";
 const REFRESH_THRESHOLD = 10;
 
 const getDeviceInfo = (): string => {
@@ -44,12 +44,15 @@ export class TokenManager {
         this.tokenData = JSON.parse(stored);
       }
     } catch (error) {
-      console.error('Error loading tokens:', error);
+      console.error("Error loading tokens:", error);
       this.clearTokens();
     }
   }
 
-  private saveTokens(data: AuthResponse | RefreshTokenResponse, userId?: number): void {
+  private saveTokens(
+    data: AuthResponse | RefreshTokenResponse,
+    userId?: number,
+  ): void {
     const tokenData: TokenData = {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
@@ -58,9 +61,9 @@ export class TokenManager {
       userEmail: data.user_email,
       role: data.role,
       userId: userId || data.user_id || this.tokenData?.userId, // Extract user_id from response
-      expiresAt: Date.now() + (data.expires_in * 1000),
+      expiresAt: Date.now() + data.expires_in * 1000,
     };
-    
+
     this.tokenData = tokenData;
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenData));
   }
@@ -68,13 +71,13 @@ export class TokenManager {
   public clearTokens(): void {
     this.tokenData = null;
     localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem('authToken');
+    localStorage.removeItem("authToken");
   }
 
   public getAccessToken(): string | null {
     return this.tokenData?.accessToken || null;
   }
- 
+
   public getRefreshToken(): string | null {
     return this.tokenData?.refreshToken || null;
   }
@@ -104,12 +107,12 @@ export class TokenManager {
 
   public isTokenExpired(): boolean {
     if (!this.tokenData) return true;
-    
+
     const now = Date.now();
     const expiresAt = this.tokenData.expiresAt;
     const threshold = REFRESH_THRESHOLD * 1000;
-    
-    return now >= (expiresAt - threshold);
+
+    return now >= expiresAt - threshold;
   }
 
   public setTokens(data: AuthResponse, userId?: number): void {
@@ -133,7 +136,7 @@ export class TokenManager {
     }
 
     this.refreshPromise = this.performTokenRefresh(refreshToken);
-    
+
     try {
       await this.refreshPromise;
       return true;
@@ -173,9 +176,9 @@ export class TokenManager {
   }
 
   public migrateFromLegacyToken(): boolean {
-    const legacyToken = localStorage.getItem('authToken');
+    const legacyToken = localStorage.getItem("authToken");
     if (legacyToken && !this.hasTokens()) {
-      localStorage.removeItem('authToken');
+      localStorage.removeItem("authToken");
       return false;
     }
     return this.hasTokens();

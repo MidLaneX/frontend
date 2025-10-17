@@ -1,4 +1,4 @@
-import { apiClient } from '../api/client';
+import { apiClient } from "../api/client";
 
 // User profile types
 export interface UserProfile {
@@ -27,30 +27,32 @@ export interface UpdateUserProfileRequest {
 }
 
 export class UserService {
-  private static readonly BASE_PATH = '/auth/user';
+  private static readonly BASE_PATH = "/auth/user";
 
   /**
    * Get user profile by user ID
    */
   static async getUserProfile(userId: number): Promise<UserProfile> {
     try {
-      console.log('Fetching user profile for userId:', userId);
-      
-      const response = await apiClient.get(`${this.BASE_PATH}/profile/${userId}`);
-      
-      console.log('User profile response:', response.data);
+      console.log("Fetching user profile for userId:", userId);
+
+      const response = await apiClient.get(
+        `${this.BASE_PATH}/profile/${userId}`,
+      );
+
+      console.log("User profile response:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching user profile:', error);
-      
+      console.error("Error fetching user profile:", error);
+
       if (error.response?.status === 404) {
-        throw new Error('User profile not found');
+        throw new Error("User profile not found");
       } else if (error.response?.status === 403) {
-        throw new Error('Access denied to user profile');
+        throw new Error("Access denied to user profile");
       } else if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
       } else {
-        throw new Error('Failed to fetch user profile');
+        throw new Error("Failed to fetch user profile");
       }
     }
   }
@@ -58,27 +60,38 @@ export class UserService {
   /**
    * Update user profile
    */
-  static async updateUserProfile(userId: number, updateData: UpdateUserProfileRequest): Promise<UserProfile> {
+  static async updateUserProfile(
+    userId: number,
+    updateData: UpdateUserProfileRequest,
+  ): Promise<UserProfile> {
     try {
-      console.log('Updating user profile for userId:', userId, 'with data:', updateData);
-      
-      const response = await apiClient.put(`${this.BASE_PATH}/profile/${userId}`, updateData);
-      
-      console.log('Updated user profile response:', response.data);
+      console.log(
+        "Updating user profile for userId:",
+        userId,
+        "with data:",
+        updateData,
+      );
+
+      const response = await apiClient.put(
+        `${this.BASE_PATH}/profile/${userId}`,
+        updateData,
+      );
+
+      console.log("Updated user profile response:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Error updating user profile:', error);
-      
+      console.error("Error updating user profile:", error);
+
       if (error.response?.status === 404) {
-        throw new Error('User profile not found');
+        throw new Error("User profile not found");
       } else if (error.response?.status === 403) {
-        throw new Error('Access denied to update user profile');
+        throw new Error("Access denied to update user profile");
       } else if (error.response?.status === 400) {
-        throw new Error(error.response.data?.message || 'Invalid profile data');
+        throw new Error(error.response.data?.message || "Invalid profile data");
       } else if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
       } else {
-        throw new Error('Failed to update user profile');
+        throw new Error("Failed to update user profile");
       }
     }
   }

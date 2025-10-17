@@ -1,5 +1,5 @@
-import { createTheme } from '@mui/material/styles';
-import { COLORS } from '../constants/colors';
+import { createTheme } from "@mui/material/styles";
+import { COLORS } from "../constants/colors";
 
 export const theme = createTheme({
   palette: {
@@ -36,37 +36,38 @@ export const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif',
+    fontFamily:
+      '"Inter", "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif',
     h1: {
       fontWeight: 700,
-      fontSize: '2.5rem',
+      fontSize: "2.5rem",
     },
     h2: {
       fontWeight: 600,
-      fontSize: '2rem',
+      fontSize: "2rem",
     },
     h3: {
       fontWeight: 600,
-      fontSize: '1.75rem',
+      fontSize: "1.75rem",
     },
     h4: {
       fontWeight: 600,
-      fontSize: '1.5rem',
+      fontSize: "1.5rem",
     },
     h5: {
       fontWeight: 500,
-      fontSize: '1.25rem',
+      fontSize: "1.25rem",
     },
     h6: {
       fontWeight: 500,
-      fontSize: '1rem',
+      fontSize: "1rem",
     },
     body1: {
-      fontSize: '0.875rem',
+      fontSize: "0.875rem",
       lineHeight: 1.5,
     },
     body2: {
-      fontSize: '0.75rem',
+      fontSize: "0.75rem",
       lineHeight: 1.4,
     },
   },
@@ -74,10 +75,10 @@ export const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: 'none',
+          textTransform: "none",
           fontWeight: 500,
           borderRadius: 8,
-          padding: '8px 16px',
+          padding: "8px 16px",
         },
       },
     },
@@ -85,8 +86,8 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #DFE1E6',
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          border: "1px solid #DFE1E6",
         },
       },
     },
@@ -94,14 +95,14 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 6,
-          fontSize: '0.75rem',
+          fontSize: "0.75rem",
         },
       },
     },
     MuiTextField: {
       styleOverrides: {
         root: {
-          '& .MuiOutlinedInput-root': {
+          "& .MuiOutlinedInput-root": {
             borderRadius: 8,
           },
         },

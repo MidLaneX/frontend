@@ -31,6 +31,6 @@ export const isProduction = ENV.PROD;
 // Debug logger
 export const debugLog = (...args: unknown[]) => {
   if (ENV.ENABLE_DEBUG || isDevelopment) {
-    console.log('[DEBUG]', ...args);
+    console.log("[DEBUG]", ...args);
   }
 };

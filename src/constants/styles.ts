@@ -16,14 +16,14 @@ export const BORDER_RADIUS = {
   small: 1,
   medium: 2,
   large: 3,
-  round: '50%',
+  round: "50%",
 } as const;
 
 // Common shadow values
 export const SHADOWS = {
-  light: '0 1px 3px rgba(0,0,0,0.1)',
-  medium: '0 4px 6px rgba(0,0,0,0.1)',
-  heavy: '0 8px 25px rgba(0,0,0,0.15)',
+  light: "0 1px 3px rgba(0,0,0,0.1)",
+  medium: "0 4px 6px rgba(0,0,0,0.1)",
+  heavy: "0 8px 25px rgba(0,0,0,0.15)",
 } as const;
 
 // Z-index values
@@ -39,16 +39,16 @@ export const Z_INDEX = {
 export const LAYOUT = {
   navbar: {
     height: 68,
-    bgcolor: 'white',
-    borderBottom: '1px solid #e0e0e0',
+    bgcolor: "white",
+    borderBottom: "1px solid #e0e0e0",
   },
   sidebar: {
     width: 280,
-    bgcolor: '#f7f8f9',
+    bgcolor: "#f7f8f9",
   },
   content: {
     padding: 3,
-    bgcolor: '#fafbfc',
+    bgcolor: "#fafbfc",
   },
 } as const;
 
@@ -56,29 +56,29 @@ export const LAYOUT = {
 export const COMPONENT_STYLES = {
   button: {
     primary: {
-      bgcolor: '#0052CC',
-      '&:hover': { bgcolor: '#0747A6' },
-      textTransform: 'none',
+      bgcolor: "#0052CC",
+      "&:hover": { bgcolor: "#0747A6" },
+      textTransform: "none",
       borderRadius: BORDER_RADIUS.medium,
       fontWeight: 600,
     },
     secondary: {
-      bgcolor: 'transparent',
-      color: '#5E6C84',
-      '&:hover': { bgcolor: '#E6F3FF', color: '#0052CC' },
-      textTransform: 'none',
+      bgcolor: "transparent",
+      color: "#5E6C84",
+      "&:hover": { bgcolor: "#E6F3FF", color: "#0052CC" },
+      textTransform: "none",
       borderRadius: BORDER_RADIUS.medium,
     },
   },
   card: {
     default: {
-      bgcolor: 'white',
+      bgcolor: "white",
       borderRadius: BORDER_RADIUS.medium,
       boxShadow: SHADOWS.light,
       p: SPACING.md,
     },
     elevated: {
-      bgcolor: 'white',
+      bgcolor: "white",
       borderRadius: BORDER_RADIUS.medium,
       boxShadow: SHADOWS.medium,
       p: SPACING.md,
@@ -87,7 +87,7 @@ export const COMPONENT_STYLES = {
   input: {
     default: {
       borderRadius: BORDER_RADIUS.medium,
-      '& .MuiOutlinedInput-root': {
+      "& .MuiOutlinedInput-root": {
         borderRadius: BORDER_RADIUS.medium,
       },
     },
@@ -96,10 +96,10 @@ export const COMPONENT_STYLES = {
 
 // Animation constants
 export const ANIMATIONS = {
-  fast: '150ms',
-  medium: '300ms',
-  slow: '500ms',
-  easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  fast: "150ms",
+  medium: "300ms",
+  slow: "500ms",
+  easing: "cubic-bezier(0.4, 0, 0.2, 1)",
 } as const;
 
 // Breakpoints for responsive design

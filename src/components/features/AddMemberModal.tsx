@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -15,9 +15,12 @@ import {
   Alert,
   CircularProgress,
   Chip,
-} from '@mui/material';
-import { Person as PersonIcon } from '@mui/icons-material';
-import type { AddMemberRequest, MemberRole } from '../../types/api/organizations';
+} from "@mui/material";
+import { Person as PersonIcon } from "@mui/icons-material";
+import type {
+  AddMemberRequest,
+  MemberRole,
+} from "../../types/api/organizations";
 
 interface AddMemberModalProps {
   open: boolean;
@@ -35,17 +38,17 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   loading = false,
 }) => {
   const [formData, setFormData] = useState<AddMemberRequest>({
-    userEmail: '',
-    role: 'member',
+    userEmail: "",
+    role: "member",
   });
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    if (!formData.userEmail || !formData.userEmail.includes('@')) {
-      setError('Valid email address is required');
+    if (!formData.userEmail || !formData.userEmail.includes("@")) {
+      setError("Valid email address is required");
       return;
     }
 
@@ -53,37 +56,37 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       await onSubmit(formData);
       handleClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to add member');
+      setError(err.response?.data?.message || "Failed to add member");
     }
   };
 
   const handleClose = () => {
     setFormData({
-      userEmail: '',
-      role: 'member',
+      userEmail: "",
+      role: "member",
     });
-    setError('');
+    setError("");
     onClose();
   };
 
   const getRoleDescription = (role: MemberRole): string => {
     const descriptions = {
-      viewer: 'Can view projects and organization details',
-      member: 'Can participate in projects and teams',
-      admin: 'Can manage members, teams, and organization settings',
-      owner: 'Full control over the organization',
+      viewer: "Can view projects and organization details",
+      member: "Can participate in projects and teams",
+      admin: "Can manage members, teams, and organization settings",
+      owner: "Full control over the organization",
     };
-    return descriptions[role] || '';
+    return descriptions[role] || "";
   };
 
   const getRoleColor = (role: MemberRole): string => {
     const colors = {
-      viewer: '#5E6C84',
-      member: '#36B37E',
-      admin: '#FF8B00',
-      owner: '#FF5630',
+      viewer: "#5E6C84",
+      member: "#36B37E",
+      admin: "#FF8B00",
+      owner: "#FF5630",
     };
-    return colors[role] || '#5E6C84';
+    return colors[role] || "#5E6C84";
   };
 
   return (
@@ -115,18 +118,22 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {/* User Email Input */}
             <TextField
               fullWidth
               label="User Email"
               type="email"
-              value={formData.userEmail || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, userEmail: e.target.value }))}
+              value={formData.userEmail || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, userEmail: e.target.value }))
+              }
               required
               placeholder="Enter user email address"
               InputProps={{
-                startAdornment: <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                startAdornment: (
+                  <PersonIcon sx={{ mr: 1, color: "text.secondary" }} />
+                ),
               }}
               helperText="Enter the email address of the user to add to this organization"
             />
@@ -137,35 +144,52 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 <InputLabel>Role</InputLabel>
                 <Select
                   value={formData.role}
-                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as MemberRole }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      role: e.target.value as MemberRole,
+                    }))
+                  }
                   label="Role"
                 >
                   <MenuItem value="viewer">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip 
-                        label="Viewer" 
-                        size="small" 
-                        sx={{ bgcolor: getRoleColor('viewer'), color: 'white', minWidth: 60 }} 
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Chip
+                        label="Viewer"
+                        size="small"
+                        sx={{
+                          bgcolor: getRoleColor("viewer"),
+                          color: "white",
+                          minWidth: 60,
+                        }}
                       />
                       <Typography variant="body2">View only access</Typography>
                     </Box>
                   </MenuItem>
                   <MenuItem value="member">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip 
-                        label="Member" 
-                        size="small" 
-                        sx={{ bgcolor: getRoleColor('member'), color: 'white', minWidth: 60 }} 
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Chip
+                        label="Member"
+                        size="small"
+                        sx={{
+                          bgcolor: getRoleColor("member"),
+                          color: "white",
+                          minWidth: 60,
+                        }}
                       />
                       <Typography variant="body2">Standard access</Typography>
                     </Box>
                   </MenuItem>
                   <MenuItem value="admin">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip 
-                        label="Admin" 
-                        size="small" 
-                        sx={{ bgcolor: getRoleColor('admin'), color: 'white', minWidth: 60 }} 
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Chip
+                        label="Admin"
+                        size="small"
+                        sx={{
+                          bgcolor: getRoleColor("admin"),
+                          color: "white",
+                          minWidth: 60,
+                        }}
                       />
                       <Typography variant="body2">Management access</Typography>
                     </Box>
@@ -174,19 +198,19 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
               </FormControl>
 
               {/* Role Description */}
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, ml: 1 }}>
-                {getRoleDescription(formData.role || 'member')}
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 1, ml: 1 }}
+              >
+                {getRoleDescription(formData.role || "member")}
               </Typography>
             </Box>
           </Box>
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button
-            onClick={handleClose}
-            variant="outlined"
-            disabled={loading}
-          >
+          <Button onClick={handleClose} variant="outlined" disabled={loading}>
             Cancel
           </Button>
           <Button

@@ -6,7 +6,11 @@ import MinimizeIcon from '@mui/icons-material/Minimize';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { ENV } from '@/config/env';
 
-const MESSAGING_APP_URL = ENV.MESSAGING_APP_URL;
+const MESSAGING_APP_URL = ENV.VITE_MESSAGING_APP_URL;
+
+// Debug logging
+console.log('ChatSidebar - Messaging App URL:', MESSAGING_APP_URL);
+console.log('ChatSidebar - ENV object:', ENV);
 
 // Clean modern styling constants
 const STYLES = {
@@ -101,24 +105,90 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ defaultOpen = false }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
 
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
+
   // Single iframe element that persists across mode changes to preserve conversation state
   const iframeElement = React.useMemo(
     () => (
-      <iframe
-        src={MESSAGING_APP_URL}
-        title="Messaging App"
-        style={{
-          width: "100%",
-          height: "100%",
-          border: "none",
-          borderRadius: isDraggableMode ? "0 0 16px 16px" : "0 0 0 12px",
-        }}
-        allow="camera; microphone; clipboard-read; clipboard-write"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
-      />
+      <>
+        {!iframeLoaded && !iframeError && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              bgcolor: '#f8fafc',
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Loading messages...
+            </Typography>
+          </Box>
+        )}
+        
+        {iframeError && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              bgcolor: '#f8fafc',
+              p: 3,
+            }}
+          >
+            <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+              Failed to load messaging app
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              URL: {MESSAGING_APP_URL}
+            </Typography>
+            <IconButton
+              onClick={() => {
+                setIframeError(false);
+                setIframeLoaded(false);
+              }}
+              sx={{ 
+                bgcolor: 'primary.main',
+                color: 'white',
+                '&:hover': { bgcolor: 'primary.dark' }
+              }}
+            >
+              <ChatIcon />
+            </IconButton>
+          </Box>
+        )}
+        
+        <iframe
+          src={MESSAGING_APP_URL}
+          title="Messaging App"
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+            borderRadius: isDraggableMode ? "0 0 16px 16px" : "0 0 0 12px",
+            display: iframeLoaded ? 'block' : 'none',
+          }}
+          allow="camera; microphone; clipboard-read; clipboard-write"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+          onLoad={() => {
+            console.log('ChatSidebar - Iframe loaded successfully');
+            setIframeLoaded(true);
+            setIframeError(false);
+          }}
+          onError={() => {
+            console.error('ChatSidebar - Iframe failed to load');
+            setIframeError(true);
+            setIframeLoaded(false);
+          }}
+        />
+      </>
     ),
-    [isDraggableMode]
-  ); // Only recreate if draggable mode changes styling
+    [isDraggableMode, iframeLoaded, iframeError, MESSAGING_APP_URL]
+  );
 
   // Drag handlers (only for draggable mode)
   const handleMouseDown = (e: React.MouseEvent) => {

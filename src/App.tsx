@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import Box from '@mui/material/Box'
 import { Navbar, Sidebar, ChatSidebar } from "@/components/layout";
@@ -24,7 +24,7 @@ import "./App.css";
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   // Initialize token refresh monitoring
   useTokenRefresh();
 
@@ -32,10 +32,10 @@ function AppContent() {
     return (
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
         }}
       >
         Loading...
@@ -59,6 +59,7 @@ function AppContent() {
       <Navbar />
       <Sidebar />
       <ChatSidebar />
+     
       <Box
         component="main"
         sx={{
@@ -171,4 +172,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
