@@ -33,12 +33,13 @@ export const projectsApi = {
     );
   },
 
-  //  Create new project (backend expects ?template= param)
-  createProject: (data: CreateProjectDTO, template: string) => {
+  //  Create new project (backend expects ?template= param and userId)
+  createProject: (data: CreateProjectDTO, template: string, userId: number) => {
     console.log("API: Creating project with data:", data);
     console.log("API: Template parameter:", template);
+    console.log("API: User ID:", userId);
     return projectsApiClient.post<ProjectDTO>(
-      `/projects?template=${template}`,
+      `/projects?template=${template}&userId=${userId}`,
       data,
     );
   },
@@ -67,17 +68,19 @@ export const projectsApi = {
 
   // Assign team to project
   assignTeamToProject: (
+    userId: number,
     projectId: number,
     templateType: string,
     teamId: number,
   ) => {
     console.log("API: Assigning team to project:", {
+      userId,
       projectId,
       templateType,
       teamId,
     });
     return projectsApiClient.post<UserProjectDTO[]>(
-      `/projects/${projectId}/assignTeamToProject?templateType=${templateType}&teamId=${teamId}`,
+      `/projects/${projectId}/assignTeamToProject?templateType=${templateType}&teamId=${teamId}&userId=${userId}`,
     );
   },
 

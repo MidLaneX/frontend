@@ -53,43 +53,49 @@ export class ProjectService {
   static async createProject(
     createData: CreateProjectDTO,
     templateType: string,
+    userId: number,
   ): Promise<Project> {
-    // Call new API route
-    const response = await projectsApi.createProject(createData, templateType);
-    const dto = response.data;
-    return {
-      id: dto.id,
-      name: dto.name,
-      templateType: dto.templateType,
-      features: dto.features || [],
-      key: dto.name.toUpperCase().replace(/\s+/g, "_"),
-      timeline: {
-        start: dto.createdAt || new Date().toISOString().split("T")[0],
-        end:
-          dto.updatedAt ||
-          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
-      },
-      type: dto.type,
-      tasks: [],
-      orgId: dto.orgId,
-      createdAt: dto.createdAt,
-      updatedAt: dto.updatedAt,
-      createdBy: dto.createdBy,
-    };
+    try {
+      // Call new API route
+      const response = await projectsApi.createProject(createData, templateType, userId);
+      const dto = response.data;
+
+      return {
+        id: dto.id,
+        name: dto.name,
+        templateType: dto.templateType,
+        features: dto.features || [],
+        key: dto.name?.toUpperCase().replace(/\s+/g, "_") || "",
+        timeline: {
+          start: dto.createdAt || new Date().toISOString().split("T")[0],
+          end:
+            dto.updatedAt ||
+            new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0],
+        },
+        type: dto.type,
+        tasks: [],
+        orgId: dto.orgId,
+        createdAt: dto.createdAt,
+        updatedAt: dto.updatedAt,
+        createdBy: dto.createdBy,
+      };
+    } catch (error: any) {
+      console.error("Failed to create project:", error);
+
+      // Check if it's an admin/permission error
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        throw new Error(
+          "Only administrators can create projects in their own organization. Please contact your admin.",
+        );
+      }
+
+      throw new Error(error.response?.data?.message || "Only administrators can create projects");
+    }
   }
 
-  /**
-   * Get all projects
-   */
-  // static getAllProjects(): Project[] {
-  //   return this.projects;
-  // }
-
-  /**
-   * Get project by ID
-   */
+ 
   static async getProjectById(
     id: number,
     template: string,
@@ -213,7 +219,7 @@ export class ProjectService {
       }
 
       throw new Error(
-        error.response?.data?.message || "Failed to update project",
+        error.response?.data?.message || "Only Admin can update project",
       );
     }
   }
@@ -247,7 +253,7 @@ export class ProjectService {
       }
 
       throw new Error(
-        error.response?.data?.message || "Failed to delete project",
+        error.response?.data?.message || "Only Admin can delete project",
       );
     }
   }
@@ -275,12 +281,14 @@ export class ProjectService {
    * Assign team to project
    */
   static async assignTeamToProject(
+    userId: number,
     projectId: number,
     templateType: string,
     teamId: number,
   ): Promise<UserProjectDTO[]> {
     try {
       console.log("ProjectService: Assigning team to project:", {
+        userId,
         projectId,
         templateType,
         teamId: teamId,
@@ -294,6 +302,7 @@ export class ProjectService {
       }
 
       const response = await projectsApi.assignTeamToProject(
+        userId,
         projectId,
         templateType,
         numericTeamId,
@@ -305,9 +314,9 @@ export class ProjectService {
       });
 
       return response.data;
-    } catch (error) {
-      console.error("Failed to assign team to project:", error);
-      throw error;
+    } catch (error: any) {
+      console.error("Only Admin can assign team to project:", error);
+      throw new Error("Only Admin can assign team");
     }
   }
 
