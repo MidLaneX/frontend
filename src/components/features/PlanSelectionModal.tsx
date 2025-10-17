@@ -110,7 +110,7 @@ const PlanSelectionModal: React.FC<PlanSelectionModalProps> = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
       PaperProps={{
         sx: {
