@@ -14,7 +14,7 @@ export const ENV = {
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
   
   // Messaging App Configuration
-  MESSAGING_APP_URL: import.meta.env.VITE_MESSAGING_APP_URL || 'https://messaging-app-jade.vercel.app/',
+  VITE_MESSAGING_APP_URL: import.meta.env.VITE_MESSAGING_APP_URL || 'https://messaging-app-jade.vercel.app/',
   
   // App Configuration
   APP_VERSION: import.meta.env.VITE_APP_VERSION || "1.0.0",
