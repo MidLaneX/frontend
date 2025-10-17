@@ -1,107 +1,120 @@
-import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Container from '@mui/material/Container';
-import Paper from '@mui/material/Paper';
-import Chip from '@mui/material/Chip';
-import Avatar from '@mui/material/Avatar';
-import { Link } from 'react-router-dom';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import GroupIcon from '@mui/icons-material/Group';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import SecurityIcon from '@mui/icons-material/Security';
-import SpeedIcon from '@mui/icons-material/Speed';
-import CloudIcon from '@mui/icons-material/Cloud';
-import IntegrationInstructionsIcon from '@mui/icons-material/IntegrationInstructions';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import StarIcon from '@mui/icons-material/Star';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import React from "react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Container from "@mui/material/Container";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import Avatar from "@mui/material/Avatar";
+import { Link } from "react-router-dom";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import GroupIcon from "@mui/icons-material/Group";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
+import SecurityIcon from "@mui/icons-material/Security";
+import SpeedIcon from "@mui/icons-material/Speed";
+import CloudIcon from "@mui/icons-material/Cloud";
+import IntegrationInstructionsIcon from "@mui/icons-material/IntegrationInstructions";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import StarIcon from "@mui/icons-material/Star";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 
 const WelcomePage: React.FC = () => {
   const features = [
     {
-      icon: <DashboardIcon sx={{ fontSize: 48, color: '#0052CC' }} />,
-      title: 'Advanced Project Management',
-      description: 'Organize complex projects with powerful Kanban boards, sprint planning, and intelligent task tracking',
-      highlight: 'Most Popular'
+      icon: <DashboardIcon sx={{ fontSize: 48, color: "#0052CC" }} />,
+      title: "Advanced Project Management",
+      description:
+        "Organize complex projects with powerful Kanban boards, sprint planning, and intelligent task tracking",
+      highlight: "Most Popular",
     },
     {
-      icon: <GroupIcon sx={{ fontSize: 48, color: '#36B37E' }} />,
-      title: 'Seamless Team Collaboration',
-      description: 'Connect teams globally with real-time updates, @mentions, file sharing, and integrated communication',
-      highlight: 'Team Favorite'
+      icon: <GroupIcon sx={{ fontSize: 48, color: "#36B37E" }} />,
+      title: "Seamless Team Collaboration",
+      description:
+        "Connect teams globally with real-time updates, @mentions, file sharing, and integrated communication",
+      highlight: "Team Favorite",
     },
     {
-      icon: <AnalyticsIcon sx={{ fontSize: 48, color: '#FF5630' }} />,
-      title: 'Intelligent Analytics & Insights',
-      description: 'Make data-driven decisions with comprehensive reporting, velocity tracking, and predictive analytics',
-      highlight: 'AI Powered'
+      icon: <AnalyticsIcon sx={{ fontSize: 48, color: "#FF5630" }} />,
+      title: "Intelligent Analytics & Insights",
+      description:
+        "Make data-driven decisions with comprehensive reporting, velocity tracking, and predictive analytics",
+      highlight: "AI Powered",
     },
     {
-      icon: <SecurityIcon sx={{ fontSize: 48, color: '#6554C0' }} />,
-      title: 'Enterprise-Grade Security',
-      description: 'Bank-level security with SSO, role-based permissions, audit logs, and compliance certifications',
-      highlight: 'SOC 2 Certified'
+      icon: <SecurityIcon sx={{ fontSize: 48, color: "#6554C0" }} />,
+      title: "Enterprise-Grade Security",
+      description:
+        "Bank-level security with SSO, role-based permissions, audit logs, and compliance certifications",
+      highlight: "SOC 2 Certified",
     },
     {
-      icon: <SpeedIcon sx={{ fontSize: 48, color: '#FF8B00' }} />,
-      title: 'Lightning Fast Performance',
-      description: 'Experience blazing fast load times with our optimized infrastructure and global CDN',
-      highlight: '99.9% Uptime'
+      icon: <SpeedIcon sx={{ fontSize: 48, color: "#FF8B00" }} />,
+      title: "Lightning Fast Performance",
+      description:
+        "Experience blazing fast load times with our optimized infrastructure and global CDN",
+      highlight: "99.9% Uptime",
     },
     {
-      icon: <CloudIcon sx={{ fontSize: 48, color: '#00875A' }} />,
-      title: 'Cloud-Native Architecture',
-      description: 'Built for scale with automatic backups, disaster recovery, and seamless integrations',
-      highlight: 'AWS Hosted'
+      icon: <CloudIcon sx={{ fontSize: 48, color: "#00875A" }} />,
+      title: "Cloud-Native Architecture",
+      description:
+        "Built for scale with automatic backups, disaster recovery, and seamless integrations",
+      highlight: "AWS Hosted",
     },
     {
-      icon: <IntegrationInstructionsIcon sx={{ fontSize: 48, color: '#0052CC' }} />,
-      title: 'Powerful Integrations',
-      description: 'Connect with 100+ tools including Slack, GitHub, Figma, and your favorite development tools',
-      highlight: '100+ Apps'
+      icon: (
+        <IntegrationInstructionsIcon sx={{ fontSize: 48, color: "#0052CC" }} />
+      ),
+      title: "Powerful Integrations",
+      description:
+        "Connect with 100+ tools including Slack, GitHub, Figma, and your favorite development tools",
+      highlight: "100+ Apps",
     },
     {
-      icon: <SupportAgentIcon sx={{ fontSize: 48, color: '#36B37E' }} />,
-      title: '24/7 Expert Support',
-      description: 'Get help when you need it with our dedicated support team and comprehensive documentation',
-      highlight: 'Premium Support'
-    }
+      icon: <SupportAgentIcon sx={{ fontSize: 48, color: "#36B37E" }} />,
+      title: "24/7 Expert Support",
+      description:
+        "Get help when you need it with our dedicated support team and comprehensive documentation",
+      highlight: "Premium Support",
+    },
   ];
 
   const benefits = [
-    'Increase team productivity by 40%',
-    'Reduce project delivery time by 30%',
-    'Improve team collaboration efficiency',
-    'Real-time project visibility',
-    'Automated workflow management',
-    'Enterprise-grade security & compliance'
+    "Increase team productivity by 40%",
+    "Reduce project delivery time by 30%",
+    "Improve team collaboration efficiency",
+    "Real-time project visibility",
+    "Automated workflow management",
+    "Enterprise-grade security & compliance",
   ];
 
   const testimonials = [
     {
-      name: 'Sarah Chen',
-      role: 'VP of Engineering, TechCorp',
-      avatar: 'SC',
-      content: 'MidLineX transformed how our engineering team collaborates. We shipped 40% faster!'
+      name: "Sarah Chen",
+      role: "VP of Engineering, TechCorp",
+      avatar: "SC",
+      content:
+        "MidLineX transformed how our engineering team collaborates. We shipped 40% faster!",
     },
     {
-      name: 'Michael Rodriguez',
-      role: 'Product Manager, StartupXYZ',
-      avatar: 'MR',
-      content: 'The best project management tool we\'ve used. Intuitive, powerful, and scales with our growth.'
+      name: "Michael Rodriguez",
+      role: "Product Manager, StartupXYZ",
+      avatar: "MR",
+      content:
+        "The best project management tool we've used. Intuitive, powerful, and scales with our growth.",
     },
     {
-      name: 'Emily Thompson',
-      role: 'CTO, Enterprise Solutions',
-      avatar: 'ET',
-      content: 'Security and compliance features are top-notch. Perfect for enterprise environments.'
-    }
+      name: "Emily Thompson",
+      role: "CTO, Enterprise Solutions",
+      avatar: "ET",
+      content:
+        "Security and compliance features are top-notch. Perfect for enterprise environments.",
+    },
   ];
 
   return (

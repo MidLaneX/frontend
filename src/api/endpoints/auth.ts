@@ -1,5 +1,5 @@
-import { apiClient } from '../client';
-import type { SignupData } from '../../context/AuthContext';
+import { apiClient } from "../client";
+import type { SignupData } from "../../context/AuthContext";
 
 export interface LoginRequest {
   email: string;
@@ -7,7 +7,7 @@ export interface LoginRequest {
 }
 
 export interface SocialLoginRequest {
-  provider: 'google' | 'facebook';
+  provider: "google" | "facebook";
   accessToken: string;
   email: string;
   name: string;
@@ -49,31 +49,47 @@ export interface UserProfile {
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/initial/login', data);
+    const response = await apiClient.post<AuthResponse>(
+      "/auth/initial/login",
+      data,
+    );
     return response.data;
   },
 
   signup: async (data: SignupData): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/initial/register', data);
+    const response = await apiClient.post<AuthResponse>(
+      "/auth/initial/register",
+      data,
+    );
     return response.data;
   },
 
   socialLogin: async (data: SocialLoginRequest): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/initial/social/login', data);
+    const response = await apiClient.post<AuthResponse>(
+      "/auth/initial/social/login",
+      data,
+    );
     return response.data;
   },
 
-  refreshToken: async (data: RefreshTokenRequest): Promise<RefreshTokenResponse> => {
-    const response = await apiClient.post<RefreshTokenResponse>('/auth/initial/refresh', data);
+  refreshToken: async (
+    data: RefreshTokenRequest,
+  ): Promise<RefreshTokenResponse> => {
+    const response = await apiClient.post<RefreshTokenResponse>(
+      "/auth/initial/refresh",
+      data,
+    );
     return response.data;
   },
 
   logout: async (): Promise<void> => {
-    await apiClient.post('/auth/logout');
+    await apiClient.post("/auth/logout");
   },
 
   getUserProfile: async (userId: number): Promise<UserProfile> => {
-    const response = await apiClient.get<UserProfile>(`/auth/initial/${userId}/me`);
+    const response = await apiClient.get<UserProfile>(
+      `/auth/initial/${userId}/me`,
+    );
     return response.data;
   },
 };

@@ -19,7 +19,7 @@ export interface Organization {
   // Role-based properties
   userRole?: OrganizationRole; // Current user's role in this organization
   isOwner?: boolean; // Quick check if current user is the owner
-  
+
   // Backend compatibility - these should be mapped to the above properties
   owner_id?: string;
   owner_name?: string;
@@ -59,7 +59,7 @@ export interface OrganizationMember {
   joinedAt: string;
   avatar?: string;
   teams: string[]; // Team IDs the member belongs to
-  
+
   // Backend compatibility - these should be mapped to the above properties
   user_id?: string;
   firstName?: string;
@@ -83,14 +83,14 @@ export interface Team {
   createdAt: string;
   updatedAt: string;
   projectCount?: number;
-  
+
   // Additional properties from backend
   memberCount?: number; // From OrganizationTeamResponse
   teamType?: string; // Team type (DEVELOPMENT, DESIGN, etc.)
   maxMembers?: number; // Maximum members allowed
   status?: string; // Team status (ACTIVE, INACTIVE, etc.)
   hasAvailableSlots?: boolean; // Whether team has available slots
-  
+
   // Backend compatibility - these should be mapped to the above properties
   team_id?: string;
   teamId?: string; // From OrganizationTeamResponse
@@ -130,7 +130,7 @@ export interface TeamMemberDetailRaw {
   team_lead: boolean;
 }
 
-// Transformed frontend format  
+// Transformed frontend format
 export interface TeamMemberDetail {
   memberId: number;
   name: string;
@@ -152,14 +152,22 @@ export interface UpdateTeamMemberRequest {
   role?: TeamRole;
 }
 
-export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
+export type MemberRole = "owner" | "admin" | "member" | "viewer";
 
 // Organization role represents current user's role in the organization
-export type OrganizationRole = 'owner' | 'member';
+export type OrganizationRole = "owner" | "member";
 
-export type TeamRole = 'lead' | 'member';
+export type TeamRole = "lead" | "member";
 
-export type TeamType = 'development' | 'design' | 'marketing' | 'sales' | 'support' | 'operations' | 'management' | 'other';
+export type TeamType =
+  | "development"
+  | "design"
+  | "marketing"
+  | "sales"
+  | "support"
+  | "operations"
+  | "management"
+  | "other";
 
 // UI-specific types
 export interface OrganizationCardProps {

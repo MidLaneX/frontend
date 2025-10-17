@@ -1,4 +1,4 @@
-import type { Task } from './task';
+import type { Task } from "./task";
 
 // Core domain types - Projects
 export interface Project {
@@ -39,4 +39,4 @@ export interface ProjectItem {
   starred: boolean;
 }
 
-export type ProjectType = 'Software' | 'Business' | 'Marketing';
+export type ProjectType = "Software" | "Business" | "Marketing";

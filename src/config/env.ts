@@ -13,6 +13,9 @@ export const ENV = {
   // Social Authentication
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
   
+  // Messaging App Configuration
+  VITE_MESSAGING_APP_URL: import.meta.env.VITE_MESSAGING_APP_URL || 'https://messaging-app-jade.vercel.app/',
+  
   // App Configuration
   APP_VERSION: import.meta.env.VITE_APP_VERSION || "1.0.0",
 
@@ -28,6 +31,6 @@ export const isProduction = ENV.PROD;
 // Debug logger
 export const debugLog = (...args: unknown[]) => {
   if (ENV.ENABLE_DEBUG || isDevelopment) {
-    console.log('[DEBUG]', ...args);
+    console.log("[DEBUG]", ...args);
   }
 };

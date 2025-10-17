@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Notification System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🔔 Notification System Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Direct API Call</h2>
+        <p>Tests the notification service directly without going through frontend code</p>
+        <button onclick="testDirectAPI()">Test Direct API</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Via NotificationService</h2>
+        <p>Tests using the NotificationService class (requires dev server running)</p>
+        <button onclick="testViaService()">Test via Service</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Full Task Creation Flow</h2>
+        <p>Simulates creating a task with assignee and reporter</p>
+        <button onclick="testFullFlow()">Test Full Flow</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearLog() {
+            output.innerHTML = '';
+        }
+
+        async function testDirectAPI() {
+            clearLog();
+            log('🧪 Testing direct API call to notification service...', 'info');
+            
+            const payload = {
+                recipients: ["test@example.com"],
+                subject: "Test from HTML Page",
+                templateName: "task-assignment",
+                templateData: {
+                    assigneeName: "Test User",
+                    assignerName: "System",
+                    taskTitle: "Direct API Test",
+                    projectName: "Test Project",
+                    taskDescription: "Testing direct API call",
+                    priority: "High",
+                    dueDate: "October 20, 2025",
+                    estimatedHours: "8",
+                    status: "To Do",
+                    taskUrl: "http://localhost:5173"
+                },
+                priority: "NORMAL"
+            };
+
+            log('📤 Sending request to: http://localhost:8084/api/v1/notifications/send', 'info');
+            log('📦 Payload: ' + JSON.stringify(payload, null, 2), 'info');
+
+            try {
+                const response = await fetch('http://localhost:8084/api/v1/notifications/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ SUCCESS! Notification sent', 'success');
+                    log('📨 Response: ' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    log('❌ FAILED! Status: ' + response.status, 'error');
+                    log('📨 Response: ' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                log('❌ ERROR: ' + error.message, 'error');
+            }
+        }
+
+        async function testViaService() {
+            clearLog();
+            log('🧪 Testing via NotificationService (requires frontend dev server)...', 'info');
+            log('⚠️ This will only work if you open this page through http://localhost:5173', 'info');
+            log('📝 Open browser console to see detailed logs', 'info');
+            
+            // This would require importing the actual service
+            log('❌ Cannot import ES modules from plain HTML', 'error');
+            log('💡 Instead, create a task in the backlog to test the service', 'info');
+        }
+
+        async function testFullFlow() {
+            clearLog();
+            log('🧪 Testing full task creation flow...', 'info');
+            
+            const mockTask = {
+                id: 999,
+                title: "Test Task",
+                description: "Test description",
+                status: "Todo",
+                priority: "High",
+                assignee: "Alice Developer <alice@example.com>",
+                reporter: "Bob Manager <bob@example.com>",
+                projectId: 1,
+                storyPoints: 3,
+                dueDate: "2025-10-20"
+            };
+
+            log('📋 Mock Task Created:', 'info');
+            log(JSON.stringify(mockTask, null, 2), 'info');
+
+            // Test assignee notification
+            log('\n📧 Sending assignee notification...', 'info');
+            await testNotification({
+                recipients: ["alice@example.com"],
+                subject: "New Task Assignment: " + mockTask.title,
+                templateName: "task-assignment",
+                templateData: {
+                    assigneeName: "Alice Developer",
+                    assignerName: "System",
+                    taskTitle: mockTask.title,
+                    projectName: "Test Project",
+                    taskDescription: mockTask.description,
+                    priority: mockTask.priority,
+                    dueDate: "October 20, 2025",
+                    estimatedHours: "24",
+                    status: "To Do",
+                    taskUrl: "http://localhost:5173/projects/1/backlog?taskId=999"
+                },
+                priority: "HIGH"
+            }, 'Assignee');
+
+            // Test reporter notification
+            log('\n📧 Sending reporter notification...', 'info');
+            await testNotification({
+                recipients: ["bob@example.com"],
+                subject: "You are the Reporter for: " + mockTask.title,
+                templateName: "task-assignment",
+                templateData: {
+                    assigneeName: "Bob Manager",
+                    assignerName: "System",
+                    taskTitle: mockTask.title,
+                    projectName: "Test Project",
+                    taskDescription: mockTask.description,
+                    priority: mockTask.priority,
+                    dueDate: "October 20, 2025",
+                    estimatedHours: "24",
+                    status: "To Do",
+                    taskUrl: "http://localhost:5173/projects/1/backlog?taskId=999"
+                },
+                priority: "HIGH"
+            }, 'Reporter');
+        }
+
+        async function testNotification(payload, label) {
+            try {
+                const response = await fetch('http://localhost:8084/api/v1/notifications/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ ${label} notification sent successfully`, 'success');
+                    log('📨 Response: ' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    log(`❌ ${label} notification failed: ${response.status}`, 'error');
+                    log('📨 Response: ' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                log(`❌ ${label} error: ${error.message}`, 'error');
+            }
+        }
+
+        log('✅ Test page loaded. Click buttons above to test!', 'success');
+        log('📝 Make sure notification service is running on port 8084', 'info');
+    </script>
+</body>
+</html>

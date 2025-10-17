@@ -1,14 +1,15 @@
-import React from 'react';
+import React from "react";
 import { useDroppable } from "@dnd-kit/core";
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import AddIcon from '@mui/icons-material/Add';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import TaskCard from '../task/TaskCard';
+import { useDraggable } from "@dnd-kit/core";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import AddIcon from "@mui/icons-material/Add";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import TaskCard from "../task/TaskCard";
 import type { Task } from "@/types";
 
 interface KanbanColumnProps {
@@ -19,54 +20,83 @@ interface KanbanColumnProps {
   onAddTask?: (status: string) => void;
 }
 
+interface DraggableTaskProps {
+  task: Task;
+  onClick?: () => void;
+}
+
+const DraggableTask: React.FC<DraggableTaskProps> = ({ task, onClick }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+  });
+
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? "grabbing" : "grab",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+      <TaskCard task={task} onClick={onClick} />
+    </div>
+  );
+};
+
 const getColumnConfig = (title: string) => {
   switch (title.toLowerCase()) {
-    case 'backlog':
-      return { 
-        color: '#8993A4',
-        bgColor: '#F8F9FA',
-        borderColor: '#DFE1E6',
-        chipColor: '#5E6C84'
+    case "backlog":
+      return {
+        color: "#8993A4",
+        bgColor: "#F8F9FA",
+        borderColor: "#DFE1E6",
+        chipColor: "#5E6C84",
       };
-    case 'todo':
-      return { 
-        color: '#0052CC',
-        bgColor: '#F4F5F7',
-        borderColor: '#DFE1E6',
-        chipColor: '#0052CC'
+    case "todo":
+      return {
+        color: "#0052CC",
+        bgColor: "#F4F5F7",
+        borderColor: "#DFE1E6",
+        chipColor: "#0052CC",
       };
-    case 'in progress':
-      return { 
-        color: '#FF8B00',
-        bgColor: '#FFF7E6',
-        borderColor: '#FFCC91',
-        chipColor: '#FF8B00'
+    case "in progress":
+      return {
+        color: "#FF8B00",
+        bgColor: "#FFF7E6",
+        borderColor: "#FFCC91",
+        chipColor: "#FF8B00",
       };
-    case 'review':
-      return { 
-        color: '#6554C0',
-        bgColor: '#F3F0FF',
-        borderColor: '#B3A0FF',
-        chipColor: '#6554C0'
+    case "review":
+      return {
+        color: "#6554C0",
+        bgColor: "#F3F0FF",
+        borderColor: "#B3A0FF",
+        chipColor: "#6554C0",
       };
-    case 'done':
-      return { 
-        color: '#00875A',
-        bgColor: '#E3FCEF',
-        borderColor: '#ABF5D1',
-        chipColor: '#00875A'
+    case "done":
+      return {
+        color: "#00875A",
+        bgColor: "#E3FCEF",
+        borderColor: "#ABF5D1",
+        chipColor: "#00875A",
       };
     default:
-      return { 
-        color: '#8993A4',
-        bgColor: '#F8F9FA',
-        borderColor: '#DFE1E6',
-        chipColor: '#5E6C84'
+      return {
+        color: "#8993A4",
+        bgColor: "#F8F9FA",
+        borderColor: "#DFE1E6",
+        chipColor: "#5E6C84",
       };
   }
 };
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, tasks, onTaskClick, onAddTask }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({
+  id,
+  title,
+  tasks,
+  onTaskClick,
+  onAddTask,
+}) => {
   const { setNodeRef, isOver } = useDroppable({ id });
   const config = getColumnConfig(title);
 
@@ -252,7 +282,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, tasks, onTaskCli
                 },
               }}
             >
-              <TaskCard task={task} onClick={() => onTaskClick?.(task)} />
+              <DraggableTask task={task} onClick={() => onTaskClick?.(task)} />
             </Box>
           ))
         )}

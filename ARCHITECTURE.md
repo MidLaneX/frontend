@@ -71,6 +71,7 @@ src/
 ## 🎯 Architecture Principles
 
 ### 1. **Separation of Concerns**
+
 - **Components**: Pure UI/presentation logic
 - **Hooks**: Stateful logic and side effects
 - **Services**: Business logic and data operations
@@ -78,18 +79,21 @@ src/
 - **Types**: TypeScript definitions for type safety
 
 ### 2. **Scalability**
+
 - Modular architecture allows easy feature additions
 - Clear boundaries between different layers
 - Reusable components and hooks
 - Consistent patterns throughout the codebase
 
 ### 3. **Maintainability**
+
 - Easy to locate and modify specific functionality
 - Consistent coding patterns and conventions
 - Comprehensive TypeScript typing
 - Clear file and folder organization
 
 ### 4. **Type Safety**
+
 - Centralized type definitions in `types/index.ts`
 - Strict TypeScript configuration
 - Comprehensive interface definitions
@@ -98,6 +102,7 @@ src/
 ## 🔧 Key Architectural Features
 
 ### **Component Organization**
+
 ```typescript
 // Example: Well-structured component
 interface ComponentProps {
@@ -115,38 +120,53 @@ export default Component;
 ```
 
 ### **Service Layer Pattern**
+
 ```typescript
 // Example: Service class for data operations
 export class ProjectService {
-  static getAllProjects(): Project[] { /* ... */ }
-  static createProject(data: CreateProjectData): Project { /* ... */ }
-  static updateProject(id: string, updates: Partial<Project>): Project { /* ... */ }
+  static getAllProjects(): Project[] {
+    /* ... */
+  }
+  static createProject(data: CreateProjectData): Project {
+    /* ... */
+  }
+  static updateProject(id: string, updates: Partial<Project>): Project {
+    /* ... */
+  }
 }
 ```
 
 ### **Custom Hooks Pattern**
+
 ```typescript
 // Example: Custom hook for state management
 export const useProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Hook logic
-  
+
   return { projects, loading, createProject, updateProject };
 };
 ```
 
 ### **Centralized Constants**
+
 ```typescript
 // Example: Design system constants
 export const COMPONENT_STYLES = {
   button: {
-    primary: { /* consistent button styles */ },
-    secondary: { /* consistent button styles */ },
+    primary: {
+      /* consistent button styles */
+    },
+    secondary: {
+      /* consistent button styles */
+    },
   },
   card: {
-    default: { /* consistent card styles */ },
+    default: {
+      /* consistent card styles */
+    },
   },
 } as const;
 ```
@@ -154,6 +174,7 @@ export const COMPONENT_STYLES = {
 ## 🎨 Design System Integration
 
 ### **Theme Configuration**
+
 - Centralized in `config/theme.ts`
 - Material-UI integration
 - Consistent color palette
@@ -161,12 +182,14 @@ export const COMPONENT_STYLES = {
 - Component overrides
 
 ### **Color System**
+
 - Semantic color definitions
 - Status-based color coding
 - Priority-based styling
 - Accessibility considerations
 
 ### **Styling Approach**
+
 - Material-UI `sx` prop for styling
 - Centralized style constants
 - Responsive design patterns
@@ -175,18 +198,21 @@ export const COMPONENT_STYLES = {
 ## 📦 Benefits of This Structure
 
 ### **For Developers**
+
 1. **Easy Navigation**: Clear file organization makes finding code intuitive
 2. **Better IntelliSense**: TypeScript provides excellent autocomplete and error detection
 3. **Reusable Code**: Components, hooks, and utilities can be easily shared
 4. **Consistent Patterns**: Similar code structures across the application
 
 ### **For Maintainability**
+
 1. **Single Responsibility**: Each file/module has a clear purpose
 2. **Loose Coupling**: Changes in one area don't affect unrelated areas
 3. **Easy Testing**: Separated concerns make unit testing straightforward
 4. **Documentation**: Clear structure serves as self-documentation
 
 ### **For Scalability**
+
 1. **Team Collaboration**: Multiple developers can work simultaneously
 2. **Feature Addition**: New features follow established patterns
 3. **Performance**: Optimized imports and bundle splitting
@@ -195,6 +221,7 @@ export const COMPONENT_STYLES = {
 ## 🚀 Development Workflow
 
 ### **Adding New Features**
+
 1. Define types in `types/index.ts`
 2. Create service methods in `services/`
 3. Build custom hooks in `hooks/`
@@ -202,12 +229,14 @@ export const COMPONENT_STYLES = {
 5. Add page components in `pages/`
 
 ### **Code Quality Standards**
+
 - ESLint configuration for code consistency
 - TypeScript strict mode for type safety
 - Prettier for code formatting
 - Consistent import organization
 
 ### **Best Practices**
+
 - Use barrel exports for clean imports
 - Follow React hooks best practices
 - Implement proper error handling
@@ -216,6 +245,7 @@ export const COMPONENT_STYLES = {
 ## 🔮 Future Enhancements
 
 This architecture supports easy integration of:
+
 - **State Management**: Redux Toolkit, Zustand, or Context API
 - **API Integration**: Axios, React Query, or SWR
 - **Testing**: Jest, React Testing Library, Cypress

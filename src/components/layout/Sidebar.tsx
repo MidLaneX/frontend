@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Drawer,
   List,
@@ -128,8 +128,8 @@ const Sidebar: React.FC = () => {
               color: 'primary.main',
             },
           },
-          '&:hover': {
-            backgroundColor: 'action.hover',
+          "&:hover": {
+            backgroundColor: "action.hover",
           },
           transition: 'all 0.2s ease',
         }}
@@ -185,7 +185,7 @@ const Sidebar: React.FC = () => {
       sx={{
         width: drawerWidth,
         flexShrink: 0,
-        '& .MuiDrawer-paper': {
+        "& .MuiDrawer-paper": {
           width: drawerWidth,
           boxSizing: 'border-box',
           borderRight: 'none',

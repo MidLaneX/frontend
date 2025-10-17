@@ -1,4 +1,4 @@
-import type { Task, Project } from '../common';
+import type { Task, Project } from "../common";
 
 // Component prop types
 export interface TaskCardProps {
@@ -19,8 +19,8 @@ export interface ProjectCardProps {
 export interface KanbanColumnProps {
   title: string;
   tasks: Task[];
-  status: Task['status'];
-  onTaskMove?: (taskId: string, newStatus: Task['status']) => void;
+  status: Task["status"];
+  onTaskMove?: (taskId: string, newStatus: Task["status"]) => void;
   onTaskEdit?: (task: Task) => void;
   onTaskDelete?: (taskId: string) => void;
 }
@@ -29,14 +29,14 @@ export interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  maxWidth?: "xs" | "sm" | "md" | "lg" | "xl";
 }
 
 export interface CreateTaskModalProps extends ModalProps {
   projectId?: string;
-  onSubmit: (task: Omit<Task, 'id'>) => void;
+  onSubmit: (task: Omit<Task, "id">) => void;
 }
 
 export interface CreateProjectModalProps extends ModalProps {
-  onSubmit: (project: Omit<Project, 'id'>) => void;
+  onSubmit: (project: Omit<Project, "id">) => void;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Drawer,
   Box,
@@ -14,7 +14,7 @@ import {
   Dialog,
   CircularProgress,
   Chip,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Close as CloseIcon,
   Delete as DeleteIcon,
@@ -22,14 +22,17 @@ import {
   Save as SaveIcon,
   Cancel as CancelIcon,
   Warning as WarningIcon,
-} from '@mui/icons-material';
-import type { OrganizationWithRole } from '../../types/api/organizations';
+} from "@mui/icons-material";
+import type { OrganizationWithRole } from "../../types/api/organizations";
 
 interface OrganizationSettingsDrawerProps {
   open: boolean;
   onClose: () => void;
   organization: OrganizationWithRole | null;
-  onUpdateOrganization: (orgId: string, data: UpdateOrganizationData) => Promise<void>;
+  onUpdateOrganization: (
+    orgId: string,
+    data: UpdateOrganizationData,
+  ) => Promise<void>;
   onDeleteOrganization: (orgId: string) => Promise<void>;
 }
 
@@ -50,16 +53,16 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
   onDeleteOrganization,
 }) => {
   const [formData, setFormData] = useState<UpdateOrganizationData>({
-    name: '',
-    description: '',
-    website: '',
-    industry: '',
-    size: '',
-    location: '',
+    name: "",
+    description: "",
+    website: "",
+    industry: "",
+    size: "",
+    location: "",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -67,12 +70,12 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
   useEffect(() => {
     if (organization) {
       setFormData({
-        name: organization.name || '',
-        description: organization.description || '',
-        website: organization.website || '',
-        industry: organization.industry || '',
-        size: organization.size || '',
-        location: organization.location || '',
+        name: organization.name || "",
+        description: organization.description || "",
+        website: organization.website || "",
+        industry: organization.industry || "",
+        size: organization.size || "",
+        location: organization.location || "",
       });
     }
   }, [organization]);
@@ -81,38 +84,38 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
   useEffect(() => {
     if (!open) {
       setIsEditing(false);
-      setError('');
+      setError("");
       setDeleteConfirmOpen(false);
     }
   }, [open]);
 
-  const handleInputChange = (field: keyof UpdateOrganizationData) => (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: event.target.value,
-    }));
-  };
+  const handleInputChange =
+    (field: keyof UpdateOrganizationData) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
 
   const handleSave = async () => {
     if (!organization) return;
 
     try {
       setLoading(true);
-      setError('');
-      
+      setError("");
+
       // Validate required fields
       if (!formData.name.trim()) {
-        setError('Organization name is required');
+        setError("Organization name is required");
         return;
       }
 
       await onUpdateOrganization(organization.id, formData);
       setIsEditing(false);
     } catch (err: any) {
-      console.error('Failed to update organization:', err);
-      setError(err.message || 'Failed to update organization');
+      console.error("Failed to update organization:", err);
+      setError(err.message || "Failed to update organization");
     } finally {
       setLoading(false);
     }
@@ -121,16 +124,16 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
   const handleCancel = () => {
     if (organization) {
       setFormData({
-        name: organization.name || '',
-        description: organization.description || '',
-        website: organization.website || '',
-        industry: organization.industry || '',
-        size: organization.size || '',
-        location: organization.location || '',
+        name: organization.name || "",
+        description: organization.description || "",
+        website: organization.website || "",
+        industry: organization.industry || "",
+        size: organization.size || "",
+        location: organization.location || "",
       });
     }
     setIsEditing(false);
-    setError('');
+    setError("");
   };
 
   const handleDelete = async () => {
@@ -142,8 +145,8 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
       setDeleteConfirmOpen(false);
       onClose();
     } catch (err: any) {
-      console.error('Failed to delete organization:', err);
-      setError(err.message || 'Failed to delete organization');
+      console.error("Failed to delete organization:", err);
+      setError(err.message || "Failed to delete organization");
     } finally {
       setDeleteLoading(false);
     }
@@ -151,7 +154,7 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
 
   if (!organization) return null;
 
-  const canEditOrDelete = organization.userRole === 'owner';
+  const canEditOrDelete = organization.userRole === "owner";
 
   return (
     <>
@@ -160,19 +163,19 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
         open={open}
         onClose={onClose}
         PaperProps={{
-          sx: { width: 400, maxWidth: '90vw' },
+          sx: { width: 400, maxWidth: "90vw" },
         }}
       >
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
           {/* Header */}
           <Box
             sx={{
               p: 2,
               borderBottom: 1,
-              borderColor: 'divider',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              borderColor: "divider",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -184,9 +187,13 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
           </Box>
 
           {/* Content */}
-          <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
+          <Box sx={{ flex: 1, p: 3, overflow: "auto" }}>
             {error && (
-              <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+              <Alert
+                severity="error"
+                sx={{ mb: 3 }}
+                onClose={() => setError("")}
+              >
                 {error}
               </Alert>
             )}
@@ -199,7 +206,14 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
 
             {/* Organization Info */}
             <Box sx={{ mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  mb: 2,
+                }}
+              >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                   Organization Details
                 </Typography>
@@ -208,14 +222,14 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
                     size="small"
                     startIcon={<EditIcon />}
                     onClick={() => setIsEditing(true)}
-                    sx={{ textTransform: 'none' }}
+                    sx={{ textTransform: "none" }}
                   >
                     Edit
                   </Button>
                 )}
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
                 <Chip
                   label={`${organization.member_count} members`}
                   size="small"
@@ -228,11 +242,11 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
                 />
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <TextField
                   label="Organization Name"
                   value={formData.name}
-                  onChange={handleInputChange('name')}
+                  onChange={handleInputChange("name")}
                   disabled={!isEditing}
                   required
                   fullWidth
@@ -243,7 +257,7 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
                 <TextField
                   label="Description"
                   value={formData.description}
-                  onChange={handleInputChange('description')}
+                  onChange={handleInputChange("description")}
                   disabled={!isEditing}
                   multiline
                   rows={3}
@@ -255,7 +269,7 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
                 <TextField
                   label="Website"
                   value={formData.website}
-                  onChange={handleInputChange('website')}
+                  onChange={handleInputChange("website")}
                   disabled={!isEditing}
                   fullWidth
                   variant="outlined"
@@ -266,7 +280,7 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
                 <TextField
                   label="Industry"
                   value={formData.industry}
-                  onChange={handleInputChange('industry')}
+                  onChange={handleInputChange("industry")}
                   disabled={!isEditing}
                   fullWidth
                   variant="outlined"
@@ -277,7 +291,7 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
                 <TextField
                   label="Company Size"
                   value={formData.size}
-                  onChange={handleInputChange('size')}
+                  onChange={handleInputChange("size")}
                   disabled={!isEditing}
                   fullWidth
                   variant="outlined"
@@ -288,7 +302,7 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
                 <TextField
                   label="Location"
                   value={formData.location}
-                  onChange={handleInputChange('location')}
+                  onChange={handleInputChange("location")}
                   disabled={!isEditing}
                   fullWidth
                   variant="outlined"
@@ -298,22 +312,24 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
               </Box>
 
               {isEditing && (
-                <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
                   <Button
                     variant="contained"
-                    startIcon={loading ? <CircularProgress size={16} /> : <SaveIcon />}
+                    startIcon={
+                      loading ? <CircularProgress size={16} /> : <SaveIcon />
+                    }
                     onClick={handleSave}
                     disabled={loading}
-                    sx={{ textTransform: 'none' }}
+                    sx={{ textTransform: "none" }}
                   >
-                    {loading ? 'Saving...' : 'Save Changes'}
+                    {loading ? "Saving..." : "Save Changes"}
                   </Button>
                   <Button
                     variant="outlined"
                     startIcon={<CancelIcon />}
                     onClick={handleCancel}
                     disabled={loading}
-                    sx={{ textTransform: 'none' }}
+                    sx={{ textTransform: "none" }}
                   >
                     Cancel
                   </Button>
@@ -326,27 +342,35 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
             {/* Danger Zone */}
             {canEditOrDelete && (
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: 'error.main' }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 600, mb: 2, color: "error.main" }}
+                >
                   Danger Zone
                 </Typography>
                 <Box
                   sx={{
                     border: 1,
-                    borderColor: 'error.main',
+                    borderColor: "error.main",
                     borderRadius: 1,
                     p: 2,
-                    bgcolor: 'error.lighter',
+                    bgcolor: "error.lighter",
                   }}
                 >
-                  <Typography variant="body2" sx={{ mb: 2, color: 'error.main' }}>
-                    Deleting this organization will permanently remove all data, including teams, members, and projects. This action cannot be undone.
+                  <Typography
+                    variant="body2"
+                    sx={{ mb: 2, color: "error.main" }}
+                  >
+                    Deleting this organization will permanently remove all data,
+                    including teams, members, and projects. This action cannot
+                    be undone.
                   </Typography>
                   <Button
                     variant="outlined"
                     color="error"
                     startIcon={<DeleteIcon />}
                     onClick={() => setDeleteConfirmOpen(true)}
-                    sx={{ textTransform: 'none' }}
+                    sx={{ textTransform: "none" }}
                   >
                     Delete Organization
                   </Button>
@@ -364,13 +388,14 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <WarningIcon color="error" />
           Confirm Deletion
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to delete the organization <strong>"{organization.name}"</strong>?
+            Are you sure you want to delete the organization{" "}
+            <strong>"{organization.name}"</strong>?
           </Typography>
           <Typography variant="body2" color="text.secondary">
             This action will permanently delete:
@@ -386,7 +411,11 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
               All associated projects and workflows
             </Typography>
           </Box>
-          <Typography variant="body2" color="error.main" sx={{ fontWeight: 600 }}>
+          <Typography
+            variant="body2"
+            color="error.main"
+            sx={{ fontWeight: 600 }}
+          >
             This action cannot be undone.
           </Typography>
         </DialogContent>
@@ -394,19 +423,21 @@ const OrganizationSettingsDrawer: React.FC<OrganizationSettingsDrawerProps> = ({
           <Button
             onClick={() => setDeleteConfirmOpen(false)}
             disabled={deleteLoading}
-            sx={{ textTransform: 'none' }}
+            sx={{ textTransform: "none" }}
           >
             Cancel
           </Button>
           <Button
             variant="contained"
             color="error"
-            startIcon={deleteLoading ? <CircularProgress size={16} /> : <DeleteIcon />}
+            startIcon={
+              deleteLoading ? <CircularProgress size={16} /> : <DeleteIcon />
+            }
             onClick={handleDelete}
             disabled={deleteLoading}
-            sx={{ textTransform: 'none' }}
+            sx={{ textTransform: "none" }}
           >
-            {deleteLoading ? 'Deleting...' : 'Delete Organization'}
+            {deleteLoading ? "Deleting..." : "Delete Organization"}
           </Button>
         </DialogActions>
       </Dialog>

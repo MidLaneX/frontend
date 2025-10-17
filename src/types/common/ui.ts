@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 // Navigation and UI types
 export interface NavigationItem {

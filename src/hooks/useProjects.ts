@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import type { Project } from '../types';
-import { ProjectService } from '../services/ProjectService';
+import { useState, useEffect } from "react";
+import type { Project } from "../types";
+import { ProjectService } from "../services/ProjectService";
 
 /**
  * Hook for managing projects
@@ -15,19 +15,19 @@ export const useProjects = () => {
       const allProjects = ProjectService.getAllProjects();
       setProjects(allProjects);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load projects');
+      setError(err instanceof Error ? err.message : "Failed to load projects");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createProject = (projectData: Omit<Project, 'id' | 'tasks'>) => {
+  const createProject = (projectData: Omit<Project, "id" | "tasks">) => {
     try {
       const newProject = ProjectService.createProject(projectData);
-      setProjects(prev => [...prev, newProject]);
+      setProjects((prev) => [...prev, newProject]);
       return newProject;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create project');
+      setError(err instanceof Error ? err.message : "Failed to create project");
       return null;
     }
   };
@@ -36,13 +36,13 @@ export const useProjects = () => {
     try {
       const updatedProject = ProjectService.updateProject(id, updates);
       if (updatedProject) {
-        setProjects(prev => 
-          prev.map(p => p.id === id ? updatedProject : p)
+        setProjects((prev) =>
+          prev.map((p) => (p.id === id ? updatedProject : p)),
         );
       }
       return updatedProject;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update project');
+      setError(err instanceof Error ? err.message : "Failed to update project");
       return null;
     }
   };
@@ -51,11 +51,11 @@ export const useProjects = () => {
     try {
       const success = ProjectService.deleteProject(id);
       if (success) {
-        setProjects(prev => prev.filter(p => p.id !== id));
+        setProjects((prev) => prev.filter((p) => p.id !== id));
       }
       return success;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete project');
+      setError(err instanceof Error ? err.message : "Failed to delete project");
       return false;
     }
   };
@@ -74,10 +74,12 @@ export const useProjects = () => {
         const allProjects = ProjectService.getAllProjects();
         setProjects(allProjects);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load projects');
+        setError(
+          err instanceof Error ? err.message : "Failed to load projects",
+        );
       } finally {
         setLoading(false);
       }
-    }
+    },
   };
 };

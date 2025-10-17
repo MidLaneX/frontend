@@ -108,7 +108,7 @@ export const generateId = (): string => {
  */
 export const debounce = <T extends unknown[]>(
   func: (...args: T) => void,
-  delay: number
+  delay: number,
 ): ((...args: T) => void) => {
   let timeoutId: ReturnType<typeof setTimeout>;
 

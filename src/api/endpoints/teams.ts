@@ -6,37 +6,41 @@ import type {
   CreateTeamRequest,
   UpdateTeamMemberRequest,
   TeamMemberDetail,
-  TeamMemberDetailRaw
-} from '../../types/api/organizations';
+  TeamMemberDetailRaw,
+} from "../../types/api/organizations";
 
 // Helper function to transform team data from backend to frontend interface
 const transformTeam = (team: any): Team => {
   return {
     ...team,
     // Handle both TeamResponse (id) and OrganizationTeamResponse (teamId)
-    id: team.id || team.teamId || team.team_id || '',
+    id: team.id || team.teamId || team.team_id || "",
     // Handle both formats: teamName from OrganizationTeamResponse, name from TeamResponse
-    team_name: team.teamName || team.team_name || team.name || '',
-    description: team.description || '',
+    team_name: team.teamName || team.team_name || team.name || "",
+    description: team.description || "",
     // Map organizationId properly
-    organizationId: team.organizationId || team.organization_id || '',
+    organizationId: team.organizationId || team.organization_id || "",
     // Map team lead information
-    leadId: team.teamLeadId || team.lead_id || team.leadId || '',
-    leadName: team.teamLeadName || team.lead_name || team.leadName || '',
+    leadId: team.teamLeadId || team.lead_id || team.leadId || "",
+    leadName: team.teamLeadName || team.lead_name || team.leadName || "",
     // Map timestamps
-    createdAt: team.created_at || team.createdAt || '',
-    updatedAt: team.updated_at || team.updatedAt || '',
+    createdAt: team.created_at || team.createdAt || "",
+    updatedAt: team.updated_at || team.updatedAt || "",
     // Handle members array or member count
     members: team.members || [],
     // Map project count
     projectCount: team.project_count || team.projectCount || 0,
     // Handle member count from OrganizationTeamResponse
-    memberCount: team.memberCount || team.member_count || team.currentMemberCount || (team.members ? team.members.length : 0),
+    memberCount:
+      team.memberCount ||
+      team.member_count ||
+      team.currentMemberCount ||
+      (team.members ? team.members.length : 0),
     // Handle team type
-    teamType: team.teamType || team.team_type || team.type || '',
+    teamType: team.teamType || team.team_type || team.type || "",
     // Handle other properties that might be present
     maxMembers: team.maxMembers || team.max_members || 0,
-    status: team.status || 'ACTIVE',
+    status: team.status || "ACTIVE",
     hasAvailableSlots: team.hasAvailableSlots || false,
   };
 };
@@ -47,7 +51,9 @@ const transformTeams = (teams: any[]): Team[] => {
 };
 
 // Helper function to transform team member data from backend to frontend interface
-const transformTeamMember = (rawMember: TeamMemberDetailRaw): TeamMemberDetail => {
+const transformTeamMember = (
+  rawMember: TeamMemberDetailRaw,
+): TeamMemberDetail => {
   return {
     memberId: rawMember.member_id,
     name: rawMember.name,
@@ -58,7 +64,9 @@ const transformTeamMember = (rawMember: TeamMemberDetailRaw): TeamMemberDetail =
 };
 
 // Helper function to transform array of team members
-const transformTeamMembers = (rawMembers: TeamMemberDetailRaw[]): TeamMemberDetail[] => {
+const transformTeamMembers = (
+  rawMembers: TeamMemberDetailRaw[],
+): TeamMemberDetail[] => {
   return rawMembers.map(transformTeamMember);
 };
 
@@ -67,7 +75,7 @@ const teamsApiClient = axios.create({
   baseURL: ENV.API_BASE_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -82,7 +90,7 @@ teamsApiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 teamsApiClient.interceptors.response.use(
@@ -110,18 +118,20 @@ teamsApiClient.interceptors.response.use(
         }
       }
       tokenManager.clearTokens();
-      if (window.location.pathname !== '/landing') {
-        window.location.href = '/landing';
+      if (window.location.pathname !== "/landing") {
+        window.location.href = "/landing";
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export const teamsApi = {
   // Team management
   getTeams: async (orgId: string): Promise<Team[]> => {
-    const response = await teamsApiClient.get(`/users/organizations/${orgId}/teams`);
+    const response = await teamsApiClient.get(
+      `/users/organizations/${orgId}/teams`,
+    );
     return response.data;
   },
 
@@ -129,21 +139,31 @@ export const teamsApi = {
     // Get the current user's ID as the creator
     const creatorId = tokenManager.getUserId();
     if (!creatorId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.post(`/users/teams?creatorId=${creatorId}`, data);
+
+    const response = await teamsApiClient.post(
+      `/users/teams?creatorId=${creatorId}`,
+      data,
+    );
     return response.data;
   },
 
-  updateTeam: async (orgId: string, teamId: string, data: Partial<CreateTeamRequest>): Promise<Team> => {
+  updateTeam: async (
+    orgId: string,
+    teamId: string,
+    data: Partial<CreateTeamRequest>,
+  ): Promise<Team> => {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.put(`/organizations/${orgId}/teams/${teamId}?requesterId=${requesterId}`, data);
+
+    const response = await teamsApiClient.put(
+      `/organizations/${orgId}/teams/${teamId}?requesterId=${requesterId}`,
+      data,
+    );
     return response.data;
   },
 
@@ -151,20 +171,29 @@ export const teamsApi = {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    await teamsApiClient.delete(`/organizations/${orgId}/teams/${teamId}?requesterId=${requesterId}`);
+
+    await teamsApiClient.delete(
+      `/organizations/${orgId}/teams/${teamId}?requesterId=${requesterId}`,
+    );
   },
 
-  addTeamMember: async (orgId: string, teamId: string, data: UpdateTeamMemberRequest): Promise<Team> => {
+  addTeamMember: async (
+    orgId: string,
+    teamId: string,
+    data: UpdateTeamMemberRequest,
+  ): Promise<Team> => {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.post(`/organizations/${orgId}/teams/${teamId}/members?requesterId=${requesterId}`, data);
+
+    const response = await teamsApiClient.post(
+      `/organizations/${orgId}/teams/${teamId}/members?requesterId=${requesterId}`,
+      data,
+    );
     return response.data;
   },
 
@@ -172,65 +201,96 @@ export const teamsApi = {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.post(`/users/teams/${teamId}/members/${userId}?requesterId=${requesterId}`);
+
+    const response = await teamsApiClient.post(
+      `/users/teams/${teamId}/members/${userId}?requesterId=${requesterId}`,
+    );
     return response.data;
   },
 
-  removeTeamMember: async (orgId: string, teamId: string, memberId: string): Promise<Team> => {
+  removeTeamMember: async (
+    orgId: string,
+    teamId: string,
+    memberId: string,
+  ): Promise<Team> => {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.delete(`/organizations/${orgId}/teams/${teamId}/members/${memberId}?requesterId=${requesterId}`);
+
+    const response = await teamsApiClient.delete(
+      `/organizations/${orgId}/teams/${teamId}/members/${memberId}?requesterId=${requesterId}`,
+    );
     return response.data;
   },
 
-  promoteToTeamLead: async (orgId: string, teamId: string, memberId: string): Promise<Team> => {
+  promoteToTeamLead: async (
+    orgId: string,
+    teamId: string,
+    memberId: string,
+  ): Promise<Team> => {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.patch(`/organizations/${orgId}/teams/${teamId}/members/${memberId}/promote?requesterId=${requesterId}`);
+
+    const response = await teamsApiClient.patch(
+      `/organizations/${orgId}/teams/${teamId}/members/${memberId}/promote?requesterId=${requesterId}`,
+    );
     return response.data;
   },
 
-  demoteTeamLead: async (orgId: string, teamId: string, memberId: string): Promise<Team> => {
+  demoteTeamLead: async (
+    orgId: string,
+    teamId: string,
+    memberId: string,
+  ): Promise<Team> => {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.patch(`/organizations/${orgId}/teams/${teamId}/members/${memberId}/demote?requesterId=${requesterId}`);
+
+    const response = await teamsApiClient.patch(
+      `/organizations/${orgId}/teams/${teamId}/members/${memberId}/demote?requesterId=${requesterId}`,
+    );
     return response.data;
   },
 
   // New API methods for team settings functionality
-  removeTeamMemberById: async (teamId: string, userId: string): Promise<void> => {
+  removeTeamMemberById: async (
+    teamId: string,
+    userId: string,
+  ): Promise<void> => {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    await teamsApiClient.delete(`/users/teams/${teamId}/members/${userId}?requesterId=${requesterId}`);
+
+    await teamsApiClient.delete(
+      `/users/teams/${teamId}/members/${userId}?requesterId=${requesterId}`,
+    );
   },
 
-  updateTeamById: async (teamId: string, data: Partial<CreateTeamRequest>): Promise<Team> => {
+  updateTeamById: async (
+    teamId: string,
+    data: Partial<CreateTeamRequest>,
+  ): Promise<Team> => {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.put(`/users/teams/${teamId}?requesterId=${requesterId}`, data);
+
+    const response = await teamsApiClient.put(
+      `/users/teams/${teamId}?requesterId=${requesterId}`,
+      data,
+    );
     return response.data;
   },
 
@@ -238,10 +298,12 @@ export const teamsApi = {
     // Get the current user's ID as the requester
     const requesterId = tokenManager.getUserId();
     if (!requesterId) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
-    
-    const response = await teamsApiClient.put(`/users/teams/${teamId}/lead/${userId}?requesterId=${requesterId}`);
+
+    const response = await teamsApiClient.put(
+      `/users/teams/${teamId}/lead/${userId}?requesterId=${requesterId}`,
+    );
     return response.data;
   },
 
@@ -253,8 +315,13 @@ export const teamsApi = {
   },
 
   // Get teams that a user belongs to in a specific organization
-  getUserTeamsInOrganization: async (organizationId: string, userId: string): Promise<Team[]> => {
-    const response = await teamsApiClient.get(`/users/teams/organization/${organizationId}/user/${userId}`);
+  getUserTeamsInOrganization: async (
+    organizationId: string,
+    userId: string,
+  ): Promise<Team[]> => {
+    const response = await teamsApiClient.get(
+      `/users/teams/organization/${organizationId}/user/${userId}`,
+    );
     return response.data;
-  }
+  },
 };

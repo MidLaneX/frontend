@@ -1,15 +1,11 @@
-import React from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-} from '@mui/material';
+import React from "react";
+import { Box, Paper, Typography } from "@mui/material";
 import {
   Work as ProjectIcon,
   Assignment as TaskIcon,
   CheckCircle as CompletedIcon,
   People as TeamIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 interface ProjectStatsProps {
   totalProjects: number;
@@ -24,46 +20,51 @@ const ProjectStats: React.FC<ProjectStatsProps> = ({
   completedTasks,
   totalTeamMembers,
 }) => {
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const completionRate =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   const stats = [
     {
-      title: 'Projects',
+      title: "Projects",
       value: totalProjects,
       icon: ProjectIcon,
-      color: '#0052CC',
+      gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      shadowColor: "rgba(102, 126, 234, 0.2)",
     },
     {
-      title: 'Tasks',
+      title: "Tasks",
       value: totalTasks,
       icon: TaskIcon,
-      color: '#6554C0',
+      gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+      shadowColor: "rgba(240, 147, 251, 0.2)",
     },
     {
-      title: 'Completion Rate',
+      title: "Completion Rate",
       value: `${completionRate}%`,
       icon: CompletedIcon,
-      color: '#00875A',
+      gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+      shadowColor: "rgba(16, 185, 129, 0.2)",
     },
     {
-      title: 'Team Members',
+      title: "Team Members",
       value: totalTeamMembers,
       icon: TeamIcon,
-      color: '#FF5630',
+      gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      shadowColor: "rgba(102, 126, 234, 0.2)",
     },
   ];
 
   return (
-    <Box 
-      sx={{ 
-        display: 'grid',
+    <Box
+      sx={{
+        display: "grid",
         gridTemplateColumns: {
-          xs: 'repeat(2, 1fr)',
-          sm: 'repeat(2, 1fr)', 
-          md: 'repeat(4, 1fr)'
+          xs: "repeat(2, 1fr)",
+          sm: "repeat(2, 1fr)",
+          md: "repeat(4, 1fr)",
         },
         gap: 3,
-        mb: 4 
+        mb: 4,
       }}
     >
       {stats.map((stat) => {
@@ -73,35 +74,56 @@ const ProjectStats: React.FC<ProjectStatsProps> = ({
             key={stat.title}
             sx={{
               p: 3,
-              borderRadius: 2,
-              border: '1px solid #DFE1E6',
-              '&:hover': {
-                boxShadow: '0 4px 8px rgba(0,0,0,0.12)',
-                transform: 'translateY(-2px)',
+              background: "rgba(255, 255, 255, 0.7)",
+              backdropFilter: "blur(20px)",
+              borderRadius: 2.5,
+              border: "1px solid rgba(255, 255, 255, 0.8)",
+              boxShadow: `0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px ${stat.shadowColor}`,
+              "&:hover": {
+                boxShadow: `0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px ${stat.shadowColor}`,
+                transform: "translateY(-4px)",
               },
-              transition: 'all 0.2s ease-in-out',
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Box
                 sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 1,
-                  backgroundColor: `${stat.color}15`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mr: 2,
+                  width: 48,
+                  height: 48,
+                  borderRadius: 2,
+                  background: stat.gradient,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: `0 4px 12px ${stat.shadowColor}`,
                 }}
               >
-                <IconComponent sx={{ color: stat.color, fontSize: 20 }} />
+                <IconComponent sx={{ color: "#ffffff", fontSize: 24 }} />
               </Box>
               <Box>
-                <Typography variant="h4" fontWeight={600} color="text.primary">
+                <Typography 
+                  variant="h4" 
+                  sx={{ 
+                    fontWeight: 800,
+                    fontSize: "1.8rem",
+                    letterSpacing: "-0.02em",
+                    color: "#1e293b",
+                    mb: 0.5,
+                  }}
+                >
                   {stat.value}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: "#64748b",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    letterSpacing: "0.02em",
+                    textTransform: "uppercase",
+                  }}
+                >
                   {stat.title}
                 </Typography>
               </Box>

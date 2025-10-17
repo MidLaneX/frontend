@@ -5,7 +5,7 @@ export type {
   PaginatedResponse,
   LoginRequest,
   LoginResponse,
-} from '../../api/types';
+} from "../../api/types";
 
 // Organization types
 export type {
@@ -23,4 +23,4 @@ export type {
   TeamCardProps,
   OrganizationSettings,
   TeamMember,
-} from './organizations';
+} from "./organizations";

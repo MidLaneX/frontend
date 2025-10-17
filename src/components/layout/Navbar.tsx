@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Button, 
-  Box, 
-  Avatar, 
+import React, { useState, useEffect } from "react";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+  Avatar,
   IconButton,
   Menu,
   MenuItem,
@@ -14,14 +14,13 @@ import {
   Chip,
   Tooltip
 } from '@mui/material'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import SettingsIcon from '@mui/icons-material/Settings'
 import LogoutIcon from '@mui/icons-material/Logout'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import WorkIcon from '@mui/icons-material/Work'
-import FilterListIcon from '@mui/icons-material/FilterList'
 import FolderIcon from '@mui/icons-material/Folder'
 import AddIcon from '@mui/icons-material/Add'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
@@ -31,7 +30,6 @@ import { useSubscription } from '@/context/SubscriptionContext'
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits'
 
 const Navbar: React.FC = () => {
-  const location = useLocation()
   const { logout, userProfile, fetchUserProfile, user } = useAuth()
   const { currentPlan } = useSubscription()
   const { getCurrentPlanData } = useSubscriptionLimits()
@@ -44,12 +42,12 @@ const Navbar: React.FC = () => {
   }
 
   const handleNotificationsClick = (event: React.MouseEvent<HTMLElement>) => {
-    setNotificationsAnchor(event.currentTarget)
-  }
+    setNotificationsAnchor(event.currentTarget);
+  };
 
   const handleCreateClick = (event: React.MouseEvent<HTMLElement>) => {
-    setCreateMenuAnchor(event.currentTarget)
-  }
+    setCreateMenuAnchor(event.currentTarget);
+  };
 
   const handleCloseMenus = () => {
     setProfileMenuAnchor(null)
@@ -58,45 +56,41 @@ const Navbar: React.FC = () => {
   }
 
   const handleLogout = () => {
-    logout()
-    handleCloseMenus()
-  }
+    logout();
+    handleCloseMenus();
+  };
 
   // Fetch user profile when component mounts
   useEffect(() => {
     if (user && !userProfile) {
-      fetchUserProfile()
+      fetchUserProfile();
     }
-  }, [user, userProfile, fetchUserProfile])
-
-  const isActiveRoute = (path: string) => {
-    return location.pathname === path
-  }
+  }, [user, userProfile, fetchUserProfile]);
 
   // Function to get initials from user name
   const getUserInitials = () => {
     if (userProfile?.first_name && userProfile?.last_name) {
-      return `${userProfile.first_name.charAt(0).toUpperCase()}${userProfile.last_name.charAt(0).toUpperCase()}`
+      return `${userProfile.first_name.charAt(0).toUpperCase()}${userProfile.last_name.charAt(0).toUpperCase()}`;
     }
     if (userProfile?.first_name) {
-      return userProfile.first_name.charAt(0).toUpperCase()
+      return userProfile.first_name.charAt(0).toUpperCase();
     }
     if (user?.email) {
-      return user.email.charAt(0).toUpperCase()
+      return user.email.charAt(0).toUpperCase();
     }
-    return 'U' // Default fallback
-  }
+    return "U"; // Default fallback
+  };
 
   // Function to get full name from user profile
   const getFullName = () => {
     if (userProfile?.first_name && userProfile?.last_name) {
-      return `${userProfile.first_name} ${userProfile.last_name}`
+      return `${userProfile.first_name} ${userProfile.last_name}`;
     }
     if (userProfile?.first_name) {
-      return userProfile.first_name
+      return userProfile.first_name;
     }
-    return user?.name || 'User'
-  }
+    return user?.name || "User";
+  };
 
   return (
     <AppBar 
@@ -112,7 +106,7 @@ const Navbar: React.FC = () => {
         boxShadow: '0 2px 20px rgba(0, 0, 0, 0.08)',
       }}
     >
-      <Toolbar sx={{ minHeight: '68px !important', px: { xs: 2, md: 4 } }}>
+      <Toolbar sx={{ minHeight: "68px !important", px: { xs: 2, md: 4 } }}>
         {/* Logo and Brand */}
         <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 2, md: 6 } }}>
           <Box
@@ -153,13 +147,13 @@ const Navbar: React.FC = () => {
               '&:hover': {
                 transform: 'scale(1.02)',
               },
-              transition: 'all 0.3s ease'
+              transition: "all 0.3s ease",
             }}
           >
             ProjectFlow
           </Typography>
         </Box>
-        
+
         {/* Navigation Links */}
         {/* <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
           <Tooltip title="View your assigned work" arrow>
@@ -270,12 +264,14 @@ const Navbar: React.FC = () => {
             </Button>
           </Tooltip>
         </Box> */}
-        
+
         {/* Search - Centered */}
-        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', mx: 4 }}>
+        <Box
+          sx={{ flexGrow: 1, display: "flex", justifyContent: "center", mx: 4 }}
+        >
           <QuickSearch />
         </Box>
-        
+
         {/* Right Side Actions */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* Create Button with Dropdown */}
@@ -312,7 +308,7 @@ const Navbar: React.FC = () => {
           <Tooltip title="Notifications" arrow>
             <IconButton 
               onClick={handleNotificationsClick}
-              sx={{ 
+              sx={{
                 p: 1.5,
                 borderRadius: 2,
                 bgcolor: 'action.hover',
@@ -326,7 +322,7 @@ const Navbar: React.FC = () => {
                   transform: 'scale(1.05)',
                   boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
                 },
-                transition: 'all 0.3s ease'
+                transition: "all 0.3s ease",
               }}
             >
               <Badge 
@@ -366,13 +362,13 @@ const Navbar: React.FC = () => {
                   transform: 'scale(1.05)',
                   boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
                 },
-                transition: 'all 0.3s ease'
+                transition: "all 0.3s ease",
               }}
             >
               <HelpOutlineIcon sx={{ fontSize: 20 }} />
             </IconButton>
           </Tooltip>
-          
+
           {/* Profile */}
           <Tooltip title="Your profile and settings" arrow>
             <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
@@ -409,32 +405,38 @@ const Navbar: React.FC = () => {
               mt: 1,
               minWidth: 280,
               maxWidth: 320,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+              boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
               borderRadius: 3,
-              border: '1px solid rgba(0,0,0,0.08)',
-              overflow: 'visible',
-              '&::before': {
+              border: "1px solid rgba(0,0,0,0.08)",
+              overflow: "visible",
+              "&::before": {
                 content: '""',
-                display: 'block',
-                position: 'absolute',
+                display: "block",
+                position: "absolute",
                 top: 0,
                 right: 20,
                 width: 10,
                 height: 10,
-                bgcolor: 'background.paper',
-                transform: 'translateY(-50%) rotate(45deg)',
+                bgcolor: "background.paper",
+                transform: "translateY(-50%) rotate(45deg)",
                 zIndex: 0,
-                borderLeft: '1px solid rgba(0,0,0,0.08)',
-                borderTop: '1px solid rgba(0,0,0,0.08)'
-              }
-            }
+                borderLeft: "1px solid rgba(0,0,0,0.08)",
+                borderTop: "1px solid rgba(0,0,0,0.08)",
+              },
+            },
           }}
         >
-          <Box sx={{ p: 2, borderBottom: '1px solid #DFE1E6' }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
+          <Box sx={{ p: 2, borderBottom: "1px solid #DFE1E6" }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 700, color: "#172B4D", mb: 0.5 }}
+            >
               Create new
             </Typography>
-            <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '12px' }}>
+            <Typography
+              variant="body2"
+              sx={{ color: "#5E6C84", fontSize: "12px" }}
+            >
               Choose what you'd like to create
             </Typography>
           </Box>
@@ -457,10 +459,13 @@ const Navbar: React.FC = () => {
                 <FolderIcon sx={{ color: '#00875A', fontSize: 20 }} />
               </Box>
               <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: "#172B4D" }}
+                >
                   Project
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#5E6C84' }}>
+                <Typography variant="caption" sx={{ color: "#5E6C84" }}>
                   Create a new project
                 </Typography>
               </Box>
@@ -530,12 +535,12 @@ const Navbar: React.FC = () => {
           open={Boolean(notificationsAnchor)}
           onClose={handleCloseMenus}
           anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
+            vertical: "bottom",
+            horizontal: "right",
           }}
           transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
+            vertical: "top",
+            horizontal: "right",
           }}
           PaperProps={{
             sx: {
@@ -550,9 +555,9 @@ const Navbar: React.FC = () => {
               '&::-webkit-scrollbar': {
                 display: 'none'
               },
-              '-ms-overflow-style': 'none',
-              'scrollbar-width': 'none'
-            }
+              "-ms-overflow-style": "none",
+              "scrollbar-width": "none",
+            },
           }}
         >
           <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -658,42 +663,50 @@ const Navbar: React.FC = () => {
           open={Boolean(profileMenuAnchor)}
           onClose={handleCloseMenus}
           anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
+            vertical: "bottom",
+            horizontal: "right",
           }}
           transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
+            vertical: "top",
+            horizontal: "right",
           }}
           PaperProps={{
             sx: {
               mt: 1,
               minWidth: 280,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+              boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
               borderRadius: 3,
-              border: '1px solid rgba(0,0,0,0.08)'
-            }
+              border: "1px solid rgba(0,0,0,0.08)",
+            },
           }}
         >
-          <Box sx={{ p: 3, borderBottom: '1px solid #DFE1E6' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Avatar sx={{ 
-                bgcolor: '#FF5722', 
-                mr: 2, 
-                width: 48, 
-                height: 48, 
-                fontSize: '18px',
-                fontWeight: 700,
-                boxShadow: '0 2px 8px rgba(255,87,34,0.3)'
-              }}>
+          <Box sx={{ p: 3, borderBottom: "1px solid #DFE1E6" }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Avatar
+                sx={{
+                  bgcolor: "#FF5722",
+                  mr: 2,
+                  width: 48,
+                  height: 48,
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  boxShadow: "0 2px 8px rgba(255,87,34,0.3)",
+                }}
+              >
                 {getUserInitials()}
               </Avatar>
               <Box>
-                <Typography variant="body1" sx={{ fontWeight: 700, color: '#172B4D' }}>
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 700, color: "#172B4D" }}
+                >
                   {getFullName()}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#5E6C84', fontSize: '13px' }}>
-                  {userProfile?.email || user?.email || 'user@example.com'}
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#5E6C84", fontSize: "13px" }}
+                >
+                  {userProfile?.email || user?.email || "user@example.com"}
                 </Typography>
                 <Chip 
                   label={getCurrentPlanData().name} 
@@ -703,42 +716,53 @@ const Navbar: React.FC = () => {
                     color: 'white', 
                     fontSize: '10px', 
                     fontWeight: 600,
-                    mt: 0.5
-                  }} 
+                    mt: 0.5,
+                  }}
                 />
               </Box>
             </Box>
           </Box>
-          <MenuItem onClick={handleCloseMenus} component={Link} to="/account/settings" sx={{ py: 2, px: 3 }}>
-            <SettingsIcon sx={{ mr: 2.5, fontSize: 22, color: '#5E6C84' }} />
+          <MenuItem
+            onClick={handleCloseMenus}
+            component={Link}
+            to="/account/settings"
+            sx={{ py: 2, px: 3 }}
+          >
+            <SettingsIcon sx={{ mr: 2.5, fontSize: 22, color: "#5E6C84" }} />
             <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: "#172B4D" }}
+              >
                 Account settings
               </Typography>
-              <Typography variant="caption" sx={{ color: '#5E6C84' }}>
+              <Typography variant="caption" sx={{ color: "#5E6C84" }}>
                 Manage your account
               </Typography>
             </Box>
           </MenuItem>
           <MenuItem onClick={handleCloseMenus} sx={{ py: 2, px: 3 }}>
-            <HelpOutlineIcon sx={{ mr: 2.5, fontSize: 22, color: '#5E6C84' }} />
+            <HelpOutlineIcon sx={{ mr: 2.5, fontSize: 22, color: "#5E6C84" }} />
             <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: "#172B4D" }}
+              >
                 Help & support
               </Typography>
-              <Typography variant="caption" sx={{ color: '#5E6C84' }}>
+              <Typography variant="caption" sx={{ color: "#5E6C84" }}>
                 Get help and support
               </Typography>
             </Box>
           </MenuItem>
           <Divider sx={{ my: 1 }} />
-          <MenuItem 
-            onClick={handleLogout} 
-            sx={{ 
-              py: 2, 
-              px: 3, 
-              color: '#DE350B',
-              '&:hover': { bgcolor: '#FFEBE6' }
+          <MenuItem
+            onClick={handleLogout}
+            sx={{
+              py: 2,
+              px: 3,
+              color: "#DE350B",
+              "&:hover": { bgcolor: "#FFEBE6" },
             }}
           >
             <LogoutIcon sx={{ mr: 2.5, fontSize: 22 }} />
@@ -754,7 +778,7 @@ const Navbar: React.FC = () => {
         </Menu>
       </Toolbar>
     </AppBar>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

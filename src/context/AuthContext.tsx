@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import { authApi, type SocialLoginRequest } from '../api/endpoints/auth';
-import { tokenManager } from '../utils/tokenManager';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
+import { authApi, type SocialLoginRequest } from "../api/endpoints/auth";
+import { tokenManager } from "../utils/tokenManager";
 
 export interface User {
   userId: number;
@@ -33,7 +33,7 @@ export interface AuthContextType {
 export interface SignupData {
   email: string;
   password: string;
-  phone?: string; 
+  phone?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,7 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -61,18 +61,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const userId = tokenManager.getUserId();
       if (!userId) {
-        console.error('No userId found in localStorage');
+        console.error("No userId found in localStorage");
         return;
       }
-      
+
       const profile = await authApi.getUserProfile(userId);
       setUserProfile(profile);
-      
+
       // Also update the user state to include the full name
       const fullName = `${profile.first_name} ${profile.last_name}`;
-      setUser(prevUser => prevUser ? { ...prevUser, name: fullName } : null);
+      setUser((prevUser) =>
+        prevUser ? { ...prevUser, name: fullName } : null,
+      );
     } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+      console.error("Failed to fetch user profile:", error);
     }
   };
 
@@ -82,17 +84,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         // Migrate from legacy token format if needed
         tokenManager.migrateFromLegacyToken();
-        
+
         // Check if we have valid tokens
         if (tokenManager.hasTokens()) {
           const validToken = await tokenManager.getValidAccessToken();
-          
+
           if (validToken) {
             // Use stored user data from tokenManager instead of calling /me
             const storedUserId = tokenManager.getUserId();
             const storedEmail = tokenManager.getUserEmail();
             const storedRole = tokenManager.getUserRole();
-            
+
             if (storedUserId && storedEmail && storedRole) {
               const userData: User = {
                 userId: storedUserId,
@@ -100,15 +102,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 role: storedRole,
               };
               setUser(userData);
-              
+
               // Fetch user profile data
               try {
                 const profile = await authApi.getUserProfile(storedUserId);
                 setUserProfile(profile);
                 const fullName = `${profile.first_name} ${profile.last_name}`;
-                setUser(prev => prev ? { ...prev, name: fullName } : null);
+                setUser((prev) => (prev ? { ...prev, name: fullName } : null));
               } catch (profileError) {
-                console.error('Failed to fetch user profile on startup:', profileError);
+                console.error(
+                  "Failed to fetch user profile on startup:",
+                  profileError,
+                );
               }
             } else {
               // No stored user data available, clear tokens
@@ -120,10 +125,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error("Auth check failed:", error);
         tokenManager.clearTokens();
       }
-      
+
       setIsLoading(false);
     };
 
@@ -136,23 +141,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email,
         password,
       });
-    
+
       console.log("Login response:", response);
-      
+
       // Store tokens using token manager - user_id will be extracted automatically
       tokenManager.setTokens(response);
-      
+
       console.log("Login successful, tokens stored");
-      
+
       // Create user object from response
       const userData: User = {
         userId: response.user_id, // Extract user_id from backend response
         email: response.user_email,
         role: response.role,
       };
-      
+
       console.log("User data:", userData);
-      
+
       // Update user state
       setUser(userData);
     } catch (error: any) {
@@ -166,19 +171,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authApi.signup(userData);
 
       console.log("Signup response:", response);
-      
+
       // Store tokens using token manager - user_id will be extracted automatically
       tokenManager.setTokens(response);
-      
+
       // Create user object from response
       const newUser: User = {
         userId: response.user_id, // Extract user_id from backend response
         email: response.user_email,
         role: response.role,
       };
-      
+
       console.log("Signup user data:", newUser);
-      
+
       // Update user state
       setUser(newUser);
     } catch (error: any) {
@@ -192,19 +197,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authApi.socialLogin(data);
 
       console.log("Social login response:", response);
-      
+
       // Store tokens using token manager - user_id will be extracted automatically
       tokenManager.setTokens(response);
-      
+
       // Create user object from response
       const newUser: User = {
         userId: response.user_id, // Extract user_id from backend response
         email: response.user_email,
         role: response.role,
       };
-      
+
       console.log("Social login user data:", newUser);
-      
+
       // Update user state
       setUser(newUser);
     } catch (error: any) {
@@ -221,7 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       return success;
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      console.error("Token refresh failed:", error);
       setUser(null);
       return false;
     }
@@ -245,9 +250,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     fetchUserProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

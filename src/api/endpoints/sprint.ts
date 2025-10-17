@@ -1,41 +1,50 @@
-import { projectsApiClient } from '../client';
-import type { SprintDTO } from '../../types/featurevise/sprint';
+import { projectsApiClient } from "../client";
+import type { SprintDTO } from "../../types/featurevise/sprint";
 
 export const sprintApi = {
   // Create sprint
-  createSprint: (projectId: number, sprintDTO: SprintDTO, template = 'scrum') => {
+  createSprint: (
+    projectId: number,
+    sprintDTO: SprintDTO,
+    template = "scrum",
+  ) => {
     return projectsApiClient.post<SprintDTO>(
       `/projects/${projectId}/sprints?template=${template}`,
-      sprintDTO
+      sprintDTO,
     );
   },
 
   // Get latest sprint
-  getLatestSprint: (projectId: number, template = 'scrum') => {
+  getLatestSprint: (projectId: number, template = "scrum") => {
     return projectsApiClient.get<SprintDTO>(
-      `/projects/${projectId}/sprints/latest?template=${template}`
+      `/projects/${projectId}/sprints/latest?template=${template}`,
     );
   },
 
   // Get all sprints
-  getAllSprints: (projectId: number, template = 'scrum') => {
+  getAllSprints: (projectId: number, template = "scrum") => {
     return projectsApiClient.get<SprintDTO[]>(
-      `/projects/${projectId}/sprints?template=${template}`
+      `/projects/${projectId}/sprints?template=${template}`,
     );
   },
 
   // Update sprint
-  updateSprint: (projectId: number, sprintId: number, sprintDTO: Partial<SprintDTO>, template = 'scrum') => {
+  updateSprint: (
+    projectId: number,
+    sprintId: number,
+    sprintDTO: Partial<SprintDTO>,
+    template = "scrum",
+  ) => {
     return projectsApiClient.put<SprintDTO>(
       `/projects/${projectId}/sprints/${sprintId}?template=${template}`,
-      sprintDTO
+      sprintDTO,
     );
   },
 
   // Delete sprint
-  deleteSprint: (projectId: number, sprintId: number, template = 'scrum') => {
+  deleteSprint: (projectId: number, sprintId: number, template = "scrum") => {
     return projectsApiClient.delete(
-      `/projects/${projectId}/sprints/${sprintId}?template=${template}`
+      `/projects/${projectId}/sprints/${sprintId}?template=${template}`,
     );
   },
 };
