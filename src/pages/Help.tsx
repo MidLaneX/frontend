@@ -108,6 +108,27 @@ const Help: React.FC = () => {
           </List>
         </Card>
 
+        {/* User Manual Download */}
+        <Card sx={{ mb: 4, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+              User Manual
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Download the complete user manual for step-by-step guidance and advanced tips.
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            color="primary"
+            href="/user-manual.pdf"
+            download
+            sx={{ mt: { xs: 2, md: 0 }, fontWeight: 700 }}
+          >
+            Download PDF
+          </Button>
+        </Card>
+
         {/* Features Overview */}
         <Card sx={{ mb: 4, p: 3 }}>
           <Typography
