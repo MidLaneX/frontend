@@ -50,6 +50,7 @@ interface BoardProps {
 }
 
 const statusColumns: TaskStatus[] = ["Todo", "In Progress", "Done"];
+const approvalColumn: TaskStatus = "Approvals";
 const priorityOptions: TaskPriority[] = [
   "Highest",
   "High",
@@ -73,6 +74,9 @@ const Board: React.FC<BoardProps> = ({
   const [openDialog, setOpenDialog] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
 
+  // Auto-scroll state for drag and drop
+  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
+
   const fetchTasks = async () => {
     setLoading(true);
     try {
@@ -93,6 +97,15 @@ const Board: React.FC<BoardProps> = ({
   useEffect(() => {
     fetchTasks();
   }, [projectId, templateType]);
+
+  // Auto-scroll handler for drag and drop
+  const handleDragUpdate = (update: any) => {
+    if (!update.destination) {
+      setDraggedOverColumn(null);
+      return;
+    }
+    setDraggedOverColumn(update.destination.droppableId);
+  };
 
   const handleDragEnd = async (result: DropResult) => {
     console.log("Drag end result:", result);
@@ -171,6 +184,7 @@ const Board: React.FC<BoardProps> = ({
 
       // Clear any existing errors
       setError(null);
+      setDraggedOverColumn(null);
     } catch (error) {
       console.error("Failed to update task status:", error);
       const errorMessage =
@@ -179,6 +193,7 @@ const Board: React.FC<BoardProps> = ({
 
       // Revert optimistic update on error
       setTasks(originalTasks);
+      setDraggedOverColumn(null);
     }
   };
 
@@ -261,51 +276,83 @@ const Board: React.FC<BoardProps> = ({
   const getTaskIcon = (type: TaskType) => {
     switch (type) {
       case "Epic":
-        return <EpicIcon sx={{ color: "#8b5a2b", fontSize: 18 }} />;
+        return <EpicIcon sx={{ color: "#b45309", fontSize: 18 }} />;
       case "Story":
-        return <StoryIcon sx={{ color: "#4caf50", fontSize: 18 }} />;
+        return <StoryIcon sx={{ color: "#0d9488", fontSize: 18 }} />;
       case "Bug":
-        return <BugIcon sx={{ color: "#f44336", fontSize: 18 }} />;
+        return <BugIcon sx={{ color: "#e11d48", fontSize: 18 }} />;
       case "Task":
-        return <TaskIcon sx={{ color: "#2196f3", fontSize: 18 }} />;
+        return <TaskIcon sx={{ color: "#3b82f6", fontSize: 18 }} />;
       case "Issue":
-        return <IssueIcon sx={{ color: "#ff9800", fontSize: 18 }} />;
+        return <IssueIcon sx={{ color: "#f97316", fontSize: 18 }} />;
       case "Approval":
-        return <ApprovalIcon sx={{ color: "#9c27b0", fontSize: 18 }} />;
+        return <ApprovalIcon sx={{ color: "#a855f7", fontSize: 18 }} />;
       case "Other":
-        return <OtherIcon sx={{ color: "#607d8b", fontSize: 18 }} />;
+        return <OtherIcon sx={{ color: "#6b7280", fontSize: 18 }} />;
       default:
-        return <TaskIcon sx={{ color: "#2196f3", fontSize: 18 }} />;
+        return <TaskIcon sx={{ color: "#3b82f6", fontSize: 18 }} />;
     }
   };
 
   const getPriorityColor = (priority: TaskPriority) => {
     switch (priority) {
       case "Highest":
-        return "#d32f2f";
+        return { main: "#e11d48", light: "#fff1f2", border: "#fecdd3" };
       case "High":
-        return "#f57c00";
+        return { main: "#f97316", light: "#fff7ed", border: "#fed7aa" };
       case "Medium":
-        return "#1976d2";
+        return { main: "#3b82f6", light: "#eff6ff", border: "#bfdbfe" };
       case "Low":
-        return "#388e3c";
+        return { main: "#14b8a6", light: "#f0fdfa", border: "#99f6e4" };
       case "Lowest":
-        return "#7b1fa2";
+        return { main: "#8b5cf6", light: "#faf5ff", border: "#e9d5ff" };
       default:
-        return "#1976d2";
+        return { main: "#3b82f6", light: "#eff6ff", border: "#bfdbfe" };
     }
   };
 
   const getColumnColor = (status: TaskStatus) => {
     switch (status) {
       case "Todo":
-        return { bg: "#e3f2fd", border: "#2196f3", text: "#1565c0" };
+        return { 
+          bg: "#f0f4ff", 
+          border: "#4f46e5", 
+          text: "#312e81",
+          headerBg: "#e0e7ff",
+          accent: "#6366f1"
+        };
       case "In Progress":
-        return { bg: "#fff3e0", border: "#ff9800", text: "#e65100" };
+        return { 
+          bg: "#fff8f0", 
+          border: "#f97316", 
+          text: "#7c2d12",
+          headerBg: "#fed7aa",
+          accent: "#fb923c"
+        };
+      case "Approvals":
+        return { 
+          bg: "#faf5ff", 
+          border: "#9333ea", 
+          text: "#581c87",
+          headerBg: "#e9d5ff",
+          accent: "#a855f7"
+        };
       case "Done":
-        return { bg: "#e8f5e8", border: "#4caf50", text: "#2e7d32" };
+        return { 
+          bg: "#f0fdf4", 
+          border: "#059669", 
+          text: "#065f46",
+          headerBg: "#d1fae5",
+          accent: "#10b981"
+        };
       default:
-        return { bg: "#f5f5f5", border: "#9e9e9e", text: "#424242" };
+        return { 
+          bg: "#f8fafc", 
+          border: "#64748b", 
+          text: "#334155",
+          headerBg: "#e2e8f0",
+          accent: "#94a3b8"
+        };
     }
   };
 
@@ -319,6 +366,11 @@ const Board: React.FC<BoardProps> = ({
 
       // Exclude Epic tasks from regular columns
       const isNotEpic = task.type !== "Epic";
+
+      // For Approvals column, only show Approval type tasks
+      if (status === "Approvals") {
+        return matchesStatus && matchesSearch && task.type === "Approval";
+      }
 
       return matchesStatus && matchesSearch && isNotEpic;
     });
@@ -335,27 +387,27 @@ const Board: React.FC<BoardProps> = ({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          elevation={snapshot.isDragging ? 8 : 2}
+          elevation={snapshot.isDragging ? 8 : 1}
           sx={{
             mb: 2,
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: snapshot.isDragging ? "primary.main" : "divider",
+            borderRadius: 3,
+            border: "2px solid",
+            borderColor: snapshot.isDragging ? "#4f46e5" : "#e5e7eb",
             transition: "all 0.2s ease-in-out",
-            transform: snapshot.isDragging ? "rotate(3deg)" : "none",
+            transform: snapshot.isDragging ? "rotate(2deg)" : "none",
             cursor: "grab",
             "&:hover": {
               transform: snapshot.isDragging
-                ? "rotate(3deg)"
-                : "translateY(-1px)",
-              boxShadow: "0 8px 25px rgba(0,0,0,0.15)",
-              borderColor: "primary.main",
+                ? "rotate(2deg)"
+                : "translateY(-2px)",
+              boxShadow: "0 12px 24px rgba(79, 70, 229, 0.15)",
+              borderColor: "#6366f1",
             },
             "&:active": {
               cursor: "grabbing",
             },
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(250,252,255,1) 100%)",
+            background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+            backdropFilter: "blur(10px)",
           }}
         >
           <CardContent sx={{ p: 2, pb: "16px !important" }}>
@@ -384,11 +436,12 @@ const Board: React.FC<BoardProps> = ({
                   label={task.priority}
                   size="small"
                   sx={{
-                    height: 20,
-                    fontSize: 10,
-                    bgcolor: `${getPriorityColor(task.priority)}15`,
-                    color: getPriorityColor(task.priority),
-                    border: `1px solid ${getPriorityColor(task.priority)}50`,
+                    height: 22,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    bgcolor: getPriorityColor(task.priority).light,
+                    color: getPriorityColor(task.priority).main,
+                    border: `1.5px solid ${getPriorityColor(task.priority).border}`,
                   }}
                 />
                 <IconButton
@@ -484,14 +537,14 @@ const Board: React.FC<BoardProps> = ({
                   label={task.storyPoints}
                   size="small"
                   sx={{
-                    height: 20,
-                    minWidth: 28,
-                    fontSize: 10,
-                    fontWeight: 600,
-                    bgcolor: "primary.50",
-                    color: "primary.main",
-                    border: "1px solid",
-                    borderColor: "primary.200",
+                    height: 24,
+                    minWidth: 32,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    bgcolor: "#eff6ff",
+                    color: "#3b82f6",
+                    border: "2px solid #bfdbfe",
+                    borderRadius: 2,
                   }}
                 />
               )}
@@ -506,32 +559,35 @@ const Board: React.FC<BoardProps> = ({
   const renderEpicColumn = () => {
     const epicTasks = tasks.filter((task) => task.type === "Epic");
     const columnColor = { 
-      bg: "#fef3e7", 
-      border: "#8b5a2b", 
-      text: "#5d4037" 
+      bg: "#fffbeb", 
+      border: "#d97706", 
+      text: "#78350f",
+      headerBg: "#fef3c7",
+      accent: "#f59e0b"
     };
 
     return (
-      <Box key="Epic" sx={{ flex: 1, minWidth: 350 }}>
+      <Box key="Epic" sx={{ flex: 1, minWidth: 350, maxWidth: 400 }}>
         <Paper
-          elevation={1}
+          elevation={2}
           sx={{
-            height: "100%",
             display: "flex",
             flexDirection: "column",
             bgcolor: columnColor.bg,
-            border: `2px solid ${columnColor.border}`,
-            borderRadius: 2,
-            opacity: 0.95,
+            border: `3px solid ${columnColor.border}`,
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: "0 4px 12px rgba(202, 138, 4, 0.1)",
+            minHeight: "700px",
           }}
         >
           {/* Column Header */}
           <Box
             sx={{
-              p: 2,
-              minHeight: 88,
-              borderBottom: `2px solid ${columnColor.border}`,
-              bgcolor: `${columnColor.border}20`,
+              p: 2.5,
+              minHeight: 100,
+              borderBottom: `3px solid ${columnColor.border}`,
+              background: `linear-gradient(135deg, ${columnColor.headerBg} 0%, ${columnColor.bg} 100%)`,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
@@ -558,15 +614,28 @@ const Board: React.FC<BoardProps> = ({
                 badgeContent={epicTasks.length}
                 sx={{
                   "& .MuiBadge-badge": {
-                    bgcolor: columnColor.border,
+                    bgcolor: columnColor.accent,
                     color: "white",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    height: 24,
+                    minWidth: 24,
+                    borderRadius: 2,
                   },
                 }}
               >
                 <Box />
               </Badge>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                mt: 1, 
+                color: columnColor.text,
+                fontWeight: 500,
+                fontSize: 11
+              }}
+            >
               Epic tasks cannot be moved or edited here
             </Typography>
           </Box>
@@ -576,8 +645,23 @@ const Board: React.FC<BoardProps> = ({
             sx={{
               flex: 1,
               p: 2,
-              minHeight: 200,
+              minHeight: 400,
+              maxHeight: "calc(100vh - 250px)",
               overflowY: "auto",
+              "&::-webkit-scrollbar": {
+                width: "8px",
+              },
+              "&::-webkit-scrollbar-track": {
+                background: "rgba(255, 255, 255, 0.3)",
+                borderRadius: "10px",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                background: "rgba(255, 255, 255, 0.6)",
+                borderRadius: "10px",
+                "&:hover": {
+                  background: "rgba(255, 255, 255, 0.8)",
+                },
+              },
             }}
           >
             {epicTasks.length === 0 ? (
@@ -599,12 +683,16 @@ const Board: React.FC<BoardProps> = ({
                   sx={{
                     mb: 2,
                     cursor: "not-allowed",
-                    opacity: 0.85,
-                    border: `1px solid ${columnColor.border}40`,
+                    opacity: 0.9,
+                    border: `2px solid ${columnColor.border}50`,
+                    borderRadius: 3,
+                    background: "linear-gradient(135deg, #ffffff 0%, #fffef7 100%)",
                     "&:hover": {
-                      boxShadow: 2,
+                      boxShadow: "0 6px 16px rgba(202, 138, 4, 0.15)",
                       opacity: 1,
+                      transform: "translateY(-1px)",
                     },
+                    transition: "all 0.2s ease-in-out",
                   }}
                 >
                   <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
@@ -676,20 +764,24 @@ const Board: React.FC<BoardProps> = ({
                           label={task.status}
                           size="small"
                           sx={{
-                            height: 20,
+                            height: 22,
                             fontSize: 10,
-                            bgcolor: "grey.200",
-                            color: "text.secondary",
+                            fontWeight: 600,
+                            bgcolor: "#f3f4f6",
+                            color: "#4b5563",
+                            border: "1.5px solid #e5e7eb",
                           }}
                         />
                         <Chip
                           label={task.priority}
                           size="small"
                           sx={{
-                            height: 20,
+                            height: 22,
                             fontSize: 10,
-                            bgcolor: getPriorityColor(task.priority),
-                            color: "white",
+                            fontWeight: 600,
+                            bgcolor: getPriorityColor(task.priority).light,
+                            color: getPriorityColor(task.priority).main,
+                            border: `1.5px solid ${getPriorityColor(task.priority).border}`,
                           }}
                         />
                       </Box>
@@ -717,25 +809,27 @@ const Board: React.FC<BoardProps> = ({
     const columnColor = getColumnColor(status);
 
     return (
-      <Box key={status} sx={{ flex: 1, minWidth: 350 }}>
+      <Box key={status} sx={{ flex: 1, minWidth: 350, maxWidth: 400 }}>
         <Paper
-          elevation={1}
+          elevation={2}
           sx={{
-            height: "100%",
             display: "flex",
             flexDirection: "column",
             bgcolor: columnColor.bg,
-            border: `2px solid ${columnColor.border}20`,
-            borderRadius: 2,
+            border: `3px solid ${columnColor.border}30`,
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: `0 4px 12px ${columnColor.border}15`,
+            minHeight: "700px",
           }}
         >
           {/* Column Header */}
           <Box
             sx={{
-              p: 2,
-              minHeight: 88,
-              borderBottom: `2px solid ${columnColor.border}30`,
-              bgcolor: `${columnColor.border}10`,
+              p: 2.5,
+              minHeight: 100,
+              borderBottom: `3px solid ${columnColor.border}40`,
+              background: `linear-gradient(135deg, ${columnColor.headerBg} 0%, ${columnColor.bg} 100%)`,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
@@ -750,8 +844,12 @@ const Board: React.FC<BoardProps> = ({
             >
               <Typography
                 variant="h6"
-                fontWeight={600}
-                sx={{ color: columnColor.text }}
+                fontWeight={700}
+                sx={{ 
+                  color: columnColor.text,
+                  fontSize: 18,
+                  letterSpacing: 0.5
+                }}
               >
                 {status}
               </Typography>
@@ -760,8 +858,13 @@ const Board: React.FC<BoardProps> = ({
                 color="primary"
                 sx={{
                   "& .MuiBadge-badge": {
-                    bgcolor: columnColor.border,
+                    bgcolor: columnColor.accent,
                     color: "white",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    height: 24,
+                    minWidth: 24,
+                    borderRadius: 2,
                   },
                 }}
               >
@@ -769,26 +872,35 @@ const Board: React.FC<BoardProps> = ({
               </Badge>
             </Box>
 
-            {status === "Done" && columnTasks.length > 0 && (
-              <Box sx={{ mt: 1 }}>
+            {(status === "Done" || status === "Approvals") && columnTasks.length > 0 && (
+              <Box sx={{ mt: 1.5 }}>
                 <LinearProgress
                   variant="determinate"
-                  value={100}
+                  value={status === "Done" ? 100 : 75}
                   sx={{
-                    height: 4,
-                    borderRadius: 2,
-                    bgcolor: `${columnColor.border}30`,
+                    height: 6,
+                    borderRadius: 3,
+                    bgcolor: `${columnColor.border}20`,
                     "& .MuiLinearProgress-bar": {
-                      bgcolor: columnColor.border,
+                      bgcolor: columnColor.accent,
+                      borderRadius: 3,
                     },
                   }}
                 />
                 <Typography
                   variant="caption"
-                  color={columnColor.text}
-                  sx={{ mt: 0.5, display: "block" }}
+                  sx={{ 
+                    mt: 0.5, 
+                    display: "block",
+                    color: columnColor.text,
+                    fontWeight: 600,
+                    fontSize: 11
+                  }}
                 >
-                  {columnTasks.length} completed
+                  {status === "Done" 
+                    ? `${columnTasks.length} task${columnTasks.length !== 1 ? 's' : ''} completed`
+                    : `${columnTasks.length} task${columnTasks.length !== 1 ? 's' : ''} awaiting approval`
+                  }
                 </Typography>
               </Box>
             )}
@@ -803,12 +915,49 @@ const Board: React.FC<BoardProps> = ({
                 sx={{
                   flex: 1,
                   p: 2,
-                  minHeight: 200,
+                  minHeight: 400,
+                  maxHeight: "calc(100vh - 250px)",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  scrollBehavior: "smooth",
                   bgcolor: snapshot.isDraggingOver
-                    ? `${columnColor.border}20`
+                    ? `${columnColor.border}25`
                     : "transparent",
-                  transition: "background-color 0.2s ease",
-                  borderRadius: "0 0 8px 8px",
+                  transition: "all 0.3s ease",
+                  borderRadius: "0 0 12px 12px",
+                  border: snapshot.isDraggingOver 
+                    ? `2px dashed ${columnColor.accent}` 
+                    : "2px dashed transparent",
+                  margin: snapshot.isDraggingOver ? 1 : 0,
+                  "&::-webkit-scrollbar": {
+                    width: "8px",
+                  },
+                  "&::-webkit-scrollbar-track": {
+                    background: "rgba(255, 255, 255, 0.3)",
+                    borderRadius: "10px",
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    background: "rgba(255, 255, 255, 0.6)",
+                    borderRadius: "10px",
+                    "&:hover": {
+                      background: "rgba(255, 255, 255, 0.8)",
+                    },
+                  },
+                }}
+                onDragOver={(e) => {
+                  if (snapshot.isDraggingOver) {
+                    const element = e.currentTarget;
+                    const rect = element.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const height = rect.height;
+                    
+                    // Auto-scroll when dragging near top or bottom
+                    if (y < 100) {
+                      element.scrollTop -= 10;
+                    } else if (y > height - 100) {
+                      element.scrollTop += 10;
+                    }
+                  }
                 }}
               >
                 {columnTasks.map((task, index) => renderTaskCard(task, index))}
@@ -824,13 +973,21 @@ const Board: React.FC<BoardProps> = ({
                   }}
                   sx={{
                     mt: 2,
+                    py: 1,
+                    borderRadius: 2,
+                    borderWidth: 2,
                     borderStyle: "dashed",
-                    borderColor: `${columnColor.border}50`,
+                    borderColor: `${columnColor.border}60`,
                     color: columnColor.text,
+                    fontWeight: 600,
+                    textTransform: "none",
                     "&:hover": {
-                      borderColor: columnColor.border,
-                      bgcolor: `${columnColor.border}10`,
+                      borderColor: columnColor.accent,
+                      bgcolor: `${columnColor.border}15`,
+                      borderWidth: 2,
+                      transform: "translateY(-1px)",
                     },
+                    transition: "all 0.2s ease",
                   }}
                 >
                   Add Task
@@ -860,37 +1017,52 @@ const Board: React.FC<BoardProps> = ({
   }
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <DragDropContext onDragEnd={handleDragEnd} onDragUpdate={handleDragUpdate}>
       <Box
         sx={{
           height: "100vh",
           display: "flex",
           flexDirection: "column",
-          bgcolor: "#fafbfc",
+          background: "linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)",
         }}
       >
         {/* Header */}
         <Box
           sx={{
             px: 3,
-            py: 2,
-            borderBottom: 1,
-            borderColor: "divider",
-            bgcolor: "white",
+            py: 2.5,
+            borderBottom: "2px solid",
+            borderColor: "#e5e7eb",
+            background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <BoardIcon sx={{ color: "primary.main" }} />
-            <Typography variant="h5" fontWeight={600}>
+            <BoardIcon sx={{ color: "#4f46e5", fontSize: 32 }} />
+            <Typography 
+              variant="h5" 
+              fontWeight={700}
+              sx={{ 
+                color: "#1e293b",
+                letterSpacing: 0.5
+              }}
+            >
               Task Board
             </Typography>
             {projectName && (
-              <Typography variant="body2" color="text.secondary">
-                • {projectName}
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: "#64748b",
+                  fontWeight: 500,
+                  pl: 1,
+                  borderLeft: "2px solid #e5e7eb"
+                }}
+              >
+                {projectName}
               </Typography>
             )}
           </Box>
@@ -900,10 +1072,19 @@ const Board: React.FC<BoardProps> = ({
             onClick={() => setOpenDialog(true)}
             sx={{
               borderRadius: 3,
-              px: 3,
+              px: 4,
+              py: 1.2,
               textTransform: "none",
-              fontWeight: 600,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              fontWeight: 700,
+              fontSize: 15,
+              bgcolor: "#4f46e5",
+              boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
+              "&:hover": {
+                bgcolor: "#4338ca",
+                boxShadow: "0 6px 16px rgba(79, 70, 229, 0.4)",
+                transform: "translateY(-1px)",
+              },
+              transition: "all 0.2s ease",
             }}
           >
             Create Task
@@ -920,9 +1101,8 @@ const Board: React.FC<BoardProps> = ({
         <Box
           sx={{
             p: 3,
-            bgcolor: "white",
-            borderBottom: 1,
-            borderColor: "divider",
+            background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+            borderBottom: "2px solid #e5e7eb",
           }}
         >
           <TextField
@@ -931,14 +1111,54 @@ const Board: React.FC<BoardProps> = ({
             placeholder="Search tasks by title, assignee, or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ maxWidth: 400 }}
+            sx={{ 
+              maxWidth: 500,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 3,
+                bgcolor: "white",
+                fontWeight: 500,
+                "&:hover fieldset": {
+                  borderColor: "#4f46e5",
+                },
+                "&.Mui-focused fieldset": {
+                  borderWidth: 2,
+                },
+              }
+            }}
           />
         </Box>
 
         {/* Board Columns */}
-        <Box sx={{ flex: 1, display: "flex", gap: 3, p: 3, overflow: "auto" }}>
+        <Box 
+          sx={{ 
+            flex: 1, 
+            display: "flex", 
+            gap: 3, 
+            p: 3, 
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollBehavior: "smooth",
+            "&::-webkit-scrollbar": {
+              height: "10px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "rgba(255, 255, 255, 0.3)",
+              borderRadius: "10px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: "rgba(255, 255, 255, 0.6)",
+              borderRadius: "10px",
+              "&:hover": {
+                background: "rgba(255, 255, 255, 0.8)",
+              },
+            },
+          }}
+        >
           {/* Epic Column (Non-Movable) */}
           {renderEpicColumn()}
+          
+          {/* Approvals Column */}
+          {renderColumn(approvalColumn)}
           
           {/* Regular Status Columns */}
           {statusColumns.map((status) => renderColumn(status))}

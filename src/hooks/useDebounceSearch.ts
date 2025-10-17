@@ -6,7 +6,7 @@ import { debounce } from "../utils";
  */
 export const useDebounceSearch = (
   searchFunction: (query: string) => void,
-  delay: number = 300,
+  delay = 300,
 ) => {
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
