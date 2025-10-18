@@ -23,7 +23,7 @@ export const projectsApiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  // ... config
+ 
 });
 
 // Request interceptor for projects API

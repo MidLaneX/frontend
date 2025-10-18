@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -13,19 +13,28 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
+import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 import CloseIcon from "@mui/icons-material/Close";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import type { Project } from "@/types";
+import { teamsApi } from "@/api/endpoints/teams";
+import type { Team } from "@/types/api/organizations";
 
 interface CreateProjectModalProps {
   open: boolean;
   onClose: () => void;
-  onCreateProject: (project: Omit<Project, "id" | "tasks">) => void;
+  onCreateProject: (project: Omit<Project, "id" | "tasks"> & { teamId?: string }) => Promise<void>;
+  loading?: boolean;
+  orgId?: number;
 }
 
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   open,
   onClose,
   onCreateProject,
+  loading = false,
+  orgId,
 }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -35,10 +44,80 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     startDate: "",
     endDate: "",
     teamMembers: [] as string[],
+    teamId: "",
   });
   const [newMember, setNewMember] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{
+    type: "success" | "error" | null;
+    message: string;
+  }>({ type: null, message: "" });
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loadingTeams, setLoadingTeams] = useState(false);
 
-  const handleSubmit = () => {
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open) {
+      console.log("📂 Modal opened, resetting form");
+      setFormData({
+        name: "",
+        key: "",
+        description: "",
+        type: "Software",
+        startDate: "",
+        endDate: "",
+        teamMembers: [],
+        teamId: "",
+      });
+      setNewMember("");
+      setSubmitStatus({ type: null, message: "" });
+      setSubmitting(false);
+    }
+  }, [open]);
+
+  // Fetch teams when modal opens
+  useEffect(() => {
+    const fetchTeams = async () => {
+      if (!open || !orgId) return;
+      
+      setLoadingTeams(true);
+      try {
+        const fetchedTeams = await teamsApi.getTeams(String(orgId));
+        console.log("CreateProjectModal - Fetched teams:", fetchedTeams);
+        setTeams(fetchedTeams);
+      } catch (error) {
+        console.error("Failed to fetch teams:", error);
+        setTeams([]);
+      } finally {
+        setLoadingTeams(false);
+      }
+    };
+
+    fetchTeams();
+  }, [open, orgId]);
+
+  // Auto-close modal after error (success closes immediately)
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    
+    if (submitStatus.type === "error") {
+      console.log("🔔 Auto-close triggered for error");
+      // Close modal after 3 seconds for error
+      timeoutId = setTimeout(() => {
+        console.log("⏰ Auto-close timeout fired, closing modal now");
+        handleClose();
+      }, 3000);
+    }
+    
+    return () => {
+      if (timeoutId) {
+        console.log("🧹 Cleaning up auto-close timeout");
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [submitStatus.type]); // Watch submitStatus.type specifically
+
+  const handleSubmit = async () => {
     if (
       !formData.name ||
       !formData.key ||
@@ -48,33 +127,64 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       return;
     }
 
-    const project: Omit<Project, "id" | "tasks"> = {
-      name: formData.name,
-      key: formData.key.toUpperCase(),
-      type: formData.type,
-      templateType: 'scrum', // Default template type
-      features: [], // Initialize empty features array
-      timeline: {
-        start: formData.startDate,
-        end: formData.endDate,
-      },
-      teamMembers: formData.teamMembers.map((name) => ({
-        name,
-        role: "Team Member",
-      })),
-    };
+    setSubmitting(true);
+    setSubmitStatus({ type: null, message: "" });
 
-    // Debug logging to verify type is captured
-    console.log("CreateProjectModal - Project data being sent:", {
-      ...project,
-      typeDebug: `Type: "${project.type}" (${typeof project.type})`,
-    });
+    try {
+      // Convert date strings (YYYY-MM-DD) to ISO format for backend
+      const startDate = formData.startDate ? new Date(formData.startDate + 'T00:00:00').toISOString() : new Date().toISOString();
+      const endDate = formData.endDate ? new Date(formData.endDate + 'T23:59:59').toISOString() : new Date().toISOString();
 
-    onCreateProject(project);
-    handleClose();
+      const project: Omit<Project, "id" | "tasks"> & { teamId?: string } = {
+        name: formData.name,
+        key: formData.key.toUpperCase(),
+        type: formData.type,
+        templateType: 'scrum', // Default template type
+        features: [], // Initialize empty features array
+        timeline: {
+          start: startDate,
+          end: endDate,
+        },
+        teamMembers: formData.teamMembers.map((name) => ({
+          name,
+          role: "Team Member",
+        })),
+        teamId: formData.teamId, // Include selected team
+      };
+
+      // Debug logging to verify type is captured
+      console.log("CreateProjectModal - Project data being sent:", {
+        ...project,
+        typeDebug: `Type: "${project.type}" (${typeof project.type})`,
+        teamIdDebug: `Team ID: "${project.teamId}"`,
+      });
+
+      await onCreateProject(project);
+      
+      console.log("✅ Project created successfully, closing modal");
+      // Close immediately on success (like TaskFormDialog does)
+      handleClose();
+    } catch (error: any) {
+      console.error("Failed to create project:", error);
+      setSubmitStatus({
+        type: "error",
+        message: error.message || "Failed to create project. Please try again.",
+      });
+      // Modal will auto-close after 3 seconds due to useEffect
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
+    // Don't allow closing while submitting
+    if (submitting) {
+      console.log("⚠️ Cannot close modal while submitting");
+      return;
+    }
+    
+    console.log("🚪 Manual close triggered");
+    setSubmitting(false);
     setFormData({
       name: "",
       key: "",
@@ -83,8 +193,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       startDate: "",
       endDate: "",
       teamMembers: [],
+      teamId: "",
     });
     setNewMember("");
+    setSubmitStatus({ type: null, message: "" });
     onClose();
   };
 
@@ -157,6 +269,27 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ p: 3 }}>
+        {/* Success/Error Message */}
+        {submitStatus.type && (
+          <Alert 
+            severity={submitStatus.type} 
+            icon={submitStatus.type === "success" ? <CheckCircleIcon /> : undefined}
+            sx={{ mb: 3 }}
+          >
+            {submitStatus.message}
+            {submitStatus.type === "success" && (
+              <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                Closing in 2 seconds...
+              </Typography>
+            )}
+            {submitStatus.type === "error" && (
+              <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                Closing in 3 seconds...
+              </Typography>
+            )}
+          </Alert>
+        )}
+
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {/* Project Name */}
           <TextField
@@ -166,6 +299,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             onChange={(e) => handleNameChange(e.target.value)}
             required
             variant="outlined"
+            disabled={submitting || submitStatus.type !== null}
           />
 
           {/* Project Key */}
@@ -183,6 +317,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             variant="outlined"
             helperText="A unique identifier for your project (e.g., MLC, MAD)"
             inputProps={{ maxLength: 10 }}
+            disabled={submitting || submitStatus.type !== null}
           />
 
           {/* Project Type */}
@@ -197,11 +332,42 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   type: e.target.value as Project["type"],
                 }))
               }
+              disabled={submitting || submitStatus.type !== null}
             >
               <MenuItem value="Software">Software</MenuItem>
               <MenuItem value="Business">Business</MenuItem>
               <MenuItem value="Marketing">Marketing</MenuItem>
             </Select>
+          </FormControl>
+
+          {/* Team Assignment */}
+          <FormControl fullWidth>
+            <InputLabel>Assign Team (Optional)</InputLabel>
+            <Select
+              value={formData.teamId}
+              label="Assign Team (Optional)"
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  teamId: e.target.value,
+                }))
+              }
+              disabled={submitting || submitStatus.type !== null || loadingTeams}
+            >
+              <MenuItem value="">
+                <em>No Team</em>
+              </MenuItem>
+              {teams.map((team) => (
+                <MenuItem key={team.id} value={String(team.id)}>
+                  {team.name}
+                </MenuItem>
+              ))}
+            </Select>
+            {loadingTeams && (
+              <Typography variant="caption" sx={{ mt: 0.5, color: "#5E6C84" }}>
+                Loading teams...
+              </Typography>
+            )}
           </FormControl>
 
           {/* Description */}
@@ -216,6 +382,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             rows={3}
             variant="outlined"
             placeholder="Brief description of your project..."
+            disabled={submitting || submitStatus.type !== null}
           />
 
           {/* Timeline */}
@@ -230,6 +397,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               }
               required
               InputLabelProps={{ shrink: true }}
+              disabled={submitting || submitStatus.type !== null}
             />
             <TextField
               fullWidth
@@ -241,6 +409,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               }
               required
               InputLabelProps={{ shrink: true }}
+              disabled={submitting || submitStatus.type !== null}
             />
           </Box>
 
@@ -260,11 +429,12 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 value={newMember}
                 onChange={(e) => setNewMember(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleAddMember()}
+                disabled={submitting || submitStatus.type !== null}
               />
               <Button
                 variant="outlined"
                 onClick={handleAddMember}
-                disabled={!newMember.trim()}
+                disabled={!newMember.trim() || submitting || submitStatus.type !== null}
                 sx={{ textTransform: "none" }}
               >
                 Add
@@ -286,26 +456,34 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 0 }}>
-        <Button onClick={handleClose} sx={{ textTransform: "none" }}>
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={
-            !formData.name ||
-            !formData.key ||
-            !formData.startDate ||
-            !formData.endDate
-          }
-          sx={{
-            textTransform: "none",
-            bgcolor: "#0052CC",
-            "&:hover": { bgcolor: "#0747A6" },
-          }}
+        <Button 
+          onClick={handleClose} 
+          sx={{ textTransform: "none" }}
+          disabled={submitting}
         >
-          Create Project
+          {submitStatus.type ? "Close" : "Cancel"}
         </Button>
+        {!submitStatus.type && (
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={
+              !formData.name ||
+              !formData.key ||
+              !formData.startDate ||
+              !formData.endDate ||
+              submitting
+            }
+            startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : null}
+            sx={{
+              textTransform: "none",
+              bgcolor: "#0052CC",
+              "&:hover": { bgcolor: "#0747A6" },
+            }}
+          >
+            {submitting ? "Creating..." : "Create Project"}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

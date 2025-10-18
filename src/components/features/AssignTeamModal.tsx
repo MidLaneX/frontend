@@ -55,6 +55,9 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<UserProjectDTO[] | null>(null);
 
+  // Get userId from localStorage
+  const userId = parseInt(localStorage.getItem("userId") || "5");
+
   // Teams state and fetching
   const [teams, setTeams] = useState<Team[]>([]);
   const [loadingTeams, setLoadingTeams] = useState(false);
@@ -71,6 +74,24 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
       fetchTeams();
       fetchTeamAssignments();
     }
+  }, [open]);
+
+  // Add a separate effect to refetch teams when teams might have been created
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    
+    if (open) {
+      // Refetch teams every 2 seconds while modal is open to catch newly created teams
+      intervalId = setInterval(() => {
+        fetchTeams();
+      }, 2000);
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [open]);
 
   const fetchTeams = async () => {
@@ -139,6 +160,7 @@ const AssignTeamModal: React.FC<AssignTeamModalProps> = ({
 
     try {
       const assignments = await ProjectService.assignTeamToProject(
+        userId,
         projectId,
         templateType,
         selectedTeamId,

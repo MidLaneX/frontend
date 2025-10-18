@@ -14,7 +14,6 @@ import { ProjectService } from "../services/ProjectService";
 import type { Project } from "../types";
 import type { CreateProjectDTO } from "../types/dto";
 import {
-  ProjectStats,
   ProjectControls,
   ProjectCard,
   CreateProjectModal,
@@ -195,13 +194,15 @@ const Dashboard: React.FC<DashboardProps> = ({
       // Create the complete payload as expected by backend
       const createProjectPayload: CreateProjectDTO = {
         id: null,
+        userId: currentUserId,
         orgId: currentOrgId,
         name: projectData.name || "Untitled Project",
         type: projectData.type || "Software", // Use consistent casing with frontend
         templateType: projectData.templateType || "scrum",
         features: projectData.features || ["Login", "Dashboard", "Analytics"],
-        createdAt: now,
-        updatedAt: now,
+        // Use timeline dates - they're already in ISO format from the modal
+        createdAt: projectData.timeline?.start || now,
+        updatedAt: projectData.timeline?.end || now,
         createdBy: String(projectData.createdBy || user?.email || "Unknown User"),
       };
 
@@ -222,8 +223,9 @@ const Dashboard: React.FC<DashboardProps> = ({
       const result = await ProjectService.createProject(
         createProjectPayload,
         createProjectPayload.templateType,
+        currentUserId, // Pass userId to the API
       );
-      console.log("Successfully created project:", result);
+      console.log("✅ Successfully created project:", result);
 
       // If a team was selected during project creation, assign it to the project
       if (projectData.teamId && projectData.teamId !== "") {
@@ -231,51 +233,76 @@ const Dashboard: React.FC<DashboardProps> = ({
           const teamIdNumber = parseInt(projectData.teamId);
           const projectIdNumber = Number(result.id);
 
+          // Validate team ID and project ID
+          if (isNaN(teamIdNumber) || isNaN(projectIdNumber)) {
+            console.error("Invalid team ID or project ID:", {
+              teamId: projectData.teamId,
+              teamIdNumber,
+              projectId: result.id,
+              projectIdNumber,
+            });
+            throw new Error("Invalid team or project ID");
+          }
+
           console.log("Assigning team to newly created project:", {
+            userId: currentUserId,
             projectId: projectIdNumber,
-            projectIdType: typeof projectIdNumber,
             templateType: result.templateType,
             teamId: teamIdNumber,
-            teamIdType: typeof teamIdNumber,
-            originalTeamId: projectData.teamId,
           });
 
           const assignments = await ProjectService.assignTeamToProject(
+            currentUserId,
             projectIdNumber,
             result.templateType,
             teamIdNumber,
           );
-          console.log("Team assigned successfully:", assignments);
-
-          // Show success message for team assignment
-          console.log(
-            `Team ${projectData.teamId} assigned to project "${result.name}" with ${assignments.length} members`,
-          );
-        } catch (teamAssignError) {
-          console.warn(
-            "Failed to assign team to project, but project was created:",
-            teamAssignError,
-          );
+          
+          console.log("✅ Team assigned successfully:", assignments);
+          
+          // Update the result with the assigned team
+          result.assignedTeamId = teamIdNumber;
+          
+        } catch (teamAssignError: any) {
+          console.error("Failed to assign team to project:", {
+            error: teamAssignError,
+            message: teamAssignError?.message,
+            response: teamAssignError?.response?.data,
+          });
           // Don't throw error here, project was created successfully
+          // But log it prominently for debugging
+          console.warn("⚠️ Project created but team assignment failed");
         }
       }
 
+      // Add project to list
       setProjects((prev) => [...prev, result]);
+      
+      // ✅ Close modal immediately after successful creation
       setIsCreateModalOpen(false);
+      console.log("🚪 Modal closed after successful creation");
 
       // Update orgId state if it wasn't set before
       if (!orgId && currentOrgId) {
         setOrgId(currentOrgId);
         localStorage.setItem("orgId", String(currentOrgId));
       }
+
+      // 🔄 Auto-refresh projects to ensure fresh data from server
+      console.log("🔄 Auto-refreshing projects to load complete data...");
+      setTimeout(() => {
+        refreshProjects();
+      }, 500); // Small delay to ensure backend has processed everything
     } catch (err) {
-      console.error("Error creating project:", err);
+      console.error("❌ Error creating project:", err);
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
         "Failed to create project. Please try again.";
       setError(errorMessage);
+      // Re-throw the error so the modal can show error state
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -345,24 +372,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     // Refresh the entire project list after deletion
     refreshProjects();
   };
-
-  // Calculate statistics
-  const totalProjects = projects.length;
-  const totalTasks = projects.reduce(
-    (sum, project) => sum + (project.tasks?.length || 0),
-    0,
-  );
-  const completedTasks = projects.reduce(
-    (sum, project) =>
-      sum +
-      (project.tasks?.filter((task) => task.status === "Done").length || 0),
-    0,
-  );
-  const totalTeamMembers = new Set(
-    projects.flatMap((project) =>
-      (project.teamMembers || []).map((member) => member.name),
-    ),
-  ).size;
 
   // Filter and sort projects
   const filteredProjects = React.useMemo(() => {
@@ -499,7 +508,10 @@ const Dashboard: React.FC<DashboardProps> = ({
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setError(null); // Clear any previous errors
+              setIsCreateModalOpen(true);
+            }}
             sx={{
               textTransform: "none",
               fontWeight: 600,
@@ -570,14 +582,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Main Content */}
         {!loading && (
           <>
-            {/* Statistics */}
-            <ProjectStats
-              totalProjects={totalProjects}
-              totalTasks={totalTasks}
-              completedTasks={completedTasks}
-              totalTeamMembers={totalTeamMembers}
-            />
-
             {/* Project Controls */}
             <ProjectControls
               searchQuery={searchQuery}
@@ -593,7 +597,10 @@ const Dashboard: React.FC<DashboardProps> = ({
 
             {/* Projects Grid/List */}
             {filteredProjects.length === 0 ? (
-              <EmptyState onCreateProject={() => setIsCreateModalOpen(true)} />
+              <EmptyState onCreateProject={() => {
+                setError(null); // Clear any previous errors
+                setIsCreateModalOpen(true);
+              }} />
             ) : (
               <>
                 <Box

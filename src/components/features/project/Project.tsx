@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { 
   Box, 
   Typography, 
@@ -10,11 +10,14 @@ import {
   CardContent,
   Chip,
   alpha,
-  useTheme
+  useTheme,
+  IconButton,
+  Tooltip
 } from "@mui/material";
 import { 
   FolderSpecial as ProjectIcon,
-  Category as TemplateIcon
+  Category as TemplateIcon,
+  ArrowBack as BackIcon
 } from "@mui/icons-material";
 import type { Project } from "@/types";
 import { ProjectService } from "@/services/ProjectService";
@@ -22,6 +25,7 @@ import DynamicProjectNavigation from "./DynamicProjectNavigation";
 
 const ProjectPage: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { projectId: urlProjectId, templateType: urlTemplateType } = useParams<{
     projectId?: string;
     templateType?: string;
@@ -131,6 +135,28 @@ const ProjectPage: React.FC = () => {
           <Container maxWidth="xl">
             <Box sx={{ py: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                <Tooltip title="Back to Projects" arrow>
+                  <IconButton
+                    onClick={() => navigate("/dashboard")}
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      bgcolor: "white",
+                      color: theme.palette.primary.main,
+                      border: `2px solid ${theme.palette.primary.main}`,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      "&:hover": {
+                        bgcolor: theme.palette.primary.main,
+                        color: "white",
+                        transform: "translateX(-3px)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                      },
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <BackIcon sx={{ fontSize: 24 }} />
+                  </IconButton>
+                </Tooltip>
                 <Box
                   sx={{
                     width: 48,
@@ -205,6 +231,28 @@ const ProjectPage: React.FC = () => {
         <Container maxWidth="xl">
           <Box sx={{ py: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Tooltip title="Back to Projects" arrow>
+                <IconButton
+                  onClick={() => navigate("/dashboard")}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: "white",
+                    color: theme.palette.primary.main,
+                    border: `2px solid ${theme.palette.primary.main}`,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.main,
+                      color: "white",
+                      transform: "translateX(-3px)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                    },
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <BackIcon sx={{ fontSize: 24 }} />
+                </IconButton>
+              </Tooltip>
               <Box
                 sx={{
                   width: 48,
